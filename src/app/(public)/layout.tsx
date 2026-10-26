@@ -2,7 +2,7 @@ import { PublicFooter, PublicHeader } from "@/components/site-chrome";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#f9fafb]">
+    <div className="public-shell flex min-h-screen flex-col">
       <PublicHeader />
       <main id="main-content" className="relative flex-1 overflow-hidden">
         <div

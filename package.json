@@ -16,10 +16,13 @@
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^0.553.0",
     "next": "16.4.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "recharts": "^3.10.1",
     "unpdf": "1.9.1",
     "zod": "4.6.7"
   },

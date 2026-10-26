@@ -9,7 +9,7 @@ import { SCHEMA_SQL } from "./schema";
  * The schema is intentionally PostgreSQL-compatible in shape so that a hosted
  * Postgres/pgvector adapter can replace this module without changing domain logic.
  */
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const GLOBAL_KEY = "__gapfinder_db__";
 
 export type SqlParam = string | number | bigint | null | Uint8Array;
@@ -48,10 +48,17 @@ export function createDatabase(databasePath: string): DatabaseSync {
     database.exec("PRAGMA cache_size = -20000;");
     database.exec("PRAGMA temp_store = MEMORY;");
   }
-  database.exec("PRAGMA user_version = " + SCHEMA_VERSION + ";");
-
   const schema = SCHEMA_SQL;
   database.exec(schema);
+
+  const userColumns = database.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
+  if (!userColumns.some((column) => column.name === "auth_user_id")) {
+    database.exec("ALTER TABLE users ADD COLUMN auth_user_id TEXT;");
+    database.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_auth_user_id ON users(auth_user_id) WHERE auth_user_id IS NOT NULL;",
+    );
+  }
+  database.exec("PRAGMA user_version = " + SCHEMA_VERSION + ";");
   return database;
 }
 

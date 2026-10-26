@@ -11,11 +11,29 @@ export async function POST(request: Request) {
     requireSameOrigin(request);
     const user = await requireUser();
     const payload = await readJson(request, assistantRequestSchema);
+
+    if (payload.mode === "general") {
+      const answer = await explainTopic({
+        ownerId: user.id,
+        subjectId: payload.subjectId,
+        request: payload,
+      });
+      return jsonOk({
+        answer,
+        topicName: "General",
+        subjectName: "General Knowledge",
+      });
+    }
+
+    if (!payload.topicId) {
+      throw new (await import("@/lib/errors")).AppError(400, "VALIDATION_ERROR", "Select a topic or switch to General mode.");
+    }
+
     const context = getTopicContext(user.id, payload.topicId);
     const answer = await explainTopic({
       ownerId: user.id,
       subjectId: context.topic.subject_id,
-      request: { topicId: payload.topicId, question: payload.question },
+      request: payload,
     });
     return jsonOk({ answer, topicName: context.topic.name, subjectName: context.subjectName });
   });

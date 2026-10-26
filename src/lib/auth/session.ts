@@ -6,6 +6,8 @@ import { db, newId, nowIso } from "@/lib/db";
 import { sessionTtlDays } from "@/lib/env";
 import { unauthenticated } from "@/lib/errors";
 import { SESSION_COOKIE } from "@/lib/auth/constants";
+import { DUMMY_PASSWORD_HASH } from "@/lib/auth/password";
+import { createClient, isSupabaseAuthConfigured } from "@/lib/supabase/server";
 
 export { SESSION_COOKIE };
 
@@ -21,6 +23,7 @@ interface UserRow {
   email: string;
   display_name: string;
   is_demo: number;
+  auth_user_id: string | null;
 }
 
 function hashToken(token: string): string {
@@ -55,12 +58,86 @@ export function findUserForSession(token: string): AuthUser | null {
   return { id: row.id, email: row.email, displayName: row.display_name, isDemo: row.is_demo === 1 };
 }
 
+export function syncSupabaseUser(user: {
+  id: string;
+  email?: string;
+  email_confirmed_at?: string | null;
+  user_metadata: Record<string, unknown>;
+  app_metadata: Record<string, unknown>;
+}): AuthUser {
+  const email = user.email?.trim().toLowerCase();
+  if (!email) throw unauthenticated();
+
+  const existing = db.get<UserRow>(
+    `SELECT id, email, display_name, is_demo, auth_user_id
+       FROM users
+      WHERE auth_user_id = ? OR email = ?
+      ORDER BY CASE WHEN auth_user_id = ? THEN 0 ELSE 1 END
+      LIMIT 1`,
+    user.id,
+    email,
+    user.id,
+  );
+
+  if (existing?.auth_user_id && existing.auth_user_id !== user.id) {
+    throw unauthenticated();
+  }
+  if (existing && !existing.auth_user_id && !user.email_confirmed_at) {
+    throw unauthenticated();
+  }
+
+  const metadataName =
+    (typeof user.user_metadata.display_name === "string" &&
+    user.user_metadata.display_name.trim()
+      ? user.user_metadata.display_name.trim()
+      : null) ??
+    (typeof user.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
+      ? user.user_metadata.full_name.trim()
+      : null);
+  const displayName = existing?.display_name ?? metadataName ?? email.split("@")[0];
+  const isDemo = existing?.is_demo === 1 || user.app_metadata.is_demo === true;
+
+  if (existing) {
+    db.run(
+      "UPDATE users SET auth_user_id = ?, email = ?, is_demo = ? WHERE id = ?",
+      user.id,
+      email,
+      isDemo ? 1 : 0,
+      existing.id,
+    );
+    return { id: existing.id, email, displayName, isDemo };
+  }
+
+  db.run(
+    `INSERT INTO users (id, email, password_hash, display_name, is_demo, auth_user_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    user.id,
+    email,
+    DUMMY_PASSWORD_HASH,
+    displayName,
+    isDemo ? 1 : 0,
+    user.id,
+    nowIso(),
+  );
+  return { id: user.id, email, displayName, isDemo };
+}
+
 /**
  * The workspace layout and the page it wraps both need the signed-in user.
  * React's request-scoped cache collapses those lookups into a single session
  * query per navigation (and stays a no-op outside a render).
  */
 export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
+  if (isSupabaseAuthConfigured()) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    if (error) throw error;
+    return user ? syncSupabaseUser(user) : null;
+  }
+
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;

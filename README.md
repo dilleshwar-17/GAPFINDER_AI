@@ -9,10 +9,11 @@ gaps. Every answer BUDDY gives is limited to passages retrieved from
 that learner's own uploads, and every question links back to the chunk, page
 and document it came from.
 
-This repository is a complete, runnable Next.js application. It is **not** a
-mock: uploads are parsed and persisted, embeddings are stored, sessions are
-server-issued and revoked, ownership is checked in SQL, and diagnostics are
-scored from stored answers.
+This repository is a runnable Next.js application. Local development uses
+SQLite and the deterministic AI fallbacks. Supabase Auth is used when its
+environment is configured; service code still depends on the local SQLite
+database, so the current app is **not ready for a durable Vercel production
+deployment**.
 
 Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
 
@@ -30,13 +31,14 @@ Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
 | Adaptive, time-bounded revision plans with version history | Real |
 | Grounded assistant (BUDDY) with citation validation and abstention | Real |
 | BUDDY voice input and spoken replies via browser Web Speech APIs | Real in supporting browsers; not exercised by automated tests |
-| Light/dark theme toggle persisted in the browser | Real; source-verified, not visually audited |
-| Server sessions, scrypt passwords, rate limits, CSRF-style origin checks | Real |
-| Shared demo workspace via `/api/auth/demo` | Real |
+| Blue glassmorphism theme, across public and workspace layouts | Implemented; visually inspected in a desktop browser |
+| Supabase Auth sign-in, sign-up, callback, sign-out, and password recovery | Implemented; not live-verified because Supabase environment is unavailable |
+| Legacy local SQLite authentication | Used only when Supabase Auth variables are absent outside production |
+| Shared demo workspace via `/api/auth/demo` | Implemented locally; Supabase production demo needs a separately configured demo user |
 | Gemini LLM / neural embeddings | **Not executed** — no `GEMINI_API_KEY` was available, so the deterministic fallbacks ran |
-| Hosted Postgres/pgvector | **Not provisioned** |
-| Vercel deployment | **Not deployed** — no CLI/token/authorization |
-| Browser automation (Playwright) | **Not run** — not installed |
+| Durable Supabase Postgres adapter and object storage | **Missing** — app data and uploads still use local SQLite |
+| Vercel production deployment | **Blocked** — local SQLite is not durable/shared on Vercel; no deployment was performed |
+| Live Supabase Auth or hosted database verification | **Blocked** — no Supabase environment was configured |
 
 The deterministic fallbacks are honest, working implementations rather than
 stubs: lexical hash embeddings (`gapfinder-hash-v1`, 512 dims), extractive
@@ -52,7 +54,9 @@ source sentences. They are labelled as such in the UI and in
   database driver is the built-in `node:sqlite` module.
 - npm (verified with npm **12.0.2**).
 
-No Docker, no external database, and no API key are required to run the app.
+No API key is required for local deterministic mode. Supabase environment
+variables are required to use Supabase Auth. The local SQLite database is not
+a production Vercel persistence option.
 
 ---
 
@@ -113,7 +117,7 @@ Public:
 
 - `/` landing page
 - `/login`, `/signup`, `/demo-access`
-- `/forgot-password`, `/reset-password` (honest "email delivery not configured" state)
+- `/forgot-password`, `/reset-password` (Supabase recovery flow when configured; local mode explains that email recovery is unavailable)
 - `/privacy`, `/terms`
 
 Authenticated workspace:
@@ -149,9 +153,9 @@ Run on Windows, Node v26.5.1, npm 12.0.2:
 | --- | --- |
 | `npm run lint` | **Passed** — no errors or warnings |
 | `npm run typecheck` | **Passed** — no errors |
-| `npm test` | **Passed** — 8 files, **127 tests** |
-| `npm run build` | **Passed** — 21 static pages generated, all routes compiled |
-| `npm run smoke` (production server, fresh DB) | **Passed** — 49 checks, 0 failed |
+| `npm test` | **Passed** — 9 files, **130 tests** |
+| `npm run build` | **Passed** — all routes compiled after consolidating Next.js 16 `proxy.ts` |
+| `npm run smoke` | **Not run** for the current Supabase/theme changes |
 
 The smoke suite covers public pages, auth guards, cross-origin rejection, demo
 session issuance, the shared-demo banner, seeded subject discovery, every seeded
@@ -159,11 +163,11 @@ dynamic route, BUDDY grounding/citation validation, diagnostic results and
 runner, the custom 404, demo write blocking, logout, and stale-session
 rejection.
 
-The light/dark toggle and BUDDY's speech controls are delivered by the built
-bundle and verified by typecheck, lint, build and server-rendered markup. No
-browser automation was available, so the actual microphone, speech-synthesis and
-theme transitions were **not** exercised end-to-end; see
-[`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+The blue glass theme was visually inspected in the integrated browser at a
+desktop viewport. Supabase email confirmation, password recovery, and provider
+sessions were not exercised against a live project. See
+[`docs/TEST_RESULTS.md`](docs/TEST_RESULTS.md) and
+[`docs/RELEASE_READINESS.md`](docs/RELEASE_READINESS.md).
 
 The Vitest suite runs with `DATABASE_PATH=:memory:` and the model provider
 disabled, so it is deterministic and offline. It includes a full service-level
@@ -174,18 +178,24 @@ assistant → cross-user 404s.
 ### Interface notes
 
 - Typography is **Onest**, bundled locally through `@fontsource-variable/onest`.
-- The palette uses a violet brand scale (`#7a5af8` / `#6938ef`) with gray neutrals; status colours stay semantic (weak red, developing amber, strong green) so a brand change cannot make a band unreadable.
-- A theme toggle in the public header, mobile bar and desktop sidebar switches light/dark and persists the choice in `localStorage`; the root layout applies it before paint to avoid a flash.
+- A blue glassmorphism palette is shared across the public site and signed-in workspace. The theme toggle supports light/dark modes and persists the choice in `localStorage`; the root layout applies it before paint. Status colours stay semantic (weak red, developing amber, strong green).
 - BUDDY (the assistant at /assistant) shows a live dictation transcript panel while you speak, supports editable dictation through the browser Speech Recognition API, and speaks replies with `speechSynthesis`. A fixed caption dock highlights the current word from `onboundary` events where supported, with a fallback when they are not reported. It also exposes a per-answer **Listen** control and a **Read aloud** toggle.
 - Hot paths use cached prepared statements, WAL with `synchronous=NORMAL`, grouped subject aggregates instead of per-subject queries, request-scoped session caching, and added lookup indexes.
 
 ## Environment variables
 
-Copy `.env.example` to `.env.local` for local development. All variables are server-side only.
+Copy `.env.example` to `.env.local` for local development. Variables prefixed
+with `NEXT_PUBLIC_` are browser-visible public configuration; never put service
+role keys or other secrets in them.
 
 | Variable | Default | Required | Notes |
 | --- | --- | --- | --- |
-| `DATABASE_PATH` | `data/gapfinder.db` | no | Use `:memory:` for tests; directory is created automatically. |
+| `NEXT_PUBLIC_SUPABASE_URL` | unset | for Supabase Auth | Supabase project URL. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | unset | for Supabase Auth | Public/anon key only; never the service-role key. |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | production auth links | Must be the canonical HTTPS deployment origin in production. |
+| `SUPABASE_DEMO_EMAIL` | unset | for Supabase-hosted demo | Server-only demo account address. |
+| `SUPABASE_DEMO_PASSWORD` | unset | for Supabase-hosted demo | Server-only secret; never commit or expose. |
+| `DATABASE_PATH` | `data/gapfinder.db` | local only | Use `:memory:` for tests; this database is not durable/shared on Vercel. |
 | `GEMINI_API_KEY` | unset | no | Without it, deterministic fallbacks are used. |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | no | |
 | `EMBEDDING_PROVIDER` | auto | no | `local` forces offline hash embeddings. |
@@ -210,15 +220,15 @@ This deletes the configured SQLite file (`DATABASE_PATH`, default `data/gapfinde
 
 ## Deployment
 
-- **Local / self-hosted:** `npm run build && npm start` (set `PORT` and `DATABASE_PATH` to a writable location).
-- **Platform notes:** `node:sqlite` needs a writable disk. Serverless platforms cannot rely on a shared local file between invocations; use Postgres with a vector store for durable production. There are no deployment credentials or hosted target in this repo. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full checklist and blockers.
+- **Local / self-hosted:** `npm run build && npm start` (set `PORT` and `DATABASE_PATH` to a writable persistent location).
+- **Vercel:** the Next.js build is supported, and Supabase Auth routes are wired. A durable Supabase/Postgres application data adapter is not implemented. Do not treat this repository as production-ready on Vercel until SQLite persistence and uploaded-file storage are migrated. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Troubleshooting
 
 - **Node version:** requires Node >= 22.5 because of `node:sqlite`. Verify with `node -v`.
 - **Voice not working:** Speech Recognition/synthesis depend on the browser and OS. If controls are disabled, type the question — no feature requires voice.
 - **Empty retrieval / abstentions:** Ensure material is uploaded, extracted and `ready`, or try re-processing after a provider change.
-- **Demo missing:** Check `DISABLE_DEMO` and that `/api/auth/demo` is not rate-limited. Run `npm run db:reset` to rebuild it.
+- **Demo missing:** In local mode, check `DISABLE_DEMO` and that `/api/auth/demo` is not rate-limited. With Supabase Auth, configure the demo account variables and mark the Supabase user `app_metadata.is_demo=true`. A production demo still needs durable app data.
 - **Port already in use:** Set `PORT` or stop the existing process.
 
 
@@ -235,6 +245,10 @@ This deletes the configured SQLite file (`DATABASE_PATH`, default `data/gapfinde
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md)
 - [`docs/DEMO_ACCESS.md`](docs/DEMO_ACCESS.md)
+- [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)
+- [`docs/TEST_RESULTS.md`](docs/TEST_RESULTS.md)
+- [`docs/BUG_REPORT.md`](docs/BUG_REPORT.md)
+- [`docs/RELEASE_READINESS.md`](docs/RELEASE_READINESS.md)
 - Diagram sources: [`docs/diagrams/system-architecture.mmd`](docs/diagrams/system-architecture.mmd), [`docs/diagrams/ai-workflow.mmd`](docs/diagrams/ai-workflow.mmd)
 
 ---
@@ -242,8 +256,9 @@ This deletes the configured SQLite file (`DATABASE_PATH`, default `data/gapfinde
 ## Technology
 
 Next.js 16 (App Router, Turbopack), React 19, TypeScript 5, Tailwind CSS 4,
-Zod 4, `node:sqlite`, `unpdf` for PDF text extraction, `lucide-react` icons, and
-locally bundled Onest. Tests use Vitest 5.
+Zod 4, Supabase Auth (`@supabase/ssr`), local `node:sqlite`, `unpdf` for PDF
+text extraction, `lucide-react` icons, and locally bundled Onest. Tests use
+Vitest 5.
 
 ---
 

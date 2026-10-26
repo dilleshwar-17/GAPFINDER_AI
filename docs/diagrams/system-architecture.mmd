@@ -5,7 +5,7 @@ flowchart TB
   end
 
   subgraph Next["Next.js 16 App Router"]
-    PROXY["src/proxy.ts<br/>cookie presence check<br/>(not the security boundary)"]
+    PROXY["src/proxy.ts<br/>Supabase session refresh + route guard<br/>(not the authorization boundary)"]
     PAGES["Pages<br/>(public) · (app) · onboarding"]
     API["Route handlers<br/>src/app/api/**/route.ts"]
     AUTH["Auth helpers<br/>requirePageUser · requireUser"]
@@ -44,6 +44,11 @@ flowchart TB
     FILES[("documents.file_data<br/>original bytes")]
   end
 
+  subgraph Identity["Authentication"]
+    SUPA["Supabase Auth<br/>(when configured)"]
+    LOCALAUTH["Local scrypt + hashed sessions<br/>(non-production fallback)"]
+  end
+
   subgraph Ext["Optional external"]
     GEM["Gemini API<br/>(only when key configured)"]
   end
@@ -52,6 +57,8 @@ flowchart TB
   UI --> FETCH --> API
   PAGES --> AUTH
   API --> HTTP --> AUTH
+  AUTH --> SUPA
+  AUTH --> LOCALAUTH
   PAGES --> Services
   API --> Services
   Services --> Domain

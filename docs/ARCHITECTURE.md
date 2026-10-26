@@ -22,7 +22,8 @@ Next.js App Router  ──────────────►  Service layer
   ▼
 Server-only configuration (env.ts)
   ├── AI provider (Gemini) or deterministic fallback
-  └── Auth (scrypt, hashed session tokens)
+  ├── Auth (Supabase Auth when configured)
+  └── Local development fallback (scrypt, hashed session tokens)
 ```
 
 See [`diagrams/system-architecture.mmd`](diagrams/system-architecture.mmd) and
@@ -41,16 +42,18 @@ Three route groups:
   banner.
 - `onboarding` — a focused first-run wizard outside the main shell.
 
-`src/proxy.ts` performs a cheap first-pass redirect for protected prefixes when
-no session cookie is present. It is **not** the security boundary: the layout,
-pages, route handlers and services re-check the real session and ownership.
+`src/proxy.ts` refreshes and validates Supabase Auth sessions when configured,
+and performs a fast redirect for protected page routes. Without Supabase
+configuration in non-production environments, it uses the local session cookie
+for the fast redirect check. It is **not** the authorization boundary: layouts,
+pages, route handlers and services re-check identity and ownership server-side.
 
 ### 2. API — `src/app/api`
 
 Route handlers are thin. Each one:
 
 1. calls `requireSameOrigin(request)` for mutations,
-2. resolves `requireUser()` (cryptographic session lookup),
+2. resolves `requireUser()` (Supabase `auth.getUser()` or local session lookup),
 3. validates input with a Zod schema,
 4. delegates to a service,
 5. returns a typed JSON envelope or a mapped `AppError` via `handleRoute`.
@@ -64,8 +67,9 @@ stable machine code, a safe message, optional details, and helpers such as
 
 Services own business transactions and authorization:
 
-- `auth.ts` — registration, authentication, password change, profile.
-- `session.ts` (in `lib/auth`) — token creation, hashing, lookup, revocation.
+- `auth.ts` — local registration/authentication, password change, profile.
+- `session.ts` (in `lib/auth`) — Supabase identity/profile mapping and local
+  token creation, hashing, lookup, revocation.
 - `subjects.ts`, `documents.ts`, `topics.ts`, `questions.ts` — content CRUD with
   owner scoping.
 - `assessment.ts` — diagnostic start, quiz view, drafts, submission, attempt
@@ -198,8 +202,8 @@ tasks) as history. The declared time budget and exam date are reused.
 
 | Boundary | Mechanism |
 | --- | --- |
-| Authentication | scrypt password hashes; 256-bit random session tokens stored as SHA-256 hashes |
-| Session | `HttpOnly`, `SameSite=Lax`, `Secure` on HTTPS, TTL expiry, delete on logout |
+| Authentication | Supabase Auth when configured; scrypt password hashes for non-production local fallback |
+| Session | Supabase SSR cookie session when configured; local `HttpOnly`, `SameSite=Lax`, HTTPS `Secure` cookie with TTL |
 | CSRF-style | `Origin`/`Sec-Fetch-Site` check on every mutation |
 | Authorization | `owner_id` filters in SQL; not-found responses for foreign IDs |
 | Upload | extension/MIME allow-list, size cap, NUL-byte and UTF-8 checks |
@@ -225,11 +229,13 @@ the browser.
 
 ## Why SQLite, and how to replace it
 
-`node:sqlite` makes the project runnable with zero infrastructure and keeps the
-schema relational. The schema avoids SQLite-only constructs, so a Postgres
-adapter can implement the same `db.get/all/run/transaction` surface. For
-production at scale, replace `src/lib/db/index.ts` with a Postgres/pgvector
-adapter, move embeddings to a `vector` column, and add an ANN index. See
+`node:sqlite` makes local development runnable with zero infrastructure and
+keeps the schema relational. The current adapter is synchronous and local; it
+is not durable or shared across Vercel instances. Supabase Auth does not change
+application-data persistence. A Vercel deployment requires a tested durable
+Postgres adapter, a safe data migration, and hosted upload storage. Replacing
+`src/lib/db/index.ts` is not a drop-in change because callers use synchronous
+database operations. See
 [`DEPLOYMENT.md`](DEPLOYMENT.md) and [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md).
 
 ## Error handling

@@ -4,7 +4,8 @@ import { requireUser, attachSessionCookie, createSession } from "@/lib/auth/sess
 import { changePassword } from "@/lib/services/auth";
 import { changePasswordSchema } from "@/lib/ai/schemas";
 import { db } from "@/lib/db";
-import { forbidden } from "@/lib/errors";
+import { AppError, forbidden } from "@/lib/errors";
+import { createClient, isSupabaseAuthConfigured } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,21 @@ export async function PATCH(request: Request) {
       throw forbidden("The shared demo account password cannot be changed.");
     }
     const payload = await readJson(request, changePasswordSchema);
+
+    if (isSupabaseAuthConfigured()) {
+      const supabase = await createClient();
+      const { error: verificationError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: payload.currentPassword,
+      });
+      if (verificationError) {
+        throw new AppError(400, "VALIDATION_ERROR", "The current password is incorrect.");
+      }
+      const { error } = await supabase.auth.updateUser({ password: payload.nextPassword });
+      if (error) throw error;
+      return jsonOk({ ok: true });
+    }
+
     changePassword(user.id, payload.currentPassword, payload.nextPassword);
     // Revoke every existing session, then issue a fresh one for this browser.
     db.run("DELETE FROM sessions WHERE user_id = ?", user.id);

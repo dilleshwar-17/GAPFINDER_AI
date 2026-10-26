@@ -86,14 +86,6 @@ export default async function DemoAccessPage() {
             </Callout>
           ) : null}
 
-          <div className="mt-6 border-t border-[#eaecf0] pt-4">
-            <p className="eyebrow mb-2">How to reset or disable</p>
-            <p className="text-[0.78rem] leading-relaxed text-[#475467]">
-              {status.enabled
-                ? "An operator can set DISABLE_DEMO=1 to withdraw access, or reset the SQLite database with `npm run db:reset`. Deleting the reserved demo user also forces a clean re-seed on the next entry."
-                : "Set DISABLE_DEMO to 0 or remove it, then restart the server to re-enable the demo."}
-            </p>
-          </div>
         </section>
 
         <div className="space-y-4">
@@ -106,54 +98,6 @@ export default async function DemoAccessPage() {
             <p className="mt-2 text-[0.75rem] leading-relaxed text-[#98a2b3]">
               The seed is idempotent. Re-entering the demo does not duplicate subjects, attempts or
               plans.
-            </p>
-          </section>
-
-          <section className="card p-5">
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={17} className="text-[#7a5af8]" aria-hidden />
-              <h2 className="text-[0.95rem]">Shared-demo protection</h2>
-            </div>
-            <ul className="mt-2 space-y-2 text-[0.78rem] leading-relaxed text-[#475467]">
-              <li className="flex gap-2">
-                <Lock size={13} className="mt-0.5 shrink-0 text-[#dc6803]" aria-hidden />
-                Writes are refused by service-level guards, not only hidden in the UI.
-              </li>
-              <li className="flex gap-2">
-                <RefreshCcw size={13} className="mt-0.5 shrink-0 text-[#dc6803]" aria-hidden />
-                Practice submissions are stored but do not mutate shared mastery or the seeded plan.
-              </li>
-              <li className="flex gap-2">
-                <Eye size={13} className="mt-0.5 shrink-0 text-[#dc6803]" aria-hidden />
-                Other reviewers may use the same workspace concurrently; expect shared practice history.
-              </li>
-            </ul>
-          </section>
-
-          <section className="card p-5">
-            <p className="eyebrow mb-2">Runtime configuration</p>
-            <dl className="space-y-1.5 text-[0.76rem]">
-              <div className="flex justify-between gap-3">
-                <dt className="text-[#667085]">Language model</dt>
-                <dd className="font-mono text-[0.7rem] text-[#344054]">
-                  {mode.llm.configured ? mode.llm.model : "not configured"}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-[#667085]">Embeddings</dt>
-                <dd className="font-mono text-[0.7rem] text-[#344054]">
-                  {mode.embeddings.model}
-                  {mode.embeddings.neural ? " (neural)" : " (local, non-neural)"}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-[#667085]">Demo email</dt>
-                <dd className="font-mono text-[0.7rem] text-[#344054]">{status.email}</dd>
-              </div>
-            </dl>
-            <p className="mt-3 text-[0.7rem] leading-relaxed text-[#667085]">
-              The email is shown only for operator diagnostics; it has a random stored password that is
-              not disclosed.
             </p>
           </section>
         </div>

@@ -161,6 +161,7 @@ export function AssistantChat({
   const [dictationFinal, setDictationFinal] = useState("");
   const [dictationInterim, setDictationInterim] = useState("");
   const [speechProgress, setSpeechProgress] = useState<SpeechProgress | null>(null);
+  const [mode, setMode] = useState<"topic" | "general">("general");
 
   const counter = useRef(0);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);

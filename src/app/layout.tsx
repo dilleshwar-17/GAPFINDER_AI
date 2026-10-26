@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#7a5af8",
+  themeColor: "#2563eb",
   width: "device-width",
   initialScale: 1,
 };
@@ -26,11 +26,11 @@ const themeScript = `(function(){try{var stored=localStorage.getItem("gapfinder-
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>

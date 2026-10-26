@@ -93,6 +93,7 @@ export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -100,10 +101,15 @@ export function SignupForm() {
     setError(null);
     setPending(true);
     try {
-      await apiRequest("/api/auth/register", {
+      const result = await apiRequest<{ confirmationRequired?: boolean }>("/api/auth/register", {
         method: "POST",
         body: { displayName, email, password },
       });
+      if (result.confirmationRequired) {
+        setNotice("Check your email to confirm your account before signing in.");
+        setPending(false);
+        return;
+      }
       router.push("/onboarding");
       router.refresh();
     } catch (caught) {
@@ -166,6 +172,11 @@ export function SignupForm() {
       {error ? (
         <div role="alert" className="rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.8rem] text-[#b42318]">
           {error}
+        </div>
+      ) : null}
+      {notice ? (
+        <div role="status" className="rounded-lg border border-[#abefc6] bg-[#ecfdf3] px-3 py-2 text-[0.8rem] text-[#067647]">
+          {notice}
         </div>
       ) : null}
       <button type="submit" className="btn btn-primary w-full" disabled={pending}>

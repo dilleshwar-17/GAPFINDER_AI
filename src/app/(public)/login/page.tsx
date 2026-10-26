@@ -31,10 +31,6 @@ export default async function LoginPage({
             <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#7a5af8]" />
             Plans are versioned after each assessment; completed tasks remain in the history.
           </div>
-          <div className="flex items-start gap-2.5">
-            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#f79009]" />
-            No email delivery is configured, so password reset is not available yet.
-          </div>
         </div>
       </section>
 

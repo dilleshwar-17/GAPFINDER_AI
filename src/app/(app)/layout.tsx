@@ -15,8 +15,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-[#f9fafb] lg:grid lg:grid-cols-[252px_1fr]">
-      <aside className="no-print sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[#171f2e] px-4 py-5 lg:flex">
+    <div className="app-shell min-h-screen lg:grid lg:grid-cols-[252px_1fr]">
+      <aside className="app-sidebar no-print sticky top-0 hidden h-screen flex-col overflow-y-auto px-4 py-5 lg:flex">
         <div className="flex items-center justify-between gap-2 px-1">
           <Brand tone="light" />
           <ThemeToggle className="theme-toggle-dark" />
@@ -65,7 +65,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <MobileNav displayName={user.displayName} isDemo={user.isDemo} />
         <main
           id="main-content"
-          className="relative flex-1 bg-[radial-gradient(900px_420px_at_85%_-10%,rgba(122,90,248,0.08),transparent_60%)] px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+          className="app-main relative flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
         >
           <div className="mx-auto w-full max-w-6xl">
             {user.isDemo ? <DemoBanner /> : null}

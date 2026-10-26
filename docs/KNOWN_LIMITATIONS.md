@@ -137,10 +137,14 @@ without retention. A long-running deployment needs housekeeping.
 
 ## 3. Accounts and access
 
-- **No email delivery.** `/forgot-password` and `/reset-password` explicitly state
-  that reset email is not configured. There is **no reset-token endpoint**. A
-  user who forgets a password cannot recover the account in this build.
-- **No email verification.**
+- **Supabase Auth is not live-verified.** The auth integration requires a
+  configured Supabase project, callback allow-list, and email delivery provider;
+  none was available in the local environment.
+- **No completed account/data migration.** Existing local scrypt hashes cannot
+  be used as Supabase passwords. The local schema can link a confirmed identity
+  to a same-email profile, but no hosted data transfer or user import has run.
+- **Auth-only does not make the app Vercel-ready.** Learner records and uploads
+  remain in local SQLite and are not durable/shared across Vercel instances.
 - **No MFA/2FA.**
 - **No account deletion or data export.**
 - **No admin role, moderation, or support tooling.**
@@ -149,8 +153,9 @@ without retention. A long-running deployment needs housekeeping.
 - **No CSRF token.** Protection relies on `SameSite=Lax` cookies plus an
   `Origin`/host check. A stricter token-based scheme is recommended.
 - **No account lockout** beyond rate limiting; no breached-password check.
-- **Email enumeration on registration** is possible through the "already exists"
-  conflict, which is a deliberate usability trade-off.
+- **Email delivery behavior depends on Supabase configuration.** Recovery
+  responses use a generic message, but the provider's delivery and redirect
+  settings must be validated before release.
 - **No per-user upload quota** beyond the per-file size cap.
 
 ---
@@ -307,8 +312,8 @@ without retention. A long-running deployment needs housekeeping.
 
 ## 10. What would be done next
 
-1. Provision Postgres + pgvector and add a database adapter; migrate embeddings
-   to a vector column with an ANN index.
+1. Provision durable application storage and add a safe Postgres/Supabase
+   database adapter; migrate records and embeddings without losing user data.
 2. Add object storage for uploads and a background worker for extraction and
    embedding.
 3. Configure a Gemini key and run a live evaluation of generation, citation

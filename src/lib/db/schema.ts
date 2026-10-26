@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   display_name TEXT NOT NULL,
   is_demo INTEGER NOT NULL DEFAULT 0,
+  auth_user_id TEXT UNIQUE,
   created_at TEXT NOT NULL
 );
 
@@ -266,4 +267,3 @@ CREATE TABLE IF NOT EXISTS ai_events (
 );
 CREATE INDEX IF NOT EXISTS idx_ai_events_owner ON ai_events(owner_id, created_at DESC);
 `;
-

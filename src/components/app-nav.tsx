@@ -92,7 +92,7 @@ export function MobileNav({
 
   return (
     <div className="lg:hidden">
-      <div className="flex h-14 items-center justify-between border-b border-[#eaecf0] bg-[#f9fafb] px-4">
+      <div className="mobile-workspace-bar flex h-14 items-center justify-between border-b border-[#eaecf0] px-4">
         <Brand />
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -112,7 +112,7 @@ export function MobileNav({
         <nav
           id="mobile-nav"
           aria-label="Workspace"
-          className="border-b border-[#eaecf0] bg-[#171f2e] px-4 pb-4 pt-3"
+          className="mobile-workspace-menu border-b border-[#eaecf0] px-4 pb-4 pt-3"
         >
           <p className="mb-2 text-[0.72rem] text-[#98a2b3]">
             {displayName}

@@ -37,7 +37,7 @@ export function Brand({ tone = "dark" }: { tone?: "dark" | "light" }) {
           }`}
         >
           GapFinder{" "}
-          <span className={dark ? "text-[#7a5af8]" : "text-[#bdb4fe]"}>AI</span>
+          <span className={dark ? "text-[#2563eb]" : "text-[#bfdbfe]"}>AI</span>
         </span>
         <span
           className={`mt-1 text-[0.56rem] font-medium uppercase tracking-[0.16em] ${

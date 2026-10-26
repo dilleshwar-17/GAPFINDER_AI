@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export function PublicHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#eaecf0] bg-white/90 backdrop-blur-xl">
+    <header className="glass-header sticky top-0 z-40 border-b border-[#eaecf0] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Brand />
         <nav
@@ -38,7 +38,7 @@ export function PublicHeader() {
       </div>
       <nav
         aria-label="Sections"
-        className="border-t border-[#eaecf0] md:hidden"
+        className="glass-subnav border-t border-[#eaecf0] md:hidden"
       >
         <div className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-4 py-2 text-[0.76rem] font-medium text-[#475467] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Link href="/#method" className="shrink-0 py-0.5 transition hover:text-[#6938ef]">
@@ -64,7 +64,7 @@ export function PublicHeader() {
 
 export function PublicFooter() {
   return (
-    <footer className="relative overflow-hidden bg-[#101828] text-[#98a2b3]">
+    <footer className="site-footer relative overflow-hidden text-[#98a2b3]">
       <div
         className="pointer-events-none absolute -top-40 left-1/2 h-80 w-[52rem] -translate-x-1/2 rounded-full bg-[#7a5af8]/25 blur-3xl"
         aria-hidden

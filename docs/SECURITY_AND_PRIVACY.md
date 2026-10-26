@@ -9,39 +9,44 @@ is **not** covered.
 
 ## 1. Authentication
 
-### Passwords
+When `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set,
+sign-in, registration, password updates, and recovery use Supabase Auth through
+the SSR client. Password storage, confirmation, and reset tokens are managed by
+Supabase; this repository does not receive or log plaintext credentials beyond
+the submitted auth request.
 
-- Hashed with **scrypt** (`N=16384, r=8, p=1`, 64-byte key, 16-byte random salt).
-- Stored as `scrypt$N$r$p$saltHex$hashHex`; the parameters are read from the
-  stored string on verification, so they can be upgraded later.
-- Verified with `timingSafeEqual`.
-- Minimum length 8 characters, maximum 200.
-- When an email is unknown, login still verifies against a fixed dummy hash, so
-  the response time does not trivially reveal whether an account exists.
-- Password change requires the current password afterwards, deletes **all**
-  sessions for the user, and issues a fresh session for the current browser.
-- The shared demo account cannot change its password (and no password is ever
-  published anyway).
+With Supabase unconfigured in development/tests, the legacy local path remains
+available: it stores scrypt hashes (`N=16384, r=8, p=1`, 64-byte key, 16-byte
+random salt) and uses `timingSafeEqual`. Production proxy requests fail closed
+when Supabase Auth configuration is missing.
+
+Existing local accounts are not automatically imported into Supabase Auth.
+`syncSupabaseUser` links a confirmed Supabase identity to a same-email local
+profile while preserving its application owner id; legacy scrypt hashes are
+not reusable as Supabase credentials, so existing users need to set/reset a
+Supabase password as part of a separately planned migration.
 
 ### Sessions
 
-- 256-bit random token (`randomBytes(32).toString("base64url")`).
-- Only a **SHA-256 hash** of the token is stored in `sessions.token_hash`.
-- Lookup requires a hash match **and** `expires_at > now`.
-- Cookie `gf_session` is `HttpOnly`, `SameSite=Lax`, `Path=/`, and `Secure` when
-  the request is HTTPS (including `x-forwarded-proto`).
-- TTL defaults to 7 days (`SESSION_TTL_DAYS`, 1–30).
-- Logout deletes the row server-side and clears the cookie. A copied stale cookie
-  no longer resolves.
-- Expired rows are simply not selected; there is no background purge in this
-  build (see limitations).
+- Supabase mode uses the SSR package's cookie adapter and refreshes provider
+  sessions in `src/proxy.ts`; server code validates identity with
+  `supabase.auth.getUser()`.
+- Local fallback mode uses a 256-bit random token; only its SHA-256 hash is
+  stored in `sessions.token_hash`. The `gf_session` cookie is HttpOnly,
+  SameSite=Lax, and Secure on HTTPS.
+- `SESSION_TTL_DAYS` applies to local sessions only. Supabase token lifetime is
+  configured in the Supabase project.
+- Supabase sign-out calls `auth.signOut({ scope: "local" })`. Local fallback
+  sign-out deletes the token-hash row and clears `gf_session`.
 
 ### Route protection
 
-`src/proxy.ts` redirects requests to protected prefixes when the session cookie
-is **absent**. This is a UX optimisation, not authorization. Every protected
-layout, page, route handler and service re-checks the real session. A forged
-cookie value grants nothing.
+`src/proxy.ts` refreshes and verifies the Supabase user when Supabase Auth is
+configured, then redirects unauthenticated protected-page requests. Local
+development without Supabase uses the legacy cookie as a fast redirect check.
+This is not the authorization boundary: `requireUser`/`requirePageUser` and
+service ownership checks run server-side too. A forged cookie alone grants no
+access.
 
 ## 2. Authorization and ownership
 
@@ -132,10 +137,12 @@ an equivalent shared store. This is listed in the limitations.
 ## 7. Shared demo isolation
 
 - The demo account is a normal row with `users.is_demo = 1`.
-- Its password is a 32-byte random value generated at provisioning time, stored
-  only as a scrypt hash, and never printed, logged, or returned in an API
-  response.
-- Entry is via `POST /api/auth/demo`, which issues a standard server session.
+- In local mode, its password is a 32-byte random value generated at
+  provisioning time, stored only as a scrypt hash, and never printed, logged,
+  or returned in an API response. Supabase mode uses the configured
+  server-only demo credentials and requires trusted `app_metadata.is_demo`.
+- Entry is via `POST /api/auth/demo`: local mode issues a `gf_session`;
+  Supabase mode establishes the provider's SSR session.
 - Writes are blocked server-side by `assertWritableAccount` for uploads,
   document delete/retry, subject create/update/delete, topic extraction/creation,
   preferences, plans, profile and password.
@@ -150,8 +157,11 @@ an equivalent shared store. This is listed in the limitations.
 
 ### What is stored
 
-- account: email, display name, password hash, demo flag, timestamps;
-- sessions: token hash, expiry, timestamps;
+- account: email, display name, local password hash (a dummy value for
+  Supabase-only profiles), Supabase auth user id when linked, demo flag,
+  timestamps;
+- local sessions: token hash, expiry, timestamps (Supabase sessions use the
+  Supabase SSR cookie flow);
 - uploads: original bytes, filename, MIME type, size, SHA-256, extracted text and
   chunks;
 - learning data: topics, questions (including answer keys), attempts, answers,
@@ -161,11 +171,12 @@ an equivalent shared store. This is listed in the limitations.
 ### What is not collected
 
 - No analytics, advertising, tracking pixels or third-party scripts.
-- No `NEXT_PUBLIC_` secrets (there are none); server configuration stays on the
-  server.
+- `NEXT_PUBLIC_` values contain only public Supabase URL/anon-key configuration;
+  service-role credentials must never be exposed through them.
 - No document text or learner answers are sent to a provider unless a Gemini key
-  is configured and generation/evaluation is invoked. With no key, everything
-  runs locally.
+  is configured and generation/evaluation is invoked. Supabase Auth still
+  contacts Supabase when configured; with neither provider configured, the
+  fallback auth and AI paths run locally.
 
 ### Data location and retention
 
@@ -194,12 +205,13 @@ regulatory compliance programme.
 
 ## 10. Verified checks
 
-The automated suites and smoke run include:
+The existing automated tests and previously executed base-app smoke run include
+(the smoke run was not rerun after the Supabase/theme changes):
 
 - unauthenticated `/dashboard` redirects, unauthenticated API returns `401`;
 - cross-origin write returns `403`;
-- session cookie is issued on demo entry and login;
-- logout removes the DB session and a stale cookie cannot render dashboard data;
+- local session cookie is issued on demo entry and login;
+- local logout removes the DB session and a stale cookie cannot render dashboard data;
 - cross-user reads return 404 for documents, quiz views, gap reports, topic
   context and progress;
 - answer key absent from the in-progress quiz payload;
@@ -210,9 +222,19 @@ The automated suites and smoke run include:
 
 ## 11. Not covered (honest gaps)
 
-- **No email delivery or password reset token.** The reset pages say so. A
-  production system needs a verified email provider and single-use, expiring
-  tokens.
+- **Supabase Auth is not live-verified.** This environment had no project URL,
+  public key, configured email provider, or redirect allow-list to test.
+- **No durable application database adapter.** Supabase Auth is not Supabase
+  Postgres: records, uploads, and embeddings still use local SQLite, which is
+  not durable/shared on Vercel.
+- **No Supabase Row Level Security policies are present.** Current resource
+  isolation depends on authenticated server code and owner-scoped SQL queries.
+- **No completed account/data migration.** The local `auth_user_id` field only
+  supports linking in the local database; it does not migrate records to hosted
+  Postgres or provision/import Supabase users. Existing local users must set or
+  reset a Supabase password when a separately planned migration is performed.
+- **Email delivery depends on Supabase project configuration.** Recovery and
+  confirmation have not been exercised against a live provider.
 - **No encryption at rest.** The SQLite file and any backups rely on OS/disk
   encryption.
 - **No MFA**, no account lockout beyond rate limiting, no breached-password

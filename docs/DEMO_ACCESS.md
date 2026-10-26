@@ -12,16 +12,25 @@ through the normal password form.
 2. Open **`/demo-access`**.
 3. Choose **Enter the demo workspace** (also available on the landing page and
    sign-in page).
-4. The browser posts to `POST /api/auth/demo`. The server:
+4. The browser posts to `POST /api/auth/demo`. In local mode the server:
    - rate-limits the request (6 per 10 minutes per IP),
    - provisions the demo user if it does not exist,
    - seeds the workspace idempotently if it is not already seeded,
    - creates a normal server session and sets the `gf_session` cookie,
    - returns `{ destination: "/dashboard" }`.
 
-No credential is displayed, logged, or returned. The account's password is a
-random 32-byte value, stored only as a scrypt hash, so the ordinary login form
-cannot be used to enter it — even if someone guessed the email.
+When Supabase Auth is configured, the endpoint instead signs in the configured
+Supabase demo user using `SUPABASE_DEMO_EMAIL` and the server-only
+`SUPABASE_DEMO_PASSWORD`. The Supabase user must have trusted
+`app_metadata.is_demo=true`. The endpoint refuses a Supabase identity not
+marked as demo. This production path still depends on application data in the
+local SQLite database and is therefore not suitable for Vercel until the data
+layer is migrated.
+
+No credential is displayed, logged, or returned. In local mode the account's
+password is a random 32-byte value stored only as a scrypt hash, so the ordinary
+login form cannot be used to enter it. In Supabase mode the demo password is a
+server-only environment value and Supabase manages the credential.
 
 If the demo is disabled (`DISABLE_DEMO=1`), the route returns a conflict and the
 UI explains that the demo is unavailable. If `DEMO_EMAIL` is already used by a
@@ -117,8 +126,8 @@ in doubt about which workspace they are in.
 
 - **No published secret.** No password is printed, returned by the API, or
   written to logs.
-- **Normal session issuance.** The same hashed, expiring, `HttpOnly` session used
-  by every account.
+- **Normal session issuance.** Local mode uses the same hashed, expiring,
+  `HttpOnly` session as other accounts; Supabase mode uses its SSR auth session.
 - **Rate limited.** Repeated demo entry is throttled.
 - **Read-only shared data.** One visitor cannot delete sources or overwrite the
   seeded plan.
@@ -134,7 +143,9 @@ in doubt about which workspace they are in.
 | Variable | Default | Effect |
 | --- | --- | --- |
 | `DISABLE_DEMO` | `0` | Set to `1` to disable demo entry and provisioning |
-| `DEMO_EMAIL` | `demo@gapfinder.local` | Reserved demo address |
+| `DEMO_EMAIL` | `demo@gapfinder.local` | Local mode reserved demo address |
+| `SUPABASE_DEMO_EMAIL` | unset | Supabase Auth demo account email |
+| `SUPABASE_DEMO_PASSWORD` | unset | Server-only secret for Supabase demo sign-in |
 
 The email must be changed together with the database if you want a different
 demo identity; a stale demo user with the old email remains a normal row.
@@ -143,8 +154,8 @@ demo identity; a stale demo user with the old email remains a normal row.
 
 ## Resetting the demo
 
-The demo lives in the same SQLite database as everything else. To rebuild it
-from scratch:
+The local demo lives in the same SQLite database as everything else. To rebuild
+it from scratch:
 
 ```bash
 # stop the server first

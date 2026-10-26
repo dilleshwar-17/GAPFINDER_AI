@@ -382,6 +382,7 @@ describe("gap analysis, planning, progress and grounded assistance", () => {
       request: {
         topicId,
         question: "What controls which substances enter and leave the cell?",
+        mode: "topic",
       },
     });
     expect(answer.sufficient).toBe(true);
@@ -414,6 +415,7 @@ describe("gap analysis, planning, progress and grounded assistance", () => {
       request: {
         topicId: manualTopicId,
         question: "Describe the structure and function of a ribosome.",
+        mode: "topic",
       },
     });
     expect(answer.sufficient).toBe(false);

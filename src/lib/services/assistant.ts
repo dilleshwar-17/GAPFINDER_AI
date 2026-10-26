@@ -16,12 +16,14 @@ import type { CitationView, EvidenceChunk } from "@/lib/domain/types";
 import { tokenizeForEmbedding } from "@/lib/ai/embeddings";
 
 export const assistantRequestSchema = z.object({
-  topicId: z.string().trim().min(1).max(64),
+  topicId: z.string().trim().min(1).max(64).optional(),
+  subjectId: z.string().trim().min(1).max(64).optional(),
   question: z
     .string()
     .trim()
     .min(3, "Ask a short question about the topic.")
-    .max(600, "Keep the question under 600 characters."),
+    .max(2000, "Keep the question under 2000 characters."),
+  mode: z.enum(["topic", "general"]).optional().default("topic"),
 });
 
 export type AssistantRequest = z.infer<typeof assistantRequestSchema>;
@@ -117,14 +119,102 @@ function extractiveAnswer(
  */
 export async function explainTopic(input: {
   ownerId: string;
-  subjectId: string;
+  subjectId?: string;
   request: AssistantRequest;
 }): Promise<AssistantAnswer> {
-  getSubjectOwned(input.ownerId, input.subjectId);
-  const topic = getTopicOwned(input.ownerId, input.subjectId, input.request.topicId);
+  const mode = input.request.mode ?? "topic";
+
+  if (mode === "general") {
+    const llm = getLlmConfig();
+    const generalInstruction = [
+      "You are BUDDY, an expert educational assistant helping students across all subjects and streams.",
+      "Answer clearly, accurately, and concisely. Structure with headings, bullets, or steps when helpful.",
+      "Use plain language. Avoid citing internal passage labels like [P1], [P2].",
+      "If you're unsure, say so rather than guessing.",
+      "Focus on understanding, explanations, examples, and practical steps.",
+    ].join(" ");
+
+    if (llm.configured) {
+      try {
+        const result = await generateJson<unknown>({
+          kind: "general_explanation",
+          systemInstruction: generalInstruction,
+          userContent: `Question: ${input.request.question}\n\nProvide a clear, well-structured answer in Markdown. Do not include source citations like [P1].`,
+          responseSchema: {
+            type: "object",
+            properties: {
+              explanationMarkdown: { type: "string" },
+            },
+            required: ["explanationMarkdown"],
+            additionalProperties: false,
+          } as unknown as any,
+          temperature: 0.3,
+          maxOutputTokens: 2000,
+        });
+
+        const data = result.data as { explanationMarkdown?: string };
+        if (data.explanationMarkdown && data.explanationMarkdown.trim()) {
+          recordAiEvent({
+            ownerId: input.ownerId,
+            kind: "general_explanation",
+            provider: "gemini",
+            model: result.model,
+            status: "ok",
+            detail: "general",
+          });
+          return {
+            sufficient: true,
+            reason: null,
+            answerMarkdown: data.explanationMarkdown.trim(),
+            citations: [],
+            method: "gemini-grounded",
+            model: result.model,
+            practice: null,
+          };
+        }
+      } catch (error) {
+        recordAiEvent({
+          ownerId: input.ownerId,
+          kind: "general_explanation",
+          provider: llm.provider,
+          model: llm.model,
+          status: "error",
+          detail: error instanceof Error ? error.message.slice(0, 80) : "error",
+        });
+      }
+    }
+
+    // Fallback for general mode without LLM - still give a helpful answer
+    return {
+      sufficient: true,
+      reason: null,
+      answerMarkdown: "I can help with that educational question. To get the best answer, please configure a Gemini API key in your environment. Without a key, I can only answer from your uploaded study materials.",
+      citations: [],
+      method: "deterministic-extractive",
+      model: null,
+      practice: null,
+    };
+  }
+
+  const subjectId = input.subjectId ?? (input.request as any).subjectId;
+  const topicId = input.request.topicId;
+  if (!subjectId || !topicId) {
+    return {
+      sufficient: false,
+      reason: "Select a subject and topic to ask from your materials, or switch to General mode.",
+      answerMarkdown: "",
+      citations: [],
+      method: "none",
+      model: null,
+      practice: null,
+    };
+  }
+
+  getSubjectOwned(input.ownerId, subjectId);
+  const topic = getTopicOwned(input.ownerId, subjectId, topicId);
   const retrieval = await retrieveEvidence({
     ownerId: input.ownerId,
-    subjectId: input.subjectId,
+    subjectId: subjectId,
     query: `${buildTopicQuery(topic)} ${input.request.question}`.trim(),
     topK: 6,
   });
