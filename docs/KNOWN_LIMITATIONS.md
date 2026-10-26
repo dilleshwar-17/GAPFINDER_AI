@@ -32,9 +32,9 @@ and auth pages respond, and unauthenticated protected requests redirect to
 login. However, `/api/health` reports `database: error`; application data still
 uses local SQLite and is not durable on Vercel. Supabase login credentials,
 document upload, and the full learner workflow have not been exercised on the
-Preview. A separate Production deployment from GitHub `main` commit `2907ca9`
-was observed and rolled back to the previous Ready deployment; the active
-Production application has not been end-to-end verified.
+Preview or Production. Commit `0866985` is deployed to Production, but its
+health endpoint also reports a database error. A GitHub-triggered Production
+deployment from commit `2907ca9` was rolled back before the current deployment.
 
 ### 1.3 No browser automation
 

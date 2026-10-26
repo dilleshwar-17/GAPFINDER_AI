@@ -3,8 +3,16 @@
 This document records the local setup, Supabase Auth configuration, Vercel
 deployment prerequisites, and the remaining release blockers.
 
-**Status: Preview deployed; not production-ready.** On 2026-10-26, the
-current local working tree was deployed to
+**Status: Production deployment active; application not healthy.** On
+2026-10-26, commit `0866985` was deployed to Production at
+`https://gapfinder-ai-dilleshwar-rao.vercel.app` as deployment
+`dpl_CxUmknxa9hA6VH8cvaaYrKkHtgCB`. Vercel reports it Ready and its alias is
+assigned to this deployment. The homepage and login returned HTTP 200 and an
+unauthenticated dashboard request redirected to login. The health endpoint
+reports a database error, so the site is not fully working like local
+development.
+
+The same working tree was also deployed to Preview at
 `https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app`. Vercel
 reported the deployment Ready; the homepage, login, and signup returned HTTP
 200, and an unauthenticated dashboard request redirected to login. The health
@@ -13,11 +21,11 @@ working data-backed application.
 
 This Preview is protected by Vercel Authentication. Do not treat route
 availability as proof that Supabase login, learner data persistence, uploads,
-or the student workflow work end-to-end. An independent Production deployment
-from GitHub `main` commit `2907ca9` was also observed on 2026-10-26. After
-explicit approval, the Production alias was rolled back to the preceding Ready
-deployment (`dpl_8WWKfFKfkaauwFkhjeGHXWaRCPZH`). The alias was verified, but
-the active Production application was not tested end-to-end.
+or the student workflow work end-to-end. A GitHub-triggered Production
+deployment from `main` commit `2907ca9` was observed and rolled back with
+explicit approval. After a further explicit Production-deployment approval,
+commit `0866985` was directly deployed and assigned to the public Production
+alias. The alias was confirmed with `vercel alias ls`.
 
 ---
 
@@ -155,7 +163,7 @@ and no mutating student-workflow actions were run. Vercel Preview readiness
 means the deployment built and was assigned; it does not mean application
 health or production readiness.
 
-## 5. Production rollback record
+## 5. Production deployment and rollback records
 
 The supplied build log showed a Production deployment from GitHub `main`
 commit `2907ca9`. Vercel inspection showed it had moved the production alias.
@@ -166,9 +174,19 @@ vercel rollback https://gapfinder-91wkw35oa-dilleshwar-17s-projects.vercel.app -
 vercel inspect https://gapfinder-ai-dilleshwar-rao.vercel.app
 ```
 
-The alias now points to the preceding Ready deployment. No production database
-was changed. This rollback is not evidence that the active Production
-application or its data layer is healthy.
+No production database was changed by the rollback. Later, with explicit
+approval, local commit `0866985` was directly deployed to Production:
+
+```powershell
+vercel deploy --prod --yes
+vercel alias set https://gapfinder-q8i82p754-dilleshwar-17s-projects.vercel.app gapfinder-ai-dilleshwar-rao.vercel.app
+vercel alias ls
+```
+
+Vercel reports deployment `dpl_CxUmknxa9hA6VH8cvaaYrKkHtgCB` as Ready and the
+alias list maps the public Production domain to that deployment. Its health
+endpoint still reports `database: error`; this deployment does not make the
+current SQLite data layer durable.
 
 If you switch embedding providers, existing chunks are excluded from retrieval
 (model/dimension mismatch). Re-process the documents (document detail →
@@ -188,6 +206,10 @@ React **19.3.1**, Vitest **5.0.5**.
 | `npm test` | **Passed** — 11 test files, **138 tests** |
 | Local `npm run build` | **Blocked** — Windows `EPERM` unlinking `.next/static` while a local Next server was running |
 | Vercel Preview build | **Passed** — latest deployment Ready |
+| Vercel Production build | **Passed** — deployment `dpl_CxUmknxa9hA6VH8cvaaYrKkHtgCB` Ready |
+| Production homepage and login | **Passed, limited** — HTTP 200 |
+| Production unauthenticated dashboard | **Passed, limited** — HTTP 307 redirect to login |
+| Production health | **Failed** — `/api/health` reports `database: error` |
 | `npm run smoke` | **Not run** for the current auth/theme changes |
 | Live Supabase Auth flow | **Not tested** — no credentials submitted; only the unauthenticated guard was checked |
 | Vercel Preview health | **Failed** — `/api/health` reports a SQLite database error |
@@ -259,11 +281,10 @@ The 49 checks cover:
 
 ### 7.1 Preview deployment does not establish production readiness
 
-A Preview has been deployed and its public routes and unauthenticated guard
-were checked. The health endpoint reports a SQLite database error. A separate
-Production deployment from GitHub `main` commit `2907ca9` was observed and
-rolled back to the previous Ready deployment with approval. Neither the
-Production application nor its data persistence was verified end-to-end.
+A Preview and a Production deployment have both been built. Public page status
+and unauthenticated redirects were checked, but both health checks report a
+SQLite database error. Production has not been verified end-to-end for login,
+uploads, persistence, or the student workflow.
 
 ### 7.2 SQLite is not durable on serverless
 

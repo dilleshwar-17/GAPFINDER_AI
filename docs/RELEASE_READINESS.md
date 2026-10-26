@@ -1,7 +1,7 @@
 # Release Readiness
 
-**Status: NOT READY for production Vercel deployment.** A protected Preview
-deployment exists, but its health endpoint reports a database error.
+**Status: NOT READY for production use.** Commit `0866985` is deployed to the
+Production alias, but its health endpoint reports a database error.
 
 ## Verified
 
@@ -25,10 +25,12 @@ deployment exists, but its health endpoint reports a database error.
 - The Preview health endpoint returned `status: degraded` and
   `database: error`; this confirms the SQLite-backed application is not healthy
   on the Vercel runtime.
-- A separate Production deployment from GitHub `main` commit `2907ca9` was
-  observed from the supplied build log and Vercel metadata, then rolled back
-  with explicit approval. The Production alias now points to the preceding
-  Ready deployment; neither deployment has been verified end-to-end here.
+- Production deployment `dpl_CxUmknxa9hA6VH8cvaaYrKkHtgCB` is Ready and
+  assigned to the public domain. Homepage/login return HTTP 200 and an
+  unauthenticated dashboard request redirects to login.
+- The Production health endpoint also returns `status: degraded` and
+  `database: error`. The alias is current, but data-backed features are not
+  healthy.
 
 ## Release blockers
 
@@ -44,15 +46,14 @@ deployment exists, but its health endpoint reports a database error.
    path exists.
 5. **End-to-end verification:** authentication, ownership, upload/RAG/citation,
    mobile, accessibility, load, and concurrency tests have not been run. The
-   current Preview cannot serve as a healthy data-backed test environment
-   because its database health check fails.
-6. **Operations:** Preview has been deployed, but backup/restore, alerting, and
-   rollback have not been verified. The separate Production deployment noted
-   above has not received end-to-end verification.
+   Preview and Production cannot serve as healthy data-backed test environments
+   because their database health checks fail.
+6. **Operations:** Production is deployed, but backup/restore, alerting,
+   rollback, and end-to-end student flows have not been verified.
 
 ## Approval gate
 
-Do not promote or claim production readiness until the application data/storage
+Do not claim production readiness until the application data/storage
 layer is durable, all Supabase auth and ownership flows pass against a
 non-production project, regression and production-build checks pass, and a
 healthy authorized preview deployment is verified end-to-end.

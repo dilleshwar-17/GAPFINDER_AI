@@ -223,7 +223,7 @@ This deletes the configured SQLite file (`DATABASE_PATH`, default `data/gapfinde
 ## Deployment
 
 - **Local / self-hosted:** `npm run build && npm start` (set `PORT` and `DATABASE_PATH` to a writable persistent location).
-- **Vercel Preview:** deployed at <https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app>. Pages and the unauthenticated redirect respond, but `/api/health` reports a database error. The Production alias was rolled back to its prior Ready deployment after a separate GitHub deployment; this does not establish production health. A durable Supabase/Postgres application data adapter is not implemented; do not treat this repository as production-ready on Vercel until SQLite persistence and uploaded-file storage are migrated. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Vercel:** commit `0866985` is deployed to Production at <https://gapfinder-ai-dilleshwar-rao.vercel.app> and to Preview at <https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app>. Routes respond and unauthenticated protected requests redirect to login, but `/api/health` reports a database error. A durable Supabase/Postgres application data adapter is not implemented; the app is not fully functional or production-ready on Vercel until SQLite persistence and uploaded-file storage are migrated. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Troubleshooting
 
