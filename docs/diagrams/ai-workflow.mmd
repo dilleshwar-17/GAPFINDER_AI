@@ -1,0 +1,36 @@
+flowchart TD
+  START(["Learner selects topic(s)"]) --> AUTHZ["Verify session + subject ownership"]
+  AUTHZ --> QUERY["Build topic query<br/>name + description + intent"]
+  QUERY --> EMBQ["Embed query<br/>Gemini or local hash"]
+  EMBQ --> SCAN["Authorized candidate scan<br/>owner + subject + ready + current model<br/>LIMIT 5000"]
+  SCAN --> RANK["Hybrid score<br/>0.75 cosine + 0.25 lexical"]
+  RANK --> THRESH{"Above threshold<br/>and enough total evidence?"}
+  THRESH -- No --> ABSTAIN["Abstain / skip topic<br/>explain what is missing<br/>no model call"]
+  THRESH -- Yes --> EVIDENCE["Evidence set with<br/>document, page, heading, excerpt"]
+
+  EVIDENCE --> MODE{"Language model<br/>configured?"}
+  MODE -- Yes --> LLM["Gemini JSON request<br/>passages tagged as untrusted data<br/>response schema enforced"]
+  MODE -- No --> DET["Deterministic generator<br/>source sentences + templates"]
+
+  LLM --> PARSE{"Valid JSON<br/>and schema?"}
+  PARSE -- No --> DET
+  PARSE -- Yes --> CITECHK{"Every citation label<br/>resolves to this evidence set?"}
+  CITECHK -- No --> REJECT["Reject output<br/>record fallback event"]
+  REJECT --> DET
+  CITECHK -- Yes --> VALID["Validated, grounded output"]
+
+  DET --> CITECHK2{"Question cites at least one<br/>retrieved chunk?"}
+  CITECHK2 -- No --> DISCARD["Discard question"]
+  CITECHK2 -- Yes --> VALIDQ["Persist question + source links<br/>dedupe by prompt hash"]
+
+  VALID --> OUT["Answer with citations"]
+  VALIDQ --> QUIZ["Quiz view<br/>no answer key while in progress"]
+  QUIZ --> SUBMIT["Submission validated<br/>duplicate + ownership checks"]
+  SUBMIT --> SCORE["Deterministic scoring<br/>MCQ exact · short answer rubric"]
+  SCORE --> MASTERY["Weighted mastery<br/>sufficiency gate"]
+  MASTERY --> GAPS["Gap report<br/>measured vs not assessed"]
+  GAPS --> PLAN["Time-bounded plan<br/>versioned · completed history kept"]
+
+  OUT --> TELEMETRY[("ai_events<br/>provider · model · status · reason")]
+  REJECT --> TELEMETRY
+  DET --> TELEMETRY

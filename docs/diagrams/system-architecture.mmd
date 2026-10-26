@@ -1,0 +1,69 @@
+flowchart TB
+  subgraph Client["Browser"]
+    UI["React Server Components<br/>+ client islands"]
+    FETCH["apiRequest helper<br/>(same-origin JSON)"]
+  end
+
+  subgraph Next["Next.js 16 App Router"]
+    PROXY["src/proxy.ts<br/>cookie presence check<br/>(not the security boundary)"]
+    PAGES["Pages<br/>(public) · (app) · onboarding"]
+    API["Route handlers<br/>src/app/api/**/route.ts"]
+    AUTH["Auth helpers<br/>requirePageUser · requireUser"]
+    HTTP["http.ts<br/>origin check · Zod · error mapping"]
+  end
+
+  subgraph Services["Service layer"]
+    SAUTH["auth / session"]
+    SDOC["documents"]
+    SUB["subjects / topics"]
+    SASM["assessment"]
+    SGAP["gaps / mastery"]
+    SPLAN["plans"]
+    SAST["assistant"]
+    SPROG["progress / preferences"]
+    SDEMO["demo seeding + guards"]
+  end
+
+  subgraph Domain["Pure domain rules"]
+    CHUNK["chunking"]
+    SCORE["scoring"]
+    MAST["mastery bands + evidence"]
+    PLAN["planner weights + caps"]
+    CITE["citation validation"]
+  end
+
+  subgraph AI["AI adapters"]
+    EMB["embeddings<br/>Gemini or local hash"]
+    GEN["question generation<br/>Gemini or deterministic"]
+    EVAL["short-answer evaluation"]
+    RET["retrieval<br/>authorized vector scan"]
+  end
+
+  subgraph Data["Persistence"]
+    DB[("SQLite via node:sqlite<br/>owner-scoped relational schema")]
+    FILES[("documents.file_data<br/>original bytes")]
+  end
+
+  subgraph Ext["Optional external"]
+    GEM["Gemini API<br/>(only when key configured)"]
+  end
+
+  UI --> PROXY --> PAGES
+  UI --> FETCH --> API
+  PAGES --> AUTH
+  API --> HTTP --> AUTH
+  PAGES --> Services
+  API --> Services
+  Services --> Domain
+  SASM --> RET
+  SAST --> RET
+  RET --> EMB
+  GEN --> EMB
+  SGAP --> MAST
+  SPLAN --> PLAN
+  SASM --> SCORE
+  Services --> DB
+  SDOC --> FILES
+  EMB -.-> GEM
+  GEN -.-> GEM
+  EVAL -.-> GEM
