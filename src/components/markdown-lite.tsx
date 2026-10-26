@@ -15,7 +15,7 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
     const token = match[0];
     if (token.startsWith("**")) {
       nodes.push(
-        <strong key={`${keyPrefix}-b-${index}`} className="font-semibold text-[#243a2e]">
+        <strong key={`${keyPrefix}-b-${index}`} className="font-semibold text-[#1d2939]">
           {token.slice(2, -2)}
         </strong>,
       );
@@ -23,7 +23,7 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
       nodes.push(
         <code
           key={`${keyPrefix}-c-${index}`}
-          className="rounded bg-[#eef3ed] px-1 py-0.5 font-mono text-[0.78em] text-[#275544]"
+          className="rounded bg-[#f2f4f7] px-1 py-0.5 font-mono text-[0.78em] text-[#5925dc]"
         >
           {token.slice(1, -1)}
         </code>,
@@ -74,7 +74,7 @@ export function MarkdownLite({ content }: { content: string }) {
       flushList();
       const size = heading[1].length <= 2 ? "text-[0.95rem]" : "text-[0.88rem]";
       blocks.push(
-        <p key={`h-${blocks.length}`} className={`mt-3 font-semibold text-[#243a2e] ${size}`}>
+        <p key={`h-${blocks.length}`} className={`mt-3 font-semibold text-[#1d2939] ${size}`}>
           {inline(heading[2], `h-${blocks.length}`)}
         </p>,
       );
@@ -103,5 +103,5 @@ export function MarkdownLite({ content }: { content: string }) {
   }
   flushList();
 
-  return <div className="space-y-2 text-[0.84rem] text-[#44564b]">{blocks}</div>;
+  return <div className="space-y-2 text-[0.84rem] text-[#475467]">{blocks}</div>;
 }

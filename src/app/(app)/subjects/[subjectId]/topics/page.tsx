@@ -118,10 +118,10 @@ export default async function TopicsPage({
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="card p-4">
           <div className="flex items-center gap-2">
-            <FolderTree size={15} className="text-[#176b50]" aria-hidden />
+            <FolderTree size={15} className="text-[#7a5af8]" aria-hidden />
             <h2 className="text-[0.92rem]">Extraction is not generation</h2>
           </div>
-          <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#68756d]">
+          <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#667085]">
             Headings such as “Unit 1”, “Chapter 2” and “1.1 Cell membrane” become topics. If a heading
             is absent from the indexed text, no topic is created for it. You can add topics manually
             when your source has no heading structure.
@@ -129,10 +129,10 @@ export default async function TopicsPage({
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2">
-            <ClipboardCheck size={15} className="text-[#176b50]" aria-hidden />
+            <ClipboardCheck size={15} className="text-[#7a5af8]" aria-hidden />
             <h2 className="text-[0.92rem]">What a diagnostic needs</h2>
           </div>
-          <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#68756d]">
+          <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#667085]">
             A diagnostic selects up to three leaf topics and asks up to three citation-validated
             questions per topic. If retrieval cannot find enough source text, that topic is skipped
             rather than filled with an unsupported question.

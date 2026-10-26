@@ -104,12 +104,12 @@ export default async function SettingsPage() {
             <dl className="space-y-3">
               {rows.map((row) => (
                 <div key={row.label} className="flex gap-2.5">
-                  <span className="mt-0.5 shrink-0 text-[#176b50]">{row.icon}</span>
+                  <span className="mt-0.5 shrink-0 text-[#7a5af8]">{row.icon}</span>
                   <div className="min-w-0">
-                    <dt className="text-[0.63rem] font-semibold uppercase tracking-[0.08em] text-[#7a877f]">
+                    <dt className="text-[0.63rem] font-semibold uppercase tracking-[0.08em] text-[#667085]">
                       {row.label}
                     </dt>
-                    <dd className="mt-0.5 break-words font-mono text-[0.69rem] leading-relaxed text-[#3f5147]">
+                    <dd className="mt-0.5 break-words font-mono text-[0.69rem] leading-relaxed text-[#344054]">
                       {row.value}
                     </dd>
                   </div>
@@ -120,18 +120,18 @@ export default async function SettingsPage() {
 
           <section className="card p-5">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={15} className="text-[#176b50]" aria-hidden />
+              <ShieldCheck size={15} className="text-[#7a5af8]" aria-hidden />
               <h2 className="text-[0.95rem]">Privacy</h2>
             </div>
-            <p className="mt-2 text-[0.77rem] leading-relaxed text-[#68756d]">
+            <p className="mt-2 text-[0.77rem] leading-relaxed text-[#667085]">
               Your material, answers and evidence are scoped to your account. Every read and write
               checks ownership on the server. There is no public sharing of a personal workspace.
             </p>
             <div className="mt-3 flex flex-wrap gap-3 text-[0.74rem]">
-              <Link href="/privacy" className="font-medium text-[#176b50] hover:underline">
+              <Link href="/privacy" className="font-medium text-[#7a5af8] hover:underline">
                 Privacy notice
               </Link>
-              <Link href="/terms" className="font-medium text-[#176b50] hover:underline">
+              <Link href="/terms" className="font-medium text-[#7a5af8] hover:underline">
                 Terms of use
               </Link>
             </div>
@@ -139,10 +139,10 @@ export default async function SettingsPage() {
 
           <section className="card p-5">
             <div className="flex items-start gap-2">
-              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[#a08a55]" aria-hidden />
+              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[#dc6803]" aria-hidden />
               <div>
                 <h2 className="text-[0.95rem]">Honest limitations</h2>
-                <ul className="mt-2 space-y-1.5 text-[0.75rem] leading-relaxed text-[#68756d]">
+                <ul className="mt-2 space-y-1.5 text-[0.75rem] leading-relaxed text-[#667085]">
                   <li>Mastery bands are heuristics, not validated exam predictions.</li>
                   <li>Short answers are scored against rubric concepts with lexical matching fallback.</li>
                   <li>Password reset email delivery is not configured in this build.</li>
@@ -150,7 +150,7 @@ export default async function SettingsPage() {
                 </ul>
                 <Link
                   href="/demo-access"
-                  className="mt-2 inline-flex text-[0.73rem] font-medium text-[#176b50] hover:underline"
+                  className="mt-2 inline-flex text-[0.73rem] font-medium text-[#7a5af8] hover:underline"
                 >
                   How the demo is provisioned
                 </Link>

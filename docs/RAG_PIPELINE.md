@@ -149,14 +149,17 @@ lexical  = |queryTerms ∩ chunkTerms| / |queryTerms|
 combined = 0.75 * semantic + 0.25 * lexical
 ```
 
-Terms are lowercase alphanumeric unigrams and bigrams with stopwords removed;
-the lexical term set uses tokens of at least 3 characters. The weighting is
-deliberately fixed and documented so ranking is inspectable and stable rather
-than tuned invisibly.
+Terms are lowercase alphanumeric words with stopwords removed. Lexical scoring
+counts **unigram overlap only**, using terms of at least three characters; the
+local embedding model separately hashes unigrams (two or more characters) and
+adjacent bigrams. Bigrams therefore influence cosine similarity but not the
+lexical term. The weighting is deliberately fixed and documented so ranking is
+inspectable and stable rather than tuned invisibly.
 
 Candidates below `RETRIEVAL_MIN_SCORE` (default `0.15`) are dropped. The
 remainder is sorted by descending score (filename as a tiebreak) and truncated
-to `RETRIEVAL_TOP_K` (default `6`).
+to the requested `topK`. `RETRIEVAL_TOP_K` (default `6`) is the fallback used by
+BUDDY; the diagnostic passes `topK = 8` explicitly.
 
 ### 2.4 Sufficiency gate
 
@@ -206,6 +209,10 @@ Callers must respect this flag:
 - Retrieval is an exact scan over up to 5000 chunks per subject, not an ANN
   index. This is acceptable for single-learner workspaces and demo data; a
   multi-tenant scale-out would use pgvector with an ANN index.
+- A single document is capped at **400 chunks**; a larger upload is rejected
+  with a message asking for smaller files. Content hashes are the first 32 hex
+  characters of SHA-256 and are used to drop duplicate chunks within one
+  document.
 - A provider change does not rewrite existing vectors. Documents indexed under
   the old model are excluded from retrieval and the learner is told to re-index.
   The document **Retry processing** action re-extracts and re-embeds the stored

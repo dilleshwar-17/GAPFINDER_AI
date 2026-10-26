@@ -150,17 +150,20 @@ without asking the learner to re-upload.
 
 ### Diagnostic
 
-1. `POST /api/assessments` selects leaf topics and calls `retrieveEvidence` per
-   topic.
+1. `POST /api/assessments` selects at most three leaf topics and calls
+   `retrieveEvidence` per topic with `topK = 8`.
 2. If evidence is insufficient, the topic is skipped and reported; if no topic
    yields evidence the request fails with `INSUFFICIENT_EVIDENCE`.
 3. Questions are generated (Gemini JSON or deterministic templates), validated,
-   deduplicated by prompt hash, and persisted with `question_sources`.
-4. `getQuizView` returns prompts, options and source excerpts but **no** answer
-   key while the attempt is `in_progress`.
+   deduplicated by prompt hash, and persisted with `question_sources`. Each topic
+   receives at most three questions.
+4. While the attempt is `in_progress`, `getQuizView` returns prompts and options
+   but **no** answer key and **no** source excerpts. Source excerpts, answers and
+   feedback are returned only after the attempt is submitted.
 5. `submitAttempt` validates completeness, scores every answer deterministically,
    stores `answers`, marks the attempt `submitted`, refreshes mastery snapshots,
-   and refreshes the active plan.
+   and refreshes the active plan. For the shared demo account both mastery and
+   plan mutation are skipped unless the seeding path passes `allowDemo`.
 
 ### Plan refresh
 
@@ -171,9 +174,21 @@ tasks) as history. The declared time budget and exam date are reused.
 ## Rendering and state
 
 - Pages are `force-dynamic` where they read session-scoped data.
-- Interactive flows (upload, diagnostic runner, assistant, settings, plan tasks)
+- Interactive flows (upload, diagnostic runner, BUDDY, settings, plan tasks)
   are client components using `src/lib/client/api.ts`, which sends same-origin
   JSON and surfaces server error codes.
+- BUDDY (`/assistant`, with an embedded copy on `/learn/[topicId]`) adds
+  browser-only speech input through `SpeechRecognition` and speech output
+  through `speechSynthesis`. While the learner speaks, interim and final words
+  are shown in a live transcript panel; while BUDDY speaks, a fixed caption dock
+  highlights the current word from `SpeechSynthesisUtterance.onboundary` events,
+  with an indeterminate progress fallback when a browser reports no boundaries.
+  Audio never passes through the GapFinder server; only the resulting question
+  text is sent to `/api/assistant`.
+- The light/dark theme is selected by a pre-paint script that reads
+  `localStorage` (falling back to `prefers-color-scheme`) and sets
+  `data-theme` on `<html>`. CSS overrides map the light palette; status colours
+  remain semantic rather than brand-coloured.
 - Documents with a draft are resumable through `quiz_attempts.draft_json`.
 - Markdown from the assistant is rendered by a deliberately small
   `MarkdownLite` renderer (headings, lists, paragraphs, inline citations) rather
@@ -189,8 +204,8 @@ tasks) as history. The declared time budget and exam date are reused.
 | Authorization | `owner_id` filters in SQL; not-found responses for foreign IDs |
 | Upload | extension/MIME allow-list, size cap, NUL-byte and UTF-8 checks |
 | Prompt injection | retrieved text is untrusted data; JSON output validated against a schema; citations re-checked |
-| Demo | shared account flagged `is_demo`; writes blocked in services via `assertWritableAccount` |
-| Rate limits | in-memory fixed windows for login, registration, demo entry and assistant |
+| Demo | shared account flagged `is_demo`; writes blocked in services via `assertWritableAccount`; preferences and profile return `409`, resource writes `403` |
+| Rate limits | in-memory fixed windows for login, registration and demo entry |
 
 Details and threat notes are in [`SECURITY_AND_PRIVACY.md`](SECURITY_AND_PRIVACY.md).
 
@@ -201,8 +216,9 @@ Details and threat notes are in [`SECURITY_AND_PRIVACY.md`](SECURITY_AND_PRIVACY
 - embeddings: Gemini when `GEMINI_API_KEY` is present and
   `EMBEDDING_PROVIDER != local`, otherwise `gapfinder-hash-v1`;
 - LLM: Gemini when configured, otherwise `deterministic-fallback`;
-- limits: upload size, retrieval top-K, score threshold, evidence minimum,
-  session TTL, demo enablement.
+- limits: upload size, the default retrieval top-K (`RETRIEVAL_TOP_K`, default
+  6, used by BUDDY) plus the diagnostic's explicit `topK = 8`, score threshold,
+  evidence minimum, session TTL, demo enablement.
 
 Nothing here uses `NEXT_PUBLIC_`, so no secret or server default is shipped to
 the browser.

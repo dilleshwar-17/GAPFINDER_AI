@@ -41,7 +41,10 @@ There was no automated interaction test of:
 - client-side validation timing,
 - responsive layout at specific breakpoints,
 - keyboard-only traversal,
-- screen-reader announcements.
+- screen-reader announcements,
+- microphone capture or speech-recognition transcription,
+- speech-synthesis playback,
+- light/dark theme persistence across reloads and every dark surface.
 
 The UI is built with semantic landmarks, labelled controls, visible focus styles
 and `aria-live` regions, but it has **not** had a formal accessibility audit
@@ -57,6 +60,32 @@ was performed. `npm audit` was not used as a release gate.
 `DATABASE_PATH=:memory:` and the provider is unset. Tests are fast and
 deterministic, but they do not exercise a long-lived file, concurrent processes,
 or real network failures.
+
+### 1.6 BUDDY voice features and the dark theme are browser-dependent
+
+- **Voice input** uses the browser's `SpeechRecognition` /
+  `webkitSpeechRecognition` API. Several browsers (including common Firefox
+  builds) do not implement it; the control is disabled and typing still works.
+  Chrome and some Chromium derivatives may send audio to the browser vendor's
+  speech service for transcription. That processing happens outside GapFinder;
+  the privacy notice says so. There is no server-side audio upload.
+- **Spoken replies** use `window.speechSynthesis`. Voice quality, available
+  voices and language support depend on the operating system and browser.
+- **Theme persistence** uses `localStorage` and a pre-paint script. It is not
+  synchronised across devices or browsers, and clearing site data resets it.
+- The dark theme re-maps the light palette with CSS, including a compatibility
+  layer for the arbitrary colour utilities used in the existing pages. It has
+  been checked by source review and the production build, **not** by a visual
+  regression suite.
+
+### 1.7 Performance work was not load-tested
+
+Prepared statements are cached, SQLite runs in WAL mode with
+`synchronous=NORMAL`, subject aggregates are grouped, session lookup is
+request-cached, and extra lookup indexes were added. No production load test,
+profiling session or benchmark harness was available, so no percentage
+speed-up is claimed. Re-measure on the target host before making performance
+claims.
 
 ---
 
@@ -151,7 +180,8 @@ without retention. A long-running deployment needs housekeeping.
 
 - **Local embeddings are lexical, not neural.** They capture token overlap
   (unigrams and bigrams, feature-hashed) and will miss paraphrase and synonymy
-  that a neural model handles. The UI labels them as non-neural.
+  that a neural model handles. The UI labels them as non-neural. Bigrams are
+  used for embeddings only, not for the lexical coverage term in hybrid scoring.
 - **Deterministic questions are template-based.** They are grounded and
   citation-valid, but less varied and less pedagogically rich than a strong LLM
   would produce. Distractors are drawn from source sentences and can be
@@ -166,8 +196,9 @@ without retention. A long-running deployment needs housekeeping.
   multi-query expansion, or iterative retrieval.
 - **Assistant answers are limited to retrieved sentences**; with a weak
   embedder, some answerable questions may abstain.
-- **Thresholds are hand-set** (`0.15` score, `240` evidence chars, top-6). They
-  were chosen for a deterministic fallback and are not empirically tuned.
+- **Thresholds are hand-set** (`0.15` score, `240` evidence chars, top-6 for
+  BUDDY, top-8 for diagnostics). They were chosen for a deterministic fallback
+  and are not empirically tuned.
 - **Gemini output variability** is unverified; the schema/citation guards are
   designed to reject bad output, not to guarantee good output.
 - **Provider change requires re-indexing.** Documents embedded with a different
@@ -218,7 +249,6 @@ without retention. A long-running deployment needs housekeeping.
 - **No offline/PWA support.**
 - **No i18n/localisation**; UI copy is English and dates are formatted `en-GB`
   in UTC.
-- **No dark mode.**
 - **No user-facing audit trail** of AI events.
 - **Report route uses the subject ID** (`/reports/[reportId]` where `reportId` is
   a subject). This is intentional and documented, but the parameter name is
@@ -229,7 +259,15 @@ without retention. A long-running deployment needs housekeeping.
   the shared plan and baseline are protected from mutation, but practice attempts
   by different visitors are visible to later visitors because they share the same
   owner. Do not enter private data into the demo.
-- **No favicon/brand asset set** beyond the in-app brand mark.
+- **No topic editing or deletion.** Topics are produced by extraction or by the
+  manual create flow; there is no rename, move or delete endpoint.
+- **The topic map is capped at 80 topics** from one extraction. Larger
+  syllabuses are truncated deterministically.
+- **Only a minimal brand asset set.** A single SVG favicon exists; there is no
+  full icon set, social card or Open Graph image.
+- **Voice live captions are best-effort.** Word highlighting depends on
+  `onboundary` support; browsers that omit it show the full reply with an
+  indeterminate progress bar. No automated test exercises this.
 
 ---
 

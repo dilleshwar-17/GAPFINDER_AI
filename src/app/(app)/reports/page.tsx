@@ -71,12 +71,12 @@ export default async function ReportsPage() {
                       <h2 className="text-[1.05rem]">
                         <Link
                           href={`/reports/${subject.id}`}
-                          className="hover:text-[#176b50]"
+                          className="hover:text-[#7a5af8]"
                         >
                           {subject.name}
                         </Link>
                       </h2>
-                      <p className="mt-0.5 text-[0.72rem] text-[#7a877f]">
+                      <p className="mt-0.5 text-[0.72rem] text-[#667085]">
                         {summary.leaves} leaf topics · {summary.attemptsConsidered} submitted attempt
                         {summary.attemptsConsidered === 1 ? "" : "s"}
                       </p>
@@ -86,16 +86,16 @@ export default async function ReportsPage() {
 
                   <div className="mt-3 grid grid-cols-4 gap-2">
                     {[
-                      ["Weak", summary.weak, "text-[#a63d2f]"],
-                      ["Developing", summary.developing, "text-[#9a6414]"],
-                      ["Strong", summary.strong, "text-[#176b50]"],
-                      ["Not assessed", summary.notAssessed, "text-[#7a877f]"],
+                      ["Weak", summary.weak, "text-[#d92d20]"],
+                      ["Developing", summary.developing, "text-[#b54708]"],
+                      ["Strong", summary.strong, "text-[#027a48]"],
+                      ["Not assessed", summary.notAssessed, "text-[#667085]"],
                     ].map(([label, value, tone]) => (
                       <div
                         key={String(label)}
-                        className="rounded-lg border border-[#e8ede4] bg-[#fbfcf8] px-2.5 py-2"
+                        className="rounded-lg border border-[#eaecf0] bg-[#fcfcfd] px-2.5 py-2"
                       >
-                        <p className="text-[0.57rem] uppercase tracking-[0.08em] text-[#7b887f]">
+                        <p className="text-[0.57rem] uppercase tracking-[0.08em] text-[#667085]">
                           {label}
                         </p>
                         <p className={`mt-0.5 text-lg font-semibold ${tone}`}>{value}</p>
@@ -103,7 +103,7 @@ export default async function ReportsPage() {
                     ))}
                   </div>
 
-                  <p className="mt-3 text-[0.76rem] leading-relaxed text-[#68756d]">
+                  <p className="mt-3 text-[0.76rem] leading-relaxed text-[#667085]">
                     {summary.assessed === 0
                       ? "No topic has passed the evidence minimum yet. Submit a diagnostic to establish evidence."
                       : `${summary.assessed} of ${summary.leaves} leaf topics currently have sufficient evidence.`}
@@ -134,26 +134,26 @@ export default async function ReportsPage() {
           <section className="mt-7 grid gap-4 sm:grid-cols-2">
             <div className="card p-4">
               <div className="flex items-center gap-2">
-                <Target size={15} className="text-[#176b50]" aria-hidden />
+                <Target size={15} className="text-[#7a5af8]" aria-hidden />
                 <h2 className="text-[0.92rem]">Measured weakness only</h2>
               </div>
-              <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#68756d]">
+              <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#667085]">
                 The weak count excludes not-assessed topics. A topic you have never been tested on is a
                 gap in evidence, not a confirmed weakness, and the planner treats it accordingly.
               </p>
             </div>
             <div className="card p-4">
               <div className="flex items-center gap-2">
-                <ChartNoAxesCombined size={15} className="text-[#176b50]" aria-hidden />
+                <ChartNoAxesCombined size={15} className="text-[#7a5af8]" aria-hidden />
                 <h2 className="text-[0.92rem]">Every report is traceable</h2>
               </div>
-              <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#68756d]">
+              <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[#667085]">
                 Each topic links back to the questions, marks and source citations that produced its
                 figure. Open the source before deciding what to revise.
               </p>
               <Link
                 href="/progress"
-                className="mt-2 inline-flex items-center gap-1 text-[0.76rem] font-medium text-[#176b50] hover:underline"
+                className="mt-2 inline-flex items-center gap-1 text-[0.76rem] font-medium text-[#7a5af8] hover:underline"
               >
                 Compare attempts over time
                 <ArrowUpRight size={13} aria-hidden />

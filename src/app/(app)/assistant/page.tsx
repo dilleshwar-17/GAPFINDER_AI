@@ -18,8 +18,9 @@ import {
   SectionHeading,
 } from "@/components/ui";
 import { AssistantChat } from "@/components/assistant-chat";
+import { SubjectFilter } from "@/components/subject-filter";
 
-export const metadata: Metadata = { title: "Source assistant" };
+export const metadata: Metadata = { title: "BUDDY" };
 export const dynamic = "force-dynamic";
 
 export default async function AssistantPage({
@@ -59,8 +60,8 @@ export default async function AssistantPage({
     <>
       <PageHeader
         eyebrow="Learn"
-        title="Source assistant"
-        description="Ask about a topic in your own material. Retrieval runs only over your indexed chunks, every claim must resolve to a real citation, and the assistant abstains when the evidence is thin."
+        title="BUDDY"
+        description="Your source-grounded study buddy. Ask about a topic in your own material: retrieval runs only over your indexed chunks, every claim must resolve to a real citation, and BUDDY abstains when the evidence is thin. Type, dictate, or listen."
         meta={
           <>
             <span className="inline-flex items-center gap-1">
@@ -81,7 +82,7 @@ export default async function AssistantPage({
         <EmptyState
           icon={<GraduationCap size={18} aria-hidden />}
           title="No material to ask about"
-          description="The assistant answers only from your indexed sources. Create a subject, upload a syllabus or notes, then extract the topic map."
+          description="BUDDY answers only from your indexed sources. Create a subject, upload a syllabus or notes, then extract the topic map."
           action={
             <Link href="/subjects?intent=create" className="btn btn-primary btn-sm">
               Create a subject
@@ -90,25 +91,18 @@ export default async function AssistantPage({
         />
       ) : (
         <>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            {subjects.map((subject) => (
-              <Link
-                key={subject.id}
-                href={`/assistant?subject=${subject.id}`}
-                className={
-                  subject.id === selectedSubject?.id ? "badge badge-strong" : "badge badge-outline"
-                }
-              >
-                {subject.name}
-              </Link>
-            ))}
-          </div>
+          <SubjectFilter
+            basePath="/assistant"
+            subjects={subjects}
+            selectedId={selectedSubject?.id ?? null}
+            className="mb-4"
+          />
 
           {!selectedSubject ? null : topics.length === 0 ? (
             <EmptyState
               icon={<FolderTree size={18} aria-hidden />}
               title="No topics in this subject"
-              description="The assistant needs a topic to scope retrieval. Extract topics from your syllabus headings or add them manually."
+              description="BUDDY needs a topic to scope retrieval. Extract topics from your syllabus headings or add them manually."
               action={
                 <Link
                   href={`/subjects/${selectedSubject.id}/topics`}
@@ -124,7 +118,7 @@ export default async function AssistantPage({
                 <SectionHeading
                   title="Topics"
                   description="Pick the topic to scope retrieval."
-                  action={<FolderTree size={15} className="text-[#176b50]" aria-hidden />}
+                  action={<FolderTree size={15} className="text-[#7a5af8]" aria-hidden />}
                 />
                 <ul id="assistant-topic-list" className="space-y-1">
                   {topics.map((topic) => {
@@ -135,15 +129,15 @@ export default async function AssistantPage({
                           href={`/assistant?subject=${selectedSubject.id}&topic=${topic.id}`}
                           className={`flex items-start justify-between gap-2 rounded-lg border px-2.5 py-2 transition ${
                             active
-                              ? "border-[#176b50] bg-[#f2f9f4]"
-                              : "border-transparent hover:border-[#dbe5da] hover:bg-[#fbfcf8]"
+                              ? "border-[#7a5af8] bg-[#f4f3ff]"
+                              : "border-transparent hover:border-[#d0d5dd] hover:bg-[#fcfcfd]"
                           }`}
                         >
                           <span className="min-w-0">
-                            <span className="block truncate text-[0.8rem] font-medium text-[#34483c]">
+                            <span className="block truncate text-[0.8rem] font-medium text-[#344054]">
                               {topic.name}
                             </span>
-                            <span className="mt-0.5 block text-[0.64rem] text-[#85928a]">
+                            <span className="mt-0.5 block text-[0.64rem] text-[#98a2b3]">
                               {topic.sourceCount} source{topic.sourceCount === 1 ? "" : "s"} ·{" "}
                               {topic.childCount > 0 ? `${topic.childCount} sub-topics` : "leaf topic"}
                             </span>
@@ -167,23 +161,23 @@ export default async function AssistantPage({
                     <h2 id="assistant-panel" className="text-[1.05rem]">
                       {selectedTopic ? selectedTopic.name : "Choose a topic"}
                     </h2>
-                    <p className="mt-0.5 text-[0.74rem] text-[#7a877f]">
+                    <p className="mt-0.5 text-[0.74rem] text-[#667085]">
                       {selectedSubject.name}
                       {selectedTopic?.parentName ? ` · ${selectedTopic.parentName}` : ""}
                     </p>
                   </div>
-                  <MessageSquareText size={17} className="text-[#176b50]" aria-hidden />
+                  <MessageSquareText size={17} className="text-[#7a5af8]" aria-hidden />
                 </div>
 
                 {!selectedTopic ? (
-                  <p className="text-[0.84rem] text-[#68756d]">Select a topic from the list.</p>
+                  <p className="text-[0.84rem] text-[#667085]">Select a topic from the list.</p>
                 ) : (
                   <>
                     {selectedTopic.sourceCount === 0 ? (
                       <div className="mb-4">
                         <Callout tone="warning" title="No linked sources for this topic">
                           Retrieval may still find relevant chunks in this subject, but this topic has
-                          no ranked source links. If the assistant abstains, upload material that covers
+                          no ranked source links. If BUDDY abstains, upload material that covers
                           it.
                         </Callout>
                       </div>
@@ -195,7 +189,7 @@ export default async function AssistantPage({
                       subjectName={selectedSubject.name}
                       initialQuestion={initialQuestion}
                     />
-                    <div className="mt-4 flex flex-wrap gap-2 border-t border-[#eef1ea] pt-3">
+                    <div className="mt-4 flex flex-wrap gap-2 border-t border-[#f2f4f7] pt-3">
                       <Link
                         href={`/learn/${selectedTopic.id}`}
                         className="btn btn-secondary btn-sm"

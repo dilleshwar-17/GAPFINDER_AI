@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // PDF text extraction can take longer than the default server action limit.
     serverActions: { bodySizeLimit: "12mb" },
+    // Tree-shake icon imports across the app shell and feature pages.
+    optimizePackageImports: ["lucide-react"],
   },
 };
 

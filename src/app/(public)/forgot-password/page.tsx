@@ -9,8 +9,8 @@ export default function ForgotPasswordPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
       <p className="eyebrow">Account recovery</p>
-      <h1 className="display-lg mt-3 text-[#12382d]">Password reset is not available yet.</h1>
-      <p className="mt-4 text-[0.93rem] leading-relaxed text-[#5a6a60]">
+      <h1 className="display-lg mt-3 text-[#171f2e]">Password reset is not available yet.</h1>
+      <p className="mt-4 text-[0.93rem] leading-relaxed text-[#475467]">
         This deployment has no transactional email provider configured. The application therefore
         cannot send a reset link, and it will not pretend that it did. No reset email has been sent.
       </p>
@@ -31,10 +31,10 @@ export default function ForgotPasswordPage() {
 
       <div className="card mt-6 p-5">
         <div className="flex items-start gap-3">
-          <MailX size={18} className="mt-0.5 shrink-0 text-[#9a6414]" aria-hidden />
+          <MailX size={18} className="mt-0.5 shrink-0 text-[#b54708]" aria-hidden />
           <div>
             <h2 className="text-[0.95rem]">Why the page exists</h2>
-            <p className="mt-1 text-[0.82rem] leading-relaxed text-[#64746a]">
+            <p className="mt-1 text-[0.82rem] leading-relaxed text-[#475467]">
               The route is part of the required information architecture. It is intentionally honest
               about an unavailable capability rather than collecting an email address and silently
               discarding it.

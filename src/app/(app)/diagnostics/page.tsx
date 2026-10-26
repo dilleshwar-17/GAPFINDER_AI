@@ -22,6 +22,7 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { DiagnosticStarter } from "@/components/diagnostic-starter";
+import { SubjectFilter } from "@/components/subject-filter";
 
 export const metadata: Metadata = { title: "Diagnostics" };
 export const dynamic = "force-dynamic";
@@ -74,19 +75,11 @@ export default async function DiagnosticsPage({
         />
       ) : (
         <>
-          <div className="mb-5 flex flex-wrap items-center gap-2">
-            {subjects.map((subject) => (
-              <Link
-                key={subject.id}
-                href={`/diagnostics?subject=${subject.id}`}
-                className={
-                  subject.id === selectedSubjectId ? "badge badge-strong" : "badge badge-outline"
-                }
-              >
-                {subject.name}
-              </Link>
-            ))}
-          </div>
+          <SubjectFilter
+            basePath="/diagnostics"
+            subjects={subjects}
+            selectedId={selectedSubjectId}
+          />
 
           {inProgress.length > 0 ? (
             <section className="mb-5">
@@ -100,7 +93,7 @@ export default async function DiagnosticsPage({
                       </span>
                       <Link
                         href={`/diagnostics/${attempt.id}`}
-                        className="font-semibold text-[#6f5117] underline underline-offset-2"
+                        className="font-semibold text-[#b54708] underline underline-offset-2"
                       >
                         Resume
                       </Link>
@@ -119,11 +112,11 @@ export default async function DiagnosticsPage({
                 description="Pick up to three leaf topics. Retrieval, generation and citation validation happen before the attempt exists."
               />
               {!selectedSubject ? (
-                <p className="text-[0.84rem] text-[#68756d]">Choose a subject above.</p>
+                <p className="text-[0.84rem] text-[#667085]">Choose a subject above.</p>
               ) : leafTopics.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-[#cbd7cd] bg-[#fbfcf8] p-5">
+                <div className="rounded-lg border border-dashed border-[#d0d5dd] bg-[#fcfcfd] p-5">
                   <h3 className="text-[0.95rem]">No leaf topics in {selectedSubject.name}</h3>
-                  <p className="mt-1 text-[0.8rem] leading-relaxed text-[#68756d]">
+                  <p className="mt-1 text-[0.8rem] leading-relaxed text-[#667085]">
                     Diagnostics run on leaf topics. Extract a topic map from a syllabus or add topics
                     manually first.
                   </p>
@@ -166,23 +159,23 @@ export default async function DiagnosticsPage({
               <section className="card p-5">
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="text-[1rem]">How it works</h2>
-                  <ClipboardCheck size={16} className="text-[#176b50]" aria-hidden />
+                  <ClipboardCheck size={16} className="text-[#7a5af8]" aria-hidden />
                 </div>
-                <ol className="mt-3 space-y-3 text-[0.79rem] leading-relaxed text-[#5d6d63]">
+                <ol className="mt-3 space-y-3 text-[0.79rem] leading-relaxed text-[#475467]">
                   <li>
-                    <strong className="text-[#2c4034]">1. Retrieve.</strong> Each selected topic is turned
+                    <strong className="text-[#344054]">1. Retrieve.</strong> Each selected topic is turned
                     into a query and matched against your ready chunks only.
                   </li>
                   <li>
-                    <strong className="text-[#2c4034]">2. Generate and validate.</strong> Questions must
+                    <strong className="text-[#344054]">2. Generate and validate.</strong> Questions must
                     map every source label to a retrieved chunk ID. Invalid questions are discarded.
                   </li>
                   <li>
-                    <strong className="text-[#2c4034]">3. Answer without a key.</strong> Expected answers
+                    <strong className="text-[#344054]">3. Answer without a key.</strong> Expected answers
                     and rubrics are withheld until the attempt is submitted.
                   </li>
                   <li>
-                    <strong className="text-[#2c4034]">4. Score and update evidence.</strong> Multiple
+                    <strong className="text-[#344054]">4. Score and update evidence.</strong> Multiple
                     choice is exact; short answers use rubric concepts with a deterministic lexical
                     fallback. Mastery changes only if evidence is sufficient.
                   </li>
@@ -192,27 +185,27 @@ export default async function DiagnosticsPage({
               <section className="card p-5">
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="text-[1rem]">Submitted</h2>
-                  <Clock3 size={16} className="text-[#176b50]" aria-hidden />
+                  <Clock3 size={16} className="text-[#7a5af8]" aria-hidden />
                 </div>
                 {submitted.length === 0 ? (
-                  <p className="mt-2 text-[0.8rem] leading-relaxed text-[#6b7a71]">
+                  <p className="mt-2 text-[0.8rem] leading-relaxed text-[#667085]">
                     No submitted diagnostics yet. Your first one will create the evidence history used by
                     reports and plans.
                   </p>
                 ) : (
-                  <ul className="mt-3 divide-y divide-[#eef1ea]">
+                  <ul className="mt-3 divide-y divide-[#f2f4f7]">
                     {submitted.slice(0, 6).map((attempt) => (
                       <li key={attempt.id} className="py-2.5 first:pt-0 last:pb-0">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <Link
                             href={`/diagnostics/${attempt.id}/results`}
-                            className="text-[0.8rem] font-medium text-[#2c4034] hover:text-[#176b50]"
+                            className="text-[0.8rem] font-medium text-[#344054] hover:text-[#7a5af8]"
                           >
                             {attempt.subjectName}
                           </Link>
                           <StatusBadge status={attempt.status} />
                         </div>
-                        <p className="mt-0.5 text-[0.69rem] text-[#7a877f]">
+                        <p className="mt-0.5 text-[0.69rem] text-[#667085]">
                           {formatDate(attempt.submittedAt)} · {attempt.questionCount} questions
                         </p>
                         <div className="mt-1">
@@ -228,7 +221,7 @@ export default async function DiagnosticsPage({
                 )}
                 <Link
                   href="/progress"
-                  className="mt-3 inline-flex items-center gap-1 text-[0.76rem] font-medium text-[#176b50] hover:underline"
+                  className="mt-3 inline-flex items-center gap-1 text-[0.76rem] font-medium text-[#7a5af8] hover:underline"
                 >
                   View progress over time
                   <ArrowUpRight size={13} aria-hidden />

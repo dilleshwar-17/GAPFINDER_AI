@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 import { db, newId, nowIso } from "@/lib/db";
@@ -54,12 +55,17 @@ export function findUserForSession(token: string): AuthUser | null {
   return { id: row.id, email: row.email, displayName: row.display_name, isDemo: row.is_demo === 1 };
 }
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
+/**
+ * The workspace layout and the page it wraps both need the signed-in user.
+ * React's request-scoped cache collapses those lookups into a single session
+ * query per navigation (and stays a no-op outside a render).
+ */
+export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   return findUserForSession(token);
-}
+});
 
 export async function requireUser(): Promise<AuthUser> {
   const user = await getCurrentUser();

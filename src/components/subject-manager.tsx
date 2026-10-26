@@ -71,7 +71,7 @@ function SubjectForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="card border-[#cddbcf] p-4" aria-labelledby="subject-form-title">
+    <form onSubmit={onSubmit} className="card border-[#d0d5dd] p-4" aria-labelledby="subject-form-title">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 id="subject-form-title" className="text-[0.98rem]">
           {initial ? "Edit subject" : "New subject"}
@@ -81,7 +81,7 @@ function SubjectForm({
         </button>
       </div>
       {isDemo ? (
-        <p className="mb-3 rounded-lg border border-[#e8d6a8] bg-[#faf6ea] px-3 py-2 text-[0.76rem] text-[#6d5418]">
+        <p className="mb-3 rounded-lg border border-[#fedf89] bg-[#fffaeb] px-3 py-2 text-[0.76rem] text-[#b54708]">
           The shared demo workspace is read-only. Create a personal account to change subjects.
         </p>
       ) : null}
@@ -103,7 +103,7 @@ function SubjectForm({
         </div>
         <div className="sm:col-span-2">
           <label htmlFor="subject-description" className="label">
-            Description <span className="font-normal normal-case tracking-normal text-[#85928a]">(optional)</span>
+            Description <span className="font-normal normal-case tracking-normal text-[#98a2b3]">(optional)</span>
           </label>
           <textarea
             id="subject-description"
@@ -116,7 +116,7 @@ function SubjectForm({
         </div>
         <div>
           <label htmlFor="subject-exam" className="label">
-            Exam date <span className="font-normal normal-case tracking-normal text-[#85928a]">(optional)</span>
+            Exam date <span className="font-normal normal-case tracking-normal text-[#98a2b3]">(optional)</span>
           </label>
           <input
             id="subject-exam"
@@ -128,7 +128,7 @@ function SubjectForm({
         </div>
       </div>
       {error ? (
-        <p role="alert" className="mt-3 rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.78rem] text-[#7f2f24]">
+        <p role="alert" className="mt-3 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.78rem] text-[#b42318]">
           {error}
         </p>
       ) : null}
@@ -180,7 +180,7 @@ export function SubjectManager({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[0.8rem] text-[#6b7a71]">
+        <p className="text-[0.8rem] text-[#667085]">
           {subjects.length} subject{subjects.length === 1 ? "" : "s"} in this workspace
         </p>
         <button
@@ -199,7 +199,7 @@ export function SubjectManager({
       </div>
 
       {error ? (
-        <div role="alert" className="rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.8rem] text-[#7f2f24]">
+        <div role="alert" className="rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.8rem] text-[#b42318]">
           {error}
         </div>
       ) : null}
@@ -213,9 +213,9 @@ export function SubjectManager({
       ) : null}
 
       {subjects.length === 0 && !creating ? (
-        <div className="card border-dashed bg-[#fcfcf8] p-7">
+        <div className="card border-dashed bg-[#fcfcfd] p-7">
           <h2 className="text-[1rem]">Start with one subject</h2>
-          <p className="mt-1 max-w-lg text-[0.84rem] leading-relaxed text-[#68756d]">
+          <p className="mt-1 max-w-lg text-[0.84rem] leading-relaxed text-[#667085]">
             Add the subject you are preparing for. You will then upload a syllabus and notes, build a
             topic map and take a short diagnostic.
           </p>
@@ -251,16 +251,16 @@ export function SubjectManager({
                 <div className="min-w-0 max-w-xl">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-[1.05rem]">
-                      <Link href={`/subjects/${subject.id}/topics`} className="hover:text-[#176b50]">
+                      <Link href={`/subjects/${subject.id}/topics`} className="hover:text-[#7a5af8]">
                         {subject.name}
                       </Link>
                     </h2>
                     {subject.isDemo ? <span className="badge badge-demo">Seeded demo</span> : null}
                   </div>
                   {subject.description ? (
-                    <p className="mt-1.5 text-[0.82rem] leading-relaxed text-[#64746a]">{subject.description}</p>
+                    <p className="mt-1.5 text-[0.82rem] leading-relaxed text-[#475467]">{subject.description}</p>
                   ) : null}
-                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.72rem] text-[#6b7a71]">
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.72rem] text-[#667085]">
                     <span className="inline-flex items-center gap-1">
                       <CalendarDays size={12} aria-hidden />
                       {subject.examDate ? `Exam ${subject.examDate}` : "No exam date"}

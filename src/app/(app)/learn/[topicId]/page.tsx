@@ -101,7 +101,7 @@ export default async function LearnTopicPage({
         title={topic.name}
         description={
           topic.description ??
-          "Read the cited passages from your own material before you revise. The assistant below answers only from those passages."
+          "Read the cited passages from your own material before you revise. BUDDY answers only from those passages."
         }
         meta={
           <>
@@ -172,7 +172,7 @@ export default async function LearnTopicPage({
             />
             {gapTopic ? (
               <div className="mt-4 space-y-3">
-                <p className="text-[0.84rem] leading-relaxed text-[#4e6056]">
+                <p className="text-[0.84rem] leading-relaxed text-[#475467]">
                   {gapTopic.recommendedAction}
                 </p>
                 {gapTopic.missingConcepts.length > 0 ? (
@@ -188,7 +188,7 @@ export default async function LearnTopicPage({
                     </ul>
                   </div>
                 ) : (
-                  <p className="text-[0.78rem] text-[#7a877f]">
+                  <p className="text-[0.78rem] text-[#667085]">
                     No rubric concept has been recorded as missing for this topic.
                   </p>
                 )}
@@ -199,10 +199,10 @@ export default async function LearnTopicPage({
                       {gapTopic.recentEvidence.slice(0, 4).map((evidence) => (
                         <li
                           key={`${evidence.attemptId}-${evidence.questionId}`}
-                          className="rounded-lg border border-[#eef1ea] px-3 py-2 text-[0.76rem] text-[#4e6056]"
+                          className="rounded-lg border border-[#f2f4f7] px-3 py-2 text-[0.76rem] text-[#475467]"
                         >
                           <span className="line-clamp-2">{evidence.prompt}</span>
-                          <span className="mt-1 block font-mono text-[0.64rem] text-[#85928a]">
+                          <span className="mt-1 block font-mono text-[0.64rem] text-[#98a2b3]">
                             {evidence.score}/{evidence.maxMarks} marks · {evidence.correctness} ·{" "}
                             {evidence.difficulty}
                           </span>
@@ -213,7 +213,7 @@ export default async function LearnTopicPage({
                 ) : null}
               </div>
             ) : (
-              <p className="mt-3 text-[0.78rem] leading-relaxed text-[#7a877f]">
+              <p className="mt-3 text-[0.78rem] leading-relaxed text-[#667085]">
                 This topic has no evidence rows yet. Take a short diagnostic to establish a measured
                 baseline.
               </p>
@@ -224,18 +224,18 @@ export default async function LearnTopicPage({
             <SectionHeading
               title="Linked source passages"
               description="Each passage is a real chunk from an indexed document. Open the material to read the surrounding context."
-              action={<span className="text-[0.72rem] text-[#7a877f]">{sources.length} chunks</span>}
+              action={<span className="text-[0.72rem] text-[#667085]">{sources.length} chunks</span>}
             />
             <div id="sources-heading">
               {sources.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-[#cbd7cd] bg-[#fbfcf8] p-4 text-[0.82rem] leading-relaxed text-[#6b7a71]">
-                  <p className="flex items-center gap-1.5 font-medium text-[#3f5147]">
+                <div className="rounded-lg border border-dashed border-[#d0d5dd] bg-[#fcfcfd] p-4 text-[0.82rem] leading-relaxed text-[#667085]">
+                  <p className="flex items-center gap-1.5 font-medium text-[#344054]">
                     <FileText size={14} aria-hidden />
                     No indexed source is linked to this topic yet
                   </p>
                   <p className="mt-1.5">
                     Upload material that covers this topic and extract the topic map again. Until then
-                    the assistant will refuse to answer rather than invent content.
+                    BUDDY will refuse to answer rather than invent content.
                   </p>
                   <Link
                     href={`/materials/upload?subject=${subject.id}`}
@@ -247,7 +247,7 @@ export default async function LearnTopicPage({
               ) : (
                 <>
                   <CitationList citations={sources} title="Passages" />
-                  <div className="mt-3 border-t border-[#eef1ea] pt-3">
+                  <div className="mt-3 border-t border-[#f2f4f7] pt-3">
                     <SourceLinks citations={sources} />
                   </div>
                 </>
@@ -257,10 +257,10 @@ export default async function LearnTopicPage({
 
           <section className="card p-5" aria-labelledby="assistant-heading">
             <SectionHeading
-              title="Ask the source assistant"
+              title="Ask BUDDY"
               description="Retrieval runs against this topic's material. Answers without enough evidence are refused, not filled in."
               action={
-                <span className="inline-flex items-center gap-1 text-[0.7rem] text-[#7a877f]">
+                <span className="inline-flex items-center gap-1 text-[0.7rem] text-[#667085]">
                   <MessageSquareText size={12} aria-hidden />
                   Grounded only
                 </span>
@@ -281,10 +281,10 @@ export default async function LearnTopicPage({
           {prerequisites.length > 0 ? (
             <section className="card p-5">
               <div className="flex items-center gap-2">
-                <Layers size={15} className="text-[#176b50]" aria-hidden />
+                <Layers size={15} className="text-[#7a5af8]" aria-hidden />
                 <h2 className="text-[0.95rem]">Prerequisites</h2>
               </div>
-              <p className="mt-1 text-[0.72rem] leading-relaxed text-[#85928a]">
+              <p className="mt-1 text-[0.72rem] leading-relaxed text-[#98a2b3]">
                 Explicit syllabus dependencies. Revision order only; not a causal claim.
               </p>
               <ul className="mt-3 space-y-2.5">
@@ -293,7 +293,7 @@ export default async function LearnTopicPage({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <Link
                         href={`/learn/${prerequisite.prerequisiteId}`}
-                        className="text-[0.82rem] font-medium text-[#34483c] hover:text-[#176b50]"
+                        className="text-[0.82rem] font-medium text-[#344054] hover:text-[#7a5af8]"
                       >
                         {prerequisite.prerequisiteName}
                       </Link>
@@ -304,7 +304,7 @@ export default async function LearnTopicPage({
                       </Badge>
                     </div>
                     {prerequisite.evidence ? (
-                      <p className="mt-0.5 text-[0.7rem] leading-relaxed text-[#7a877f]">
+                      <p className="mt-0.5 text-[0.7rem] leading-relaxed text-[#667085]">
                         {prerequisite.evidence}
                       </p>
                     ) : null}
@@ -315,10 +315,10 @@ export default async function LearnTopicPage({
           ) : (
             <section className="card p-5">
               <div className="flex items-center gap-2">
-                <Layers size={15} className="text-[#176b50]" aria-hidden />
+                <Layers size={15} className="text-[#7a5af8]" aria-hidden />
                 <h2 className="text-[0.95rem]">Prerequisites</h2>
               </div>
-              <p className="mt-2 text-[0.77rem] leading-relaxed text-[#68756d]">
+              <p className="mt-2 text-[0.77rem] leading-relaxed text-[#667085]">
                 No dependency has been recorded for this topic. The planner will treat it as
                 independent rather than guessing an order.
               </p>
@@ -328,7 +328,7 @@ export default async function LearnTopicPage({
           {subTopics.length > 0 ? (
             <section className="card p-5">
               <div className="flex items-center gap-2">
-                <BookOpen size={15} className="text-[#176b50]" aria-hidden />
+                <BookOpen size={15} className="text-[#7a5af8]" aria-hidden />
                 <h2 className="text-[0.95rem]">Sub-topics</h2>
               </div>
               <ul className="mt-2 space-y-2">
@@ -336,7 +336,7 @@ export default async function LearnTopicPage({
                   <li key={subTopic.id} className="flex items-center justify-between gap-2">
                     <Link
                       href={`/learn/${subTopic.id}`}
-                      className="text-[0.81rem] text-[#34483c] hover:text-[#176b50]"
+                      className="text-[0.81rem] text-[#344054] hover:text-[#7a5af8]"
                     >
                       {subTopic.name}
                     </Link>
@@ -353,7 +353,7 @@ export default async function LearnTopicPage({
           {planTasks.length > 0 ? (
             <section className="card p-5">
               <div className="flex items-center gap-2">
-                <Clock3 size={15} className="text-[#176b50]" aria-hidden />
+                <Clock3 size={15} className="text-[#7a5af8]" aria-hidden />
                 <h2 className="text-[0.95rem]">In your revision plan</h2>
               </div>
               <ul className="mt-2 space-y-2.5">
@@ -363,11 +363,11 @@ export default async function LearnTopicPage({
                       <Badge tone={task.status === "completed" ? "strong" : "outline"}>
                         {task.status === "completed" ? "Completed" : "Pending"}
                       </Badge>
-                      <span className="font-mono text-[0.66rem] text-[#7a877f]">
+                      <span className="font-mono text-[0.66rem] text-[#667085]">
                         {task.durationMinutes} min
                       </span>
                     </div>
-                    <p className="mt-1 text-[0.78rem] leading-relaxed text-[#5d6d63]">
+                    <p className="mt-1 text-[0.78rem] leading-relaxed text-[#475467]">
                       {task.objective}
                     </p>
                   </li>
@@ -384,10 +384,10 @@ export default async function LearnTopicPage({
           ) : (
             <section className="card p-5">
               <div className="flex items-center gap-2">
-                <Target size={15} className="text-[#176b50]" aria-hidden />
+                <Target size={15} className="text-[#7a5af8]" aria-hidden />
                 <h2 className="text-[0.95rem]">Next step</h2>
               </div>
-              <p className="mt-2 text-[0.77rem] leading-relaxed text-[#68756d]">
+              <p className="mt-2 text-[0.77rem] leading-relaxed text-[#667085]">
                 Read the cited passages, then check yourself with a short diagnostic. A plan only
                 schedules topics that have topics and evidence to schedule.
               </p>

@@ -82,18 +82,18 @@ export function OnboardingWizard({
             <span
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border font-mono text-[0.68rem] font-semibold ${
                 step > value
-                  ? "border-[#176b50] bg-[#176b50] text-white"
+                  ? "border-[#7a5af8] bg-[#7a5af8] text-white"
                   : step === value
-                    ? "border-[#176b50] bg-[#e9f4ee] text-[#176b50]"
-                    : "border-[#d6ded4] bg-white text-[#8b978f]"
+                    ? "border-[#7a5af8] bg-[#ebe9fe] text-[#7a5af8]"
+                    : "border-[#d0d5dd] bg-white text-[#98a2b3]"
               }`}
             >
               {step > value ? <Check size={13} aria-hidden /> : value}
             </span>
-            <span className={`text-[0.72rem] ${step === value ? "font-semibold text-[#243a2e]" : "text-[#7b887f]"}`}>
+            <span className={`text-[0.72rem] ${step === value ? "font-semibold text-[#1d2939]" : "text-[#667085]"}`}>
               {value === 1 ? "Subject" : value === 2 ? "Study time" : "Confirm"}
             </span>
-            {value < 3 ? <span className="h-px flex-1 bg-[#e0e7dc]" aria-hidden /> : null}
+            {value < 3 ? <span className="h-px flex-1 bg-[#eaecf0]" aria-hidden /> : null}
           </li>
         ))}
       </ol>
@@ -102,7 +102,7 @@ export function OnboardingWizard({
         <div className="space-y-4">
           <div>
             <h2 className="text-[1.1rem]">Which subject are you preparing for?</h2>
-            <p className="mt-1 text-[0.82rem] text-[#67766d]">
+            <p className="mt-1 text-[0.82rem] text-[#475467]">
               Start with one. You can add more later from Subjects.
             </p>
           </div>
@@ -121,7 +121,7 @@ export function OnboardingWizard({
           </div>
           <div>
             <label htmlFor="onboarding-exam" className="label">
-              Exam date <span className="font-normal normal-case tracking-normal text-[#85928a]">(optional)</span>
+              Exam date <span className="font-normal normal-case tracking-normal text-[#98a2b3]">(optional)</span>
             </label>
             <input
               id="onboarding-exam"
@@ -139,7 +139,7 @@ export function OnboardingWizard({
         <div className="space-y-4">
           <div>
             <h2 className="text-[1.1rem]">How much time can you realistically give this?</h2>
-            <p className="mt-1 text-[0.82rem] text-[#67766d]">
+            <p className="mt-1 text-[0.82rem] text-[#475467]">
               The server enforces this budget when generating a revision plan.
             </p>
           </div>
@@ -185,27 +185,27 @@ export function OnboardingWizard({
         <div className="space-y-4">
           <div>
             <h2 className="text-[1.1rem]">Confirm your starting point</h2>
-            <p className="mt-1 text-[0.82rem] text-[#67766d]">
+            <p className="mt-1 text-[0.82rem] text-[#475467]">
               The subject is created immediately, then you will add material.
             </p>
           </div>
-          <dl className="divide-y divide-[#e7ece3] rounded-lg border border-[#e2e9dd] bg-[#fbfcf8] px-4">
+          <dl className="divide-y divide-[#eaecf0] rounded-lg border border-[#eaecf0] bg-[#fcfcfd] px-4">
             <div className="flex items-center justify-between gap-4 py-2.5 text-[0.82rem]">
-              <dt className="text-[#718078]">Subject</dt>
-              <dd className="font-medium text-[#2c4034]">{name}</dd>
+              <dt className="text-[#667085]">Subject</dt>
+              <dd className="font-medium text-[#344054]">{name}</dd>
             </div>
             <div className="flex items-center justify-between gap-4 py-2.5 text-[0.82rem]">
-              <dt className="text-[#718078]">Exam date</dt>
-              <dd className="text-[#2c4034]">{examDate || "Not set"}</dd>
+              <dt className="text-[#667085]">Exam date</dt>
+              <dd className="text-[#344054]">{examDate || "Not set"}</dd>
             </div>
             <div className="flex items-center justify-between gap-4 py-2.5 text-[0.82rem]">
-              <dt className="text-[#718078]">Daily budget</dt>
-              <dd className="text-[#2c4034]">
+              <dt className="text-[#667085]">Daily budget</dt>
+              <dd className="text-[#344054]">
                 {minutesPerDay} min · {sessionMinutes} min sessions
               </dd>
             </div>
           </dl>
-          <p className="text-[0.74rem] leading-relaxed text-[#718078]">
+          <p className="text-[0.74rem] leading-relaxed text-[#667085]">
             Next you will upload a syllabus and notes. Topic extraction only creates topics from
             headings present in that material; nothing is invented when a heading is absent.
           </p>
@@ -213,12 +213,12 @@ export function OnboardingWizard({
       ) : null}
 
       {error ? (
-        <div role="alert" className="mt-4 rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.8rem] text-[#7f2f24]">
+        <div role="alert" className="mt-4 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.8rem] text-[#b42318]">
           {error}
         </div>
       ) : null}
 
-      <div className="mt-6 flex items-center justify-between gap-3 border-t border-[#e7ece3] pt-4">
+      <div className="mt-6 flex items-center justify-between gap-3 border-t border-[#eaecf0] pt-4">
         <button
           type="button"
           className="btn btn-ghost"

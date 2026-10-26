@@ -98,14 +98,14 @@ export function Stat({
 }) {
   const body = (
     <>
-      <p className="text-[0.69rem] font-semibold uppercase tracking-[0.09em] text-[#65756d]">{label}</p>
+      <p className="text-[0.69rem] font-semibold uppercase tracking-[0.09em] text-[#475467]">{label}</p>
       <div className="stat-value mt-2">{value}</div>
-      {detail ? <div className="mt-1.5 text-xs text-[#68756d]">{detail}</div> : null}
+      {detail ? <div className="mt-1.5 text-xs text-[#667085]">{detail}</div> : null}
     </>
   );
   if (href) {
     return (
-      <Link href={href} className="card block p-4 transition hover:border-[#b9cdbf]">
+      <Link href={href} className="card block p-4 transition hover:border-[#bdb4fe]">
         {body}
       </Link>
     );
@@ -132,11 +132,11 @@ export function PageHeader({
         {eyebrow ? <p className="eyebrow mb-2">{eyebrow}</p> : null}
         <h1 className="text-[1.85rem] leading-tight sm:text-[2.2rem]">{title}</h1>
         {description ? (
-          <div className="mt-2 max-w-2xl text-[0.91rem] leading-relaxed text-[#5f6f66]">
+          <div className="mt-2 max-w-2xl text-[0.91rem] leading-relaxed text-[#475467]">
             {description}
           </div>
         ) : null}
-        {meta ? <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#6b7a71]">{meta}</div> : null}
+        {meta ? <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#667085]">{meta}</div> : null}
       </div>
       {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
@@ -159,7 +159,7 @@ export function SectionHeading({
     <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
       <div>
         <Heading className={level === 2 ? "text-[1.15rem]" : "text-[1rem]"}>{title}</Heading>
-        {description ? <p className="mt-1 text-[0.82rem] text-[#68756d]">{description}</p> : null}
+        {description ? <p className="mt-1 text-[0.82rem] text-[#667085]">{description}</p> : null}
       </div>
       {action}
     </div>
@@ -181,16 +181,16 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={`card flex flex-col items-start gap-3 border-dashed bg-[#fcfcf8] ${compact ? "p-4" : "p-7"}`}
+      className={`card flex flex-col items-start gap-3 border-dashed bg-[#fcfcfd] ${compact ? "p-4" : "p-7"}`}
     >
       {icon ? (
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#e8f1ea] text-[#176b50]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#ebe9fe] text-[#7a5af8]">
           {icon}
         </span>
       ) : null}
       <div>
         <h3 className="text-[1rem]">{title}</h3>
-        <div className="mt-1 max-w-xl text-[0.85rem] leading-relaxed text-[#68756d]">{description}</div>
+        <div className="mt-1 max-w-xl text-[0.85rem] leading-relaxed text-[#667085]">{description}</div>
       </div>
       {action}
     </div>
@@ -207,11 +207,11 @@ export function Callout({
   children: ReactNode;
 }) {
   const styles = {
-    info: "border-[#cfe0e9] bg-[#f1f7fa] text-[#2c5265]",
-    warning: "border-[#ecd8af] bg-[#fbf5e8] text-[#6f5117]",
-    danger: "border-[#ecc8c1] bg-[#fbf0ed] text-[#7f2f24]",
-    success: "border-[#bcded0] bg-[#f0f9f4] text-[#14533f]",
-    gold: "border-[#e8d6a8] bg-[#faf6ea] text-[#68531e]",
+    info: "border-[#b9e6fe] bg-[#f0f9ff] text-[#344054]",
+    warning: "border-[#fedf89] bg-[#fffaeb] text-[#b54708]",
+    danger: "border-[#fecdca] bg-[#fef3f2] text-[#b42318]",
+    success: "border-[#a6f4c5] bg-[#ecfdf3] text-[#027a48]",
+    gold: "border-[#fedf89] bg-[#fffaeb] text-[#b54708]",
   }[tone];
   return (
     <div className={`rounded-[10px] border px-4 py-3 text-[0.84rem] leading-relaxed ${styles}`}>
@@ -238,17 +238,17 @@ export function CitationList({
         {citations.map((citation) => (
           <li key={`${citation.chunkId}-${citation.documentId}`} className="citation">
             <div className="flex items-start gap-2">
-              <Quote size={13} className="mt-0.5 shrink-0 text-[#49806b]" aria-hidden />
+              <Quote size={13} className="mt-0.5 shrink-0 text-[#7a5af8]" aria-hidden />
               <div className="min-w-0">
-                <p className="text-[0.76rem] font-semibold text-[#275544]">
+                <p className="text-[0.76rem] font-semibold text-[#5925dc]">
                   {citation.documentTitle}
-                  <span className="font-normal text-[#6a7a71]">
+                  <span className="font-normal text-[#667085]">
                     {citation.pageNumber === null ? " · page not available" : ` · page ${citation.pageNumber}`}
                     {citation.sectionHeading ? ` · ${citation.sectionHeading}` : ""}
                   </span>
                 </p>
                 {!compact ? (
-                  <p className="mt-1 text-[0.8rem] leading-relaxed text-[#4e6056]">{citation.excerpt}</p>
+                  <p className="mt-1 text-[0.8rem] leading-relaxed text-[#475467]">{citation.excerpt}</p>
                 ) : null}
               </div>
             </div>
@@ -275,7 +275,7 @@ export function SourceLinks({
         <Link
           key={citation.documentId}
           href={`/materials/${citation.documentId}`}
-          className="inline-flex items-center gap-1 text-[0.76rem] font-medium text-[#176b50] hover:underline"
+          className="inline-flex items-center gap-1 text-[0.76rem] font-medium text-[#7a5af8] hover:underline"
         >
           {citation.documentTitle}
           <ArrowUpRight size={12} aria-hidden />
@@ -292,16 +292,16 @@ export function Breadcrumbs({
 }) {
   return (
     <nav aria-label="Breadcrumb" className="mb-4">
-      <ol className="flex flex-wrap items-center gap-1.5 text-[0.75rem] text-[#74837a]">
+      <ol className="flex flex-wrap items-center gap-1.5 text-[0.75rem] text-[#667085]">
         {items.map((item, index) => (
           <li key={`${item.label}-${index}`} className="flex items-center gap-1.5">
             {index > 0 ? <span aria-hidden>/</span> : null}
             {item.href ? (
-              <Link href={item.href} className="hover:text-[#176b50] hover:underline">
+              <Link href={item.href} className="hover:text-[#7a5af8] hover:underline">
                 {item.label}
               </Link>
             ) : (
-              <span aria-current="page" className="text-[#46564d]">
+              <span aria-current="page" className="text-[#475467]">
                 {item.label}
               </span>
             )}
@@ -314,12 +314,12 @@ export function Breadcrumbs({
 
 export function DemoBanner() {
   return (
-    <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#e8d6a8] bg-[#faf4e2] px-4 py-2.5 text-[0.78rem] text-[#6b531b]">
+    <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#fedf89] bg-[#fffaeb] px-4 py-2.5 text-[0.78rem] text-[#b54708]">
       <p>
         <strong className="font-semibold">DEMO WORKSPACE</strong> — You are exploring seeded sample learning data.
         Sample results are not a real student&apos;s outcomes.
       </p>
-      <Link href="/demo-access" className="font-semibold underline decoration-[#c8ac6a] underline-offset-2">
+      <Link href="/demo-access" className="font-semibold underline decoration-[#f79009] underline-offset-2">
         About this demo
       </Link>
     </div>
@@ -328,11 +328,11 @@ export function DemoBanner() {
 
 export function InlineMeterLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-3 text-[0.7rem] text-[#6a7970]">
-      <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#b44b3b]" /> Weak</span>
-      <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#c08a2c]" /> Developing</span>
-      <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#2fa77a]" /> Strong</span>
-      <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#cbd5cd]" /> Not assessed</span>
+    <div className="flex flex-wrap items-center gap-3 text-[0.7rem] text-[#667085]">
+      <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#d92d20]" /> Weak</span>
+      <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#dc6803]" /> Developing</span>
+      <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#12b76a]" /> Strong</span>
+      <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#d0d5dd]" /> Not assessed</span>
     </div>
   );
 }
@@ -354,7 +354,7 @@ export function ScoreDisplay({
       <span className={`font-display font-semibold tracking-tight ${sizeClass}`}>
         {score === null ? "—" : `${Math.round(score * 10) / 10}`}
       </span>
-      <span className="text-xs text-[#68756d]">/ {total} marks{percentage === null ? "" : ` · ${percentage}%`}</span>
+      <span className="text-xs text-[#667085]">/ {total} marks{percentage === null ? "" : ` · ${percentage}%`}</span>
     </span>
   );
 }
@@ -373,8 +373,8 @@ export function BarChart({
         {data.map((item) => (
           <div key={item.label}>
             <div className="mb-1 flex items-baseline justify-between gap-3 text-[0.78rem]">
-              <span className="truncate text-[#3f5147]">{item.label}</span>
-              <span className="shrink-0 font-mono text-[0.72rem] text-[#68756d]">
+              <span className="truncate text-[#344054]">{item.label}</span>
+              <span className="shrink-0 font-mono text-[0.72rem] text-[#667085]">
                 {item.value === null ? "not assessed" : `${item.value}%`}
                 {item.caption ? ` · ${item.caption}` : ""}
               </span>
@@ -414,12 +414,12 @@ export function Sparkline({
       <polyline
         points={coords.join(" ")}
         fill="none"
-        stroke="#2fa77a"
+        stroke="#7a5af8"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <line x1="0" y1={height - 1} x2={width} y2={height - 1} stroke="#e1e7e1" strokeWidth="1" />
+      <line x1="0" y1={height - 1} x2={width} y2={height - 1} stroke="#eaecf0" strokeWidth="1" />
     </svg>
   );
 }

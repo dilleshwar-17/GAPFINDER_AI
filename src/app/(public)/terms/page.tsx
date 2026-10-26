@@ -7,8 +7,8 @@ export default function TermsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
       <p className="eyebrow">Terms of use</p>
-      <h1 className="display-lg mt-3 text-[#12382d]">An educational tool with explicit limits.</h1>
-      <p className="mt-4 text-[0.92rem] leading-relaxed text-[#5a6a60]">
+      <h1 className="display-lg mt-3 text-[#171f2e]">An educational tool with explicit limits.</h1>
+      <p className="mt-4 text-[0.92rem] leading-relaxed text-[#475467]">
         These terms describe the self-hosted build in this repository. They are not a substitute for a
         deployment-specific agreement.
       </p>
@@ -65,8 +65,8 @@ export default function TermsPage() {
         </p>
       </div>
 
-      <p className="mt-6 text-[0.8rem] text-[#6d7b72]">
-        See also the <Link href="/privacy" className="underline hover:text-[#176b50]">privacy notice</Link>.
+      <p className="mt-6 text-[0.8rem] text-[#667085]">
+        See also the <Link href="/privacy" className="underline hover:text-[#7a5af8]">privacy notice</Link>.
       </p>
     </div>
   );

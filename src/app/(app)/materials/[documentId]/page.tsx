@@ -30,7 +30,7 @@ export default async function DocumentDetailPage({
     <>
       <Link
         href={`/materials?subject=${document.subjectId}`}
-        className="mb-4 inline-flex items-center gap-1.5 text-[0.78rem] text-[#65756b] hover:text-[#176b50]"
+        className="mb-4 inline-flex items-center gap-1.5 text-[0.78rem] text-[#475467] hover:text-[#7a5af8]"
       >
         <ArrowLeft size={13} aria-hidden />
         Materials in {document.subjectName}
@@ -41,7 +41,7 @@ export default async function DocumentDetailPage({
         title={document.filename}
         meta={
           <>
-            <Link href={`/subjects/${document.subjectId}/topics`} className="hover:text-[#176b50] hover:underline">
+            <Link href={`/subjects/${document.subjectId}/topics`} className="hover:text-[#7a5af8] hover:underline">
               {document.subjectName}
             </Link>
             <span aria-hidden>·</span>
@@ -70,13 +70,13 @@ export default async function DocumentDetailPage({
           ["Questions citing", String(document.citationCount)],
         ].map(([label, value]) => (
           <div key={label} className="card p-3.5">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-[#7a877f]">{label}</p>
-            <p className="mt-1 text-[1rem] font-semibold text-[#2c4034]">{value}</p>
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-[#667085]">{label}</p>
+            <p className="mt-1 text-[1rem] font-semibold text-[#344054]">{value}</p>
           </div>
         ))}
       </div>
 
-      <p className="mb-5 text-[0.74rem] text-[#74837a]">
+      <p className="mb-5 text-[0.74rem] text-[#667085]">
         Added {formatDate(document.createdAt)}
         {document.processedAt ? ` · last processed ${formatDate(document.processedAt)}` : ""}
       </p>
@@ -99,7 +99,7 @@ export default async function DocumentDetailPage({
       ) : null}
 
       {chunks.length === 0 ? (
-        <div className="card border-dashed bg-[#fcfcf8] p-6 text-[0.84rem] text-[#68756d]">
+        <div className="card border-dashed bg-[#fcfcfd] p-6 text-[0.84rem] text-[#667085]">
           No chunks are available.{" "}
           {document.status === "failed"
             ? "Retry processing or replace the file."
@@ -111,7 +111,7 @@ export default async function DocumentDetailPage({
             <h2 id="chunks-heading" className="text-[1.05rem]">
               Indexed chunks
             </h2>
-            <p className="text-[0.72rem] text-[#74837a]">
+            <p className="text-[0.72rem] text-[#667085]">
               Showing {chunks.length} of {document.chunkCount} · page and heading are source metadata
             </p>
           </div>
@@ -119,7 +119,7 @@ export default async function DocumentDetailPage({
             {chunks.map((chunk) => (
               <article key={chunk.id} className="card p-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2 text-[0.7rem] text-[#6b7a71]">
+                  <div className="flex flex-wrap items-center gap-2 text-[0.7rem] text-[#667085]">
                     <span className="inline-flex items-center gap-1 font-mono text-[0.66rem]">
                       <FileText size={12} aria-hidden />
                       chunk {chunk.chunkIndex + 1}
@@ -129,7 +129,7 @@ export default async function DocumentDetailPage({
                     {chunk.sectionHeading ? (
                       <>
                         <span aria-hidden>·</span>
-                        <span className="font-medium text-[#3f5147]">{chunk.sectionHeading}</span>
+                        <span className="font-medium text-[#344054]">{chunk.sectionHeading}</span>
                       </>
                     ) : null}
                     <span aria-hidden>·</span>
@@ -143,9 +143,9 @@ export default async function DocumentDetailPage({
                     <span className="badge badge-neutral">Not yet cited</span>
                   )}
                 </div>
-                <div className="flex items-start gap-2 rounded-lg bg-[#f7faf5] px-3 py-2.5">
-                  <Quote size={13} className="mt-0.5 shrink-0 text-[#49806b]" aria-hidden />
-                  <p className="text-[0.8rem] leading-relaxed text-[#46564d]">{chunk.excerpt}</p>
+                <div className="flex items-start gap-2 rounded-lg bg-[#f9fafb] px-3 py-2.5">
+                  <Quote size={13} className="mt-0.5 shrink-0 text-[#7a5af8]" aria-hidden />
+                  <p className="text-[0.8rem] leading-relaxed text-[#475467]">{chunk.excerpt}</p>
                 </div>
               </article>
             ))}

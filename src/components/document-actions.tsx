@@ -80,7 +80,7 @@ export function DocumentActions({
         </button>
       </div>
       {error ? (
-        <p role="alert" className="mt-2 max-w-md text-[0.76rem] leading-relaxed text-[#8b2e22]">
+        <p role="alert" className="mt-2 max-w-md text-[0.76rem] leading-relaxed text-[#b42318]">
           {error}
         </p>
       ) : null}

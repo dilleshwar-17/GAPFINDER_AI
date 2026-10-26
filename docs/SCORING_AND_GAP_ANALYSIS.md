@@ -149,9 +149,12 @@ topic touched by that attempt and appends a `mastery_snapshots` row. Snapshots
 are append-only:
 
 - previous assessments are never rewritten,
-- a duplicate snapshot for the same `(owner, topic, attempt)` is skipped,
+- a duplicate snapshot for the same `(owner, topic, attempt)` is skipped in
+  application code (there is no unique constraint on that tuple),
 - topic trends and mastery changes are derived from the two most recent
   snapshots.
+
+Demo practice submissions never reach this function, so they add no snapshots.
 
 A change is only shown when both snapshots have a numeric mastery; otherwise the
 change is `null`, not zero.
@@ -281,12 +284,15 @@ prerequisite boost. The plan page shows the same breakdown per topic.
 2. computes the new plan,
 3. inserts the new plan as `version = previous.version + 1`, `status = active`,
 4. marks the previous plan `superseded`,
-5. marks previous completed tasks as carried history (the old plan row and its
-   completed tasks remain queryable),
-6. writes new pending tasks.
+5. leaves the previous plan's completed tasks in place as history (nothing is
+   copied into the new plan; new tasks are written as `pending` and
+   `carried_from_task_id` is left `NULL`),
+6. writes new pending tasks, capped at 12.
 
 Completed task history is therefore preserved in the superseded plan and shown
-in the plan history section. A new plan does not silently erase what was done.
+in the plan history section. There is no cross-version completion transfer: a
+completed task does not carry its completion into the new version. A new plan
+does not silently erase what was done.
 
 ### 6.5 Adaptation after an assessment
 

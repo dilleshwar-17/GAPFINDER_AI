@@ -7,8 +7,8 @@ export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
       <p className="eyebrow">Privacy notice</p>
-      <h1 className="display-lg mt-3 text-[#12382d]">What this build stores, and where it goes.</h1>
-      <p className="mt-4 text-[0.92rem] leading-relaxed text-[#5a6a60]">
+      <h1 className="display-lg mt-3 text-[#171f2e]">What this build stores, and where it goes.</h1>
+      <p className="mt-4 text-[0.92rem] leading-relaxed text-[#475467]">
         This notice describes the self-hosted GapFinder AI build in this repository. It is an operational
         description, not legal advice. A production deployment must add its own retention policy,
         controller details and lawful-basis analysis.
@@ -25,7 +25,11 @@ export default function PrivacyPage() {
             be retried.
           </li>
           <li>Diagnostic questions, your answers, marks, feedback and mastery snapshots.</li>
-          <li>Assistant questions and the responses generated for them. These are not stored in this build.</li>
+          <li>BUDDY (the study assistant) questions and the responses generated for them. These are not stored in this build.</li>
+          <li>
+            Your light/dark theme preference. It is stored only in this browser&apos;s local storage;
+            it is never sent to the server.
+          </li>
         </ul>
 
         <h2>Where data is stored</h2>
@@ -48,6 +52,17 @@ export default function PrivacyPage() {
             question generation, evaluation and explanations use deterministic source-grounded fallbacks.
             No document text leaves the server in that mode.
           </li>
+          <li>
+            BUDDY&apos;s <strong>Speak</strong> button uses your browser&apos;s speech-recognition API.
+            Depending on the browser, audio may be processed by that browser vendor&apos;s speech
+            service (for example, Chrome&apos;s online recognition). GapFinder does not receive or store
+            audio; only the transcription you choose to send as a question reaches this server. The
+            browser asks for microphone permission the first time you use it.
+          </li>
+          <li>
+            BUDDY&apos;s <strong>Read aloud</strong> option uses the browser&apos;s built-in speech
+            synthesis and never sends the answer text to GapFinder for audio generation.
+          </li>
           <li>No analytics, advertising or third-party tracking scripts are included.</li>
         </ul>
 
@@ -69,7 +84,7 @@ export default function PrivacyPage() {
 
         <h2>The shared demo</h2>
         <p>
-          The demo is a single shared account. Anything you type into practice answers, assistant
+          The demo is a single shared account. Anything you type into practice answers, BUDDY
           questions or profile-adjacent fields may be visible to another reviewer using the same
           workspace. Do not enter personal, sensitive or confidential information into the demo. Shared
           reference data is protected by server-side write guards, but practice submissions are shared.
@@ -89,9 +104,9 @@ export default function PrivacyPage() {
         </p>
       </div>
 
-      <p className="mt-6 text-[0.8rem] text-[#6d7b72]">
-        See also the <Link href="/terms" className="underline hover:text-[#176b50]">terms of use</Link> and{" "}
-        <Link href="/demo-access" className="underline hover:text-[#176b50]">demo access notes</Link>.
+      <p className="mt-6 text-[0.8rem] text-[#667085]">
+        See also the <Link href="/terms" className="underline hover:text-[#7a5af8]">terms of use</Link> and{" "}
+        <Link href="/demo-access" className="underline hover:text-[#7a5af8]">demo access notes</Link>.
       </p>
     </div>
   );

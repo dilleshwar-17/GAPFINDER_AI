@@ -23,12 +23,12 @@ export default function ErrorBoundary({
     >
       <p className="eyebrow mb-2">Something failed</p>
       <h1 className="text-[1.9rem] leading-tight">This page could not finish loading.</h1>
-      <p className="mt-3 text-[0.91rem] leading-relaxed text-[#5f6f66]">
+      <p className="mt-3 text-[0.91rem] leading-relaxed text-[#475467]">
         The server rejected the request or hit an unexpected error. No partial or invented result is
         shown. Retrying re-runs the same server-side checks.
       </p>
 
-      <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-[#ecd8af] bg-[#fbf5e8] px-4 py-3 text-[0.8rem] leading-relaxed text-[#6f5117]">
+      <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-[#fedf89] bg-[#fffaeb] px-4 py-3 text-[0.8rem] leading-relaxed text-[#b54708]">
         <AlertTriangle size={15} className="mt-0.5 shrink-0" aria-hidden />
         <div>
           <p className="font-semibold">What you can try</p>
@@ -38,7 +38,7 @@ export default function ErrorBoundary({
             <li>If you were submitting a diagnostic, your saved draft should still be available.</li>
           </ul>
           {error.digest ? (
-            <p className="mt-1.5 font-mono text-[0.66rem] text-[#8a6d2c]">Digest: {error.digest}</p>
+            <p className="mt-1.5 font-mono text-[0.66rem] text-[#b54708]">Digest: {error.digest}</p>
           ) : null}
         </div>
       </div>

@@ -3,7 +3,7 @@ flowchart TD
   AUTHZ --> QUERY["Build topic query<br/>name + description + intent"]
   QUERY --> EMBQ["Embed query<br/>Gemini or local hash"]
   EMBQ --> SCAN["Authorized candidate scan<br/>owner + subject + ready + current model<br/>LIMIT 5000"]
-  SCAN --> RANK["Hybrid score<br/>0.75 cosine + 0.25 lexical"]
+  SCAN --> RANK["Hybrid score<br/>0.75 cosine + 0.25 lexical (unigrams)"]
   RANK --> THRESH{"Above threshold<br/>and enough total evidence?"}
   THRESH -- No --> ABSTAIN["Abstain / skip topic<br/>explain what is missing<br/>no model call"]
   THRESH -- Yes --> EVIDENCE["Evidence set with<br/>document, page, heading, excerpt"]

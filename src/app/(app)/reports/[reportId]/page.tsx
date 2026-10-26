@@ -67,18 +67,18 @@ function confidenceBadge(confidence: GapTopic["confidence"]) {
 
 function TopicCard({ topic }: { topic: GapTopic }) {
   return (
-    <details className="group border-b border-[#eef1ea] last:border-0">
+    <details className="group border-b border-[#f2f4f7] last:border-0">
       <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3 py-3.5 marker:hidden">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[0.9rem] font-medium text-[#2c4034]">{topic.name}</span>
+            <span className="text-[0.9rem] font-medium text-[#344054]">{topic.name}</span>
             <MasteryBadge classification={topic.classification} sufficient={topic.sufficient} />
             {confidenceBadge(topic.confidence)}
             {topic.parentName ? (
-              <span className="text-[0.68rem] text-[#85928a]">under {topic.parentName}</span>
+              <span className="text-[0.68rem] text-[#98a2b3]">under {topic.parentName}</span>
             ) : null}
           </div>
-          <p className="mt-1 text-[0.73rem] text-[#7a877f]">
+          <p className="mt-1 text-[0.73rem] text-[#667085]">
             {topic.sufficient && topic.mastery !== null ? (
               <>
                 {Math.round(topic.mastery)}% weighted mastery ·{" "}
@@ -103,19 +103,19 @@ function TopicCard({ topic }: { topic: GapTopic }) {
             />
           </div>
         </div>
-        <span className="text-[0.68rem] font-medium text-[#176b50] group-open:hidden">Details</span>
-        <span className="hidden text-[0.68rem] font-medium text-[#176b50] group-open:inline">Close</span>
+        <span className="text-[0.68rem] font-medium text-[#7a5af8] group-open:hidden">Details</span>
+        <span className="hidden text-[0.68rem] font-medium text-[#7a5af8] group-open:inline">Close</span>
       </summary>
 
       <div className="pb-4 pl-0 sm:pl-1">
-        <p className="text-[0.8rem] leading-relaxed text-[#4e6056]">{topic.recommendedAction}</p>
+        <p className="text-[0.8rem] leading-relaxed text-[#475467]">{topic.recommendedAction}</p>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-[#e8ede4] bg-[#fbfcf8] px-3 py-2.5">
-            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-[#7a877f]">
+          <div className="rounded-lg border border-[#eaecf0] bg-[#fcfcfd] px-3 py-2.5">
+            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-[#667085]">
               Evidence surface
             </p>
-            <ul className="mt-1 space-y-0.5 text-[0.73rem] text-[#526258]">
+            <ul className="mt-1 space-y-0.5 text-[0.73rem] text-[#475467]">
               <li>{topic.questionCount} question{topic.questionCount === 1 ? "" : "s"} in the bank</li>
               <li>{topic.sourceCount} linked source chunk{topic.sourceCount === 1 ? "" : "s"}</li>
               <li>
@@ -126,12 +126,12 @@ function TopicCard({ topic }: { topic: GapTopic }) {
             </ul>
           </div>
 
-          <div className="rounded-lg border border-[#e8ede4] bg-[#fbfcf8] px-3 py-2.5">
-            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-[#7a877f]">
+          <div className="rounded-lg border border-[#eaecf0] bg-[#fcfcfd] px-3 py-2.5">
+            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-[#667085]">
               Missing concepts
             </p>
             {topic.missingConcepts.length === 0 ? (
-              <p className="mt-1 text-[0.73rem] text-[#68756d]">
+              <p className="mt-1 text-[0.73rem] text-[#667085]">
                 No rubric concept has been recorded as missing.
               </p>
             ) : (
@@ -148,16 +148,16 @@ function TopicCard({ topic }: { topic: GapTopic }) {
         </div>
 
         {topic.prerequisiteHypotheses.length > 0 ? (
-          <div className="mt-3 rounded-lg border border-[#ecd8af] bg-[#fbf5e8] px-3 py-2.5">
-            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-[#7a5c1c]">
+          <div className="mt-3 rounded-lg border border-[#fedf89] bg-[#fffaeb] px-3 py-2.5">
+            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-[#b54708]">
               Prerequisite hypotheses
             </p>
-            <ul className="mt-1 space-y-1 text-[0.74rem] leading-relaxed text-[#6f5117]">
+            <ul className="mt-1 space-y-1 text-[0.74rem] leading-relaxed text-[#b54708]">
               {topic.prerequisiteHypotheses.map((hypothesis) => (
                 <li key={hypothesis.prerequisiteName}>{hypothesis.message}</li>
               ))}
             </ul>
-            <p className="mt-1 text-[0.66rem] text-[#8a6d2c]">
+            <p className="mt-1 text-[0.66rem] text-[#b54708]">
               Explicit syllabus dependencies only. These are hypotheses for revision order, not causal
               claims.
             </p>
@@ -171,12 +171,12 @@ function TopicCard({ topic }: { topic: GapTopic }) {
               {topic.recentEvidence.map((evidence) => (
                 <li
                   key={`${evidence.attemptId}-${evidence.questionId}`}
-                  className="rounded-lg border border-[#eef1ea] px-3 py-2"
+                  className="rounded-lg border border-[#f2f4f7] px-3 py-2"
                 >
-                  <p className="line-clamp-2 text-[0.76rem] leading-relaxed text-[#46564d]">
+                  <p className="line-clamp-2 text-[0.76rem] leading-relaxed text-[#475467]">
                     {evidence.prompt}
                   </p>
-                  <p className="mt-1 text-[0.67rem] text-[#7a877f]">
+                  <p className="mt-1 text-[0.67rem] text-[#667085]">
                     <ScoreDisplay score={evidence.score} total={evidence.maxMarks} size="sm" />
                     <span className="ml-2">
                       {evidence.correctness} · {evidence.difficulty} ·{" "}
@@ -184,7 +184,7 @@ function TopicCard({ topic }: { topic: GapTopic }) {
                     </span>
                   </p>
                   {evidence.citation ? (
-                    <p className="mt-1 text-[0.67rem] text-[#49806b]">
+                    <p className="mt-1 text-[0.67rem] text-[#7a5af8]">
                       Source: {evidence.citation.documentTitle}
                       {evidence.citation.pageNumber === null
                         ? ""
@@ -318,7 +318,7 @@ export default async function ReportDetailPage({
           })}
 
           {report!.topics.length === 0 ? (
-            <div className="card border-dashed bg-[#fcfcf8] p-6 text-[0.85rem] text-[#68756d]">
+            <div className="card border-dashed bg-[#fcfcfd] p-6 text-[0.85rem] text-[#667085]">
               No leaf topics exist yet. Build a topic map from a syllabus, then submit a diagnostic.
             </div>
           ) : null}
@@ -327,45 +327,45 @@ export default async function ReportDetailPage({
         <div className="space-y-4">
           <section className="card p-5">
             <div className="flex items-center gap-2">
-              <Gauge size={16} className="text-[#176b50]" aria-hidden />
+              <Gauge size={16} className="text-[#7a5af8]" aria-hidden />
               <h2 className="text-[0.95rem]">Method</h2>
             </div>
             <dl className="mt-3 space-y-2 text-[0.76rem]">
               <div className="flex justify-between gap-3">
-                <dt className="text-[#718078]">Version</dt>
-                <dd className="font-mono text-[0.69rem] text-[#3f5147]">{report!.method.version}</dd>
+                <dt className="text-[#667085]">Version</dt>
+                <dd className="font-mono text-[0.69rem] text-[#344054]">{report!.method.version}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-[#718078]">Weak band</dt>
-                <dd className="text-[#3f5147]">0–{report!.method.bands.weakMax}%</dd>
+                <dt className="text-[#667085]">Weak band</dt>
+                <dd className="text-[#344054]">0–{report!.method.bands.weakMax}%</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-[#718078]">Developing band</dt>
-                <dd className="text-[#3f5147]">
+                <dt className="text-[#667085]">Developing band</dt>
+                <dd className="text-[#344054]">
                   {report!.method.bands.weakMax + 1}–{report!.method.bands.developingMax}%
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-[#718078]">Strong band</dt>
-                <dd className="text-[#3f5147]">{report!.method.bands.developingMax + 1}–100%</dd>
+                <dt className="text-[#667085]">Strong band</dt>
+                <dd className="text-[#344054]">{report!.method.bands.developingMax + 1}–100%</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-[#718078]">Minimum answers</dt>
-                <dd className="text-[#3f5147]">{report!.method.evidenceRules.minAnswers}</dd>
+                <dt className="text-[#667085]">Minimum answers</dt>
+                <dd className="text-[#344054]">{report!.method.evidenceRules.minAnswers}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-[#718078]">Minimum marks</dt>
-                <dd className="text-[#3f5147]">{report!.method.evidenceRules.minMarks}</dd>
+                <dt className="text-[#667085]">Minimum marks</dt>
+                <dd className="text-[#344054]">{report!.method.evidenceRules.minMarks}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-[#718078]">Distinct questions</dt>
-                <dd className="text-[#3f5147]">{report!.method.evidenceRules.minDistinctQuestions}</dd>
+                <dt className="text-[#667085]">Distinct questions</dt>
+                <dd className="text-[#344054]">{report!.method.evidenceRules.minDistinctQuestions}</dd>
               </div>
             </dl>
-            <div className="mt-3 border-t border-[#eef1ea] pt-3">
+            <div className="mt-3 border-t border-[#f2f4f7] pt-3">
               <InlineMeterLegend />
             </div>
-            <p className="mt-2 text-[0.68rem] leading-relaxed text-[#85928a]">
+            <p className="mt-2 text-[0.68rem] leading-relaxed text-[#98a2b3]">
               Bands are provisional heuristics and have not been validated against an external
               educational standard.
             </p>
@@ -373,35 +373,35 @@ export default async function ReportDetailPage({
 
           <section className="card p-5">
             <div className="flex items-center gap-2">
-              <Layers size={16} className="text-[#176b50]" aria-hidden />
+              <Layers size={16} className="text-[#7a5af8]" aria-hidden />
               <h2 className="text-[0.95rem]">Evidence confidence</h2>
             </div>
-            <ul className="mt-2 space-y-2 text-[0.76rem] leading-relaxed text-[#64746a]">
+            <ul className="mt-2 space-y-2 text-[0.76rem] leading-relaxed text-[#475467]">
               <li>
-                <strong className="text-[#3f5147]">Limited:</strong> the minimum is met, but there are
+                <strong className="text-[#344054]">Limited:</strong> the minimum is met, but there are
                 fewer than four answers or eight marks.
               </li>
               <li>
-                <strong className="text-[#3f5147]">Moderate:</strong> at least four answers and eight
+                <strong className="text-[#344054]">Moderate:</strong> at least four answers and eight
                 marks. Still a sample, not a full syllabus audit.
               </li>
               <li>
-                <strong className="text-[#3f5147]">Insufficient:</strong> no band is applied. This is not
+                <strong className="text-[#344054]">Insufficient:</strong> no band is applied. This is not
                 a zero.
               </li>
             </ul>
           </section>
 
           <section className="card-forest p-5">
-            <Info size={17} className="text-[#8fc9ad]" aria-hidden />
-            <h2 className="mt-2 text-[0.98rem] text-[#fbfbf4]">Check the source</h2>
-            <p className="mt-1.5 text-[0.76rem] leading-relaxed text-[#bcd0c2]">
+            <Info size={17} className="text-[#9b8afb]" aria-hidden />
+            <h2 className="mt-2 text-[0.98rem] text-[#ffffff]">Check the source</h2>
+            <p className="mt-1.5 text-[0.76rem] leading-relaxed text-[#bdb4fe]">
               A mastery figure is only as good as the evidence behind it. Open the indexed material and
               read the cited passage before you plan a revision block.
             </p>
             <Link
               href={`/materials?subject=${subject.id}`}
-              className="btn btn-ghost btn-sm mt-3 text-[#c8ddcf] hover:bg-white/10"
+              className="btn btn-ghost btn-sm mt-3 text-[#a6f4c5] hover:bg-white/10"
             >
               Review sources
               <ArrowUpRight size={13} aria-hidden />

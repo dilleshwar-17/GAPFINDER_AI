@@ -43,22 +43,22 @@ function TopicRow({ topic, isDemo }: { topic: TopicMapItem; isDemo: boolean }) {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={`/learn/${topic.id}`}
-            className="text-[0.9rem] font-medium text-[#2c4034] hover:text-[#176b50]"
+            className="text-[0.9rem] font-medium text-[#344054] hover:text-[#7a5af8]"
           >
             {topic.name}
           </Link>
           <MasteryBadge classification={topic.classification} sufficient={topic.sufficient} />
           {topic.importance >= 0.8 ? <Badge tone="outline">High importance</Badge> : null}
           {topic.childCount > 0 ? (
-            <span className="text-[0.66rem] text-[#85928a]">{topic.childCount} sub-topics</span>
+            <span className="text-[0.66rem] text-[#98a2b3]">{topic.childCount} sub-topics</span>
           ) : null}
         </div>
         {topic.description ? (
-          <p className="mt-1 max-w-2xl text-[0.76rem] leading-relaxed text-[#6b7a71]">
+          <p className="mt-1 max-w-2xl text-[0.76rem] leading-relaxed text-[#667085]">
             {topic.description}
           </p>
         ) : null}
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.68rem] text-[#7a877f]">
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.68rem] text-[#667085]">
           <span>{topic.questionCount} question{topic.questionCount === 1 ? "" : "s"} in bank</span>
           <span>{topic.sourceCount} linked source{topic.sourceCount === 1 ? "" : "s"}</span>
           {topic.evidenceAnswers > 0 ? (
@@ -72,7 +72,7 @@ function TopicRow({ topic, isDemo }: { topic: TopicMapItem; isDemo: boolean }) {
           {topic.sourceDocumentId ? (
             <Link
               href={`/materials/${topic.sourceDocumentId}`}
-              className="font-medium text-[#176b50] hover:underline"
+              className="font-medium text-[#7a5af8] hover:underline"
             >
               Source
               {topic.sourcePage === null ? "" : ` · page ${topic.sourcePage}`}
@@ -173,7 +173,7 @@ export function TopicMap({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[0.78rem] text-[#6b7a71]">
+        <p className="text-[0.78rem] text-[#667085]">
           {topics.length} topic{topics.length === 1 ? "" : "s"} in this subject
         </p>
         <div className="flex flex-wrap gap-2">
@@ -208,25 +208,25 @@ export function TopicMap({
       </div>
 
       {isDemo ? (
-        <div className="rounded-lg border border-[#e8d6a8] bg-[#faf6ea] px-3 py-2 text-[0.78rem] leading-relaxed text-[#6d5418]">
+        <div className="rounded-lg border border-[#fedf89] bg-[#fffaeb] px-3 py-2 text-[0.78rem] leading-relaxed text-[#b54708]">
           The seeded topic map is shared and read-only. Create a personal account to extract or add
           topics.
         </div>
       ) : null}
 
       {error ? (
-        <div role="alert" className="rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.8rem] text-[#7f2f24]">
+        <div role="alert" className="rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.8rem] text-[#b42318]">
           {error}
         </div>
       ) : null}
       {notice ? (
-        <div role="status" className="rounded-lg border border-[#bcded0] bg-[#f0f9f4] px-3 py-2 text-[0.8rem] text-[#14533f]">
+        <div role="status" className="rounded-lg border border-[#a6f4c5] bg-[#ecfdf3] px-3 py-2 text-[0.8rem] text-[#027a48]">
           {notice}
         </div>
       ) : null}
 
       {showAdd ? (
-        <form onSubmit={onAdd} className="card border-[#cddbcf] p-4">
+        <form onSubmit={onAdd} className="card border-[#d0d5dd] p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h3 className="text-[0.95rem]">Add a topic manually</h3>
             <button
@@ -256,7 +256,7 @@ export function TopicMap({
             </div>
             <div>
               <label htmlFor="topic-parent" className="label">
-                Parent topic <span className="font-normal normal-case tracking-normal text-[#85928a]">(optional)</span>
+                Parent topic <span className="font-normal normal-case tracking-normal text-[#98a2b3]">(optional)</span>
               </label>
               <select
                 id="topic-parent"
@@ -274,7 +274,7 @@ export function TopicMap({
             </div>
             <div className="sm:col-span-2">
               <label htmlFor="topic-description" className="label">
-                Description <span className="font-normal normal-case tracking-normal text-[#85928a]">(optional)</span>
+                Description <span className="font-normal normal-case tracking-normal text-[#98a2b3]">(optional)</span>
               </label>
               <textarea
                 id="topic-description"
@@ -298,12 +298,12 @@ export function TopicMap({
       ) : null}
 
       {topics.length === 0 ? (
-        <div className="card border-dashed bg-[#fcfcf8] p-7">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#e8f1ea] text-[#176b50]">
+        <div className="card border-dashed bg-[#fcfcfd] p-7">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#ebe9fe] text-[#7a5af8]">
             <FolderTree size={18} aria-hidden />
           </span>
           <h3 className="mt-3 text-[1rem]">No topics mapped yet</h3>
-          <p className="mt-1 max-w-xl text-[0.84rem] leading-relaxed text-[#68756d]">
+          <p className="mt-1 max-w-xl text-[0.84rem] leading-relaxed text-[#667085]">
             Upload a syllabus with headings and use “Extract from headings”. The extractor only creates
             topics that actually appear in your indexed material, and links each one to the page it came
             from. You can also add a topic manually.
@@ -321,19 +321,19 @@ export function TopicMap({
             level={2}
             description="Mastery is shown only when the evidence minimum is met. A missing figure means not assessed, not weak."
             action={
-              <span className="inline-flex items-center gap-1 text-[0.7rem] text-[#7a877f]">
+              <span className="inline-flex items-center gap-1 text-[0.7rem] text-[#667085]">
                 <Sparkles size={12} aria-hidden />
                 Citation-linked
               </span>
             }
           />
-          <ul id="topic-list-heading" className="divide-y divide-[#eef1ea]">
+          <ul id="topic-list-heading" className="divide-y divide-[#f2f4f7]">
             {tree.roots.map((root) => (
               <li key={root.id}>
-                <ul className="divide-y divide-[#f2f4ef]">
+                <ul className="divide-y divide-[#f2f4f7]">
                   <TopicRow topic={root} isDemo={isDemo} />
                   {(tree.childrenByParent.get(root.id) ?? []).map((child) => (
-                    <li key={child.id} className="ml-4 border-l border-[#e2e9dd] pl-4 sm:ml-8">
+                    <li key={child.id} className="ml-4 border-l border-[#eaecf0] pl-4 sm:ml-8">
                       <ul>
                         <TopicRow topic={child} isDemo={isDemo} />
                       </ul>

@@ -1,4 +1,4 @@
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, type StatementSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -43,7 +43,10 @@ export function createDatabase(databasePath: string): DatabaseSync {
   database.exec("PRAGMA foreign_keys = ON;");
   if (databasePath !== ":memory:") {
     database.exec("PRAGMA journal_mode = WAL;");
+    database.exec("PRAGMA synchronous = NORMAL;");
     database.exec("PRAGMA busy_timeout = 5000;");
+    database.exec("PRAGMA cache_size = -20000;");
+    database.exec("PRAGMA temp_store = MEMORY;");
   }
   database.exec("PRAGMA user_version = " + SCHEMA_VERSION + ";");
 
@@ -66,13 +69,13 @@ export function getConnection(): DatabaseSync {
 
 export const db: Queryable = {
   all<T>(sql: string, ...params: SqlParam[]): T[] {
-    return getConnection().prepare(sql).all(...params) as unknown as T[];
+    return getStatement(sql).all(...params) as unknown as T[];
   },
   get<T>(sql: string, ...params: SqlParam[]): T | undefined {
-    return getConnection().prepare(sql).get(...params) as unknown as T | undefined;
+    return getStatement(sql).get(...params) as unknown as T | undefined;
   },
   run(sql: string, ...params: SqlParam[]) {
-    const result = getConnection().prepare(sql).run(...params);
+    const result = getStatement(sql).run(...params);
     return { changes: Number(result.changes) };
   },
 };
@@ -88,6 +91,28 @@ export function transaction<T>(fn: () => T): T {
     connection.exec("ROLLBACK");
     throw error;
   }
+}
+
+/**
+ * Prepared statements are reused for the lifetime of the process. Every page
+ * render issues the same handful of queries, so re-preparing them on each call
+ * is pure overhead. The cache is bounded to keep memory flat.
+ */
+const STATEMENT_CACHE_LIMIT = 256;
+const statementCache = new Map<string, StatementSync>();
+
+function getStatement(sql: string): StatementSync {
+  const cached = statementCache.get(sql);
+  if (cached) return cached;
+
+  if (statementCache.size >= STATEMENT_CACHE_LIMIT) {
+    const oldest = statementCache.keys().next().value;
+    if (oldest) statementCache.delete(oldest);
+  }
+
+  const statement = getConnection().prepare(sql);
+  statementCache.set(sql, statement);
+  return statement;
 }
 
 export function newId(): string {

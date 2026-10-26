@@ -28,6 +28,7 @@ import {
   Stat,
   StatusBadge,
 } from "@/components/ui";
+import { SubjectFilter } from "@/components/subject-filter";
 
 export const metadata: Metadata = { title: "Progress" };
 export const dynamic = "force-dynamic";
@@ -90,19 +91,11 @@ export default async function ProgressPage({
         />
       ) : (
         <>
-          <div className="mb-5 flex flex-wrap items-center gap-2">
-            {subjects.map((subject) => (
-              <Link
-                key={subject.id}
-                href={`/progress?subject=${subject.id}`}
-                className={
-                  subject.id === selectedSubjectId ? "badge badge-strong" : "badge badge-outline"
-                }
-              >
-                {subject.name}
-              </Link>
-            ))}
-          </div>
+          <SubjectFilter
+            basePath="/progress"
+            subjects={subjects}
+            selectedId={selectedSubjectId}
+          />
 
           {!overview || !selectedSubject ? null : (
             <>
@@ -150,11 +143,11 @@ export default async function ProgressPage({
                       }
                     />
                     {overview.scoreSeries.length === 0 ? (
-                      <p className="text-[0.82rem] leading-relaxed text-[#68756d]">
+                      <p className="text-[0.82rem] leading-relaxed text-[#667085]">
                         No submitted attempt yet.{" "}
                         <Link
                           href={`/diagnostics?subject=${selectedSubject.id}`}
-                          className="font-medium text-[#176b50] hover:underline"
+                          className="font-medium text-[#7a5af8] hover:underline"
                         >
                           Prepare the first diagnostic
                         </Link>
@@ -178,7 +171,7 @@ export default async function ProgressPage({
                               .reverse()
                               .map((point) => (
                                 <tr key={point.attemptId}>
-                                  <td className="text-[#6b7a71]">
+                                  <td className="text-[#667085]">
                                     {formatDateTime(point.submittedAt)}
                                   </td>
                                   <td>
@@ -201,7 +194,7 @@ export default async function ProgressPage({
                                   <td className="text-right">
                                     <Link
                                       href={`/diagnostics/${point.attemptId}/results`}
-                                      className="inline-flex items-center gap-1 text-[0.74rem] font-medium text-[#176b50] hover:underline"
+                                      className="inline-flex items-center gap-1 text-[0.74rem] font-medium text-[#7a5af8] hover:underline"
                                     >
                                       Results
                                       <ArrowUpRight size={12} aria-hidden />
@@ -221,12 +214,12 @@ export default async function ProgressPage({
                       description="Mastery snapshots recorded when evidence produced a band. A flat line is stable evidence, not progress."
                     />
                     {overview.topicTrends.length === 0 ? (
-                      <p className="text-[0.82rem] leading-relaxed text-[#68756d]">
+                      <p className="text-[0.82rem] leading-relaxed text-[#667085]">
                         No topic has passed the evidence minimum yet, so there is no trend to plot.
                         Submit a diagnostic first.
                       </p>
                     ) : (
-                      <ul className="divide-y divide-[#eef1ea]">
+                      <ul className="divide-y divide-[#f2f4f7]">
                         {overview.topicTrends.map((trend) => {
                           const latestPoint = trend.points[trend.points.length - 1];
                           return (
@@ -238,7 +231,7 @@ export default async function ProgressPage({
                                 <div className="flex flex-wrap items-center gap-2">
                                   <Link
                                     href={`/learn/${trend.topicId}`}
-                                    className="text-[0.85rem] font-medium text-[#34483c] hover:text-[#176b50]"
+                                    className="text-[0.85rem] font-medium text-[#344054] hover:text-[#7a5af8]"
                                   >
                                     {trend.topicName}
                                   </Link>
@@ -247,14 +240,14 @@ export default async function ProgressPage({
                                     sufficient
                                   />
                                   {trend.change === null ? (
-                                    <span className="inline-flex items-center gap-1 text-[0.68rem] text-[#85928a]">
+                                    <span className="inline-flex items-center gap-1 text-[0.68rem] text-[#98a2b3]">
                                       <Minus size={11} aria-hidden />
                                       one snapshot
                                     </span>
                                   ) : (
                                     <span
                                       className={`inline-flex items-center gap-1 text-[0.68rem] ${
-                                        trend.change >= 0 ? "text-[#14533f]" : "text-[#8b2e22]"
+                                        trend.change >= 0 ? "text-[#027a48]" : "text-[#b42318]"
                                       }`}
                                     >
                                       {trend.change >= 0 ? (
@@ -274,7 +267,7 @@ export default async function ProgressPage({
                                     label={`${trend.topicName} mastery`}
                                   />
                                 </div>
-                                <p className="mt-1 text-[0.67rem] text-[#85928a]">
+                                <p className="mt-1 text-[0.67rem] text-[#98a2b3]">
                                   {trend.points.length} snapshot
                                   {trend.points.length === 1 ? "" : "s"} · latest{" "}
                                   {formatDate(latestPoint.createdAt)}
@@ -291,7 +284,7 @@ export default async function ProgressPage({
                         })}
                       </ul>
                     )}
-                    <div className="mt-4 border-t border-[#e7ece3] pt-3">
+                    <div className="mt-4 border-t border-[#eaecf0] pt-3">
                       <InlineMeterLegend />
                     </div>
                   </section>
@@ -300,15 +293,15 @@ export default async function ProgressPage({
                 <div className="space-y-4">
                   <section className="card p-5">
                     <div className="flex items-center gap-2">
-                      <Clock3 size={15} className="text-[#176b50]" aria-hidden />
+                      <Clock3 size={15} className="text-[#7a5af8]" aria-hidden />
                       <h2 className="text-[0.95rem]">Plan completion</h2>
                     </div>
                     {overview.taskStats.planVersion === null ? (
-                      <p className="mt-2 text-[0.78rem] leading-relaxed text-[#68756d]">
+                      <p className="mt-2 text-[0.78rem] leading-relaxed text-[#667085]">
                         No active plan.{" "}
                         <Link
                           href={`/revision-plan?subject=${selectedSubject.id}`}
-                          className="font-medium text-[#176b50] hover:underline"
+                          className="font-medium text-[#7a5af8] hover:underline"
                         >
                           Build one
                         </Link>{" "}
@@ -316,7 +309,7 @@ export default async function ProgressPage({
                       </p>
                     ) : (
                       <>
-                        <p className="mt-2 text-[0.78rem] text-[#68756d]">
+                        <p className="mt-2 text-[0.78rem] text-[#667085]">
                           Plan v{overview.taskStats.planVersion}: {overview.taskStats.completed} of{" "}
                           {overview.taskStats.total} tasks completed.
                         </p>
@@ -335,12 +328,12 @@ export default async function ProgressPage({
                         </div>
                         <dl className="mt-3 space-y-1.5 text-[0.74rem]">
                           <div className="flex justify-between gap-3">
-                            <dt className="text-[#718078]">Pending tasks</dt>
-                            <dd className="text-[#3f5147]">{overview.taskStats.pending}</dd>
+                            <dt className="text-[#667085]">Pending tasks</dt>
+                            <dd className="text-[#344054]">{overview.taskStats.pending}</dd>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <dt className="text-[#718078]">Pending minutes</dt>
-                            <dd className="text-[#3f5147]">{overview.taskStats.pendingMinutes}</dd>
+                            <dt className="text-[#667085]">Pending minutes</dt>
+                            <dd className="text-[#344054]">{overview.taskStats.pendingMinutes}</dd>
                           </div>
                         </dl>
                         <Link
@@ -355,11 +348,11 @@ export default async function ProgressPage({
 
                   <section className="card p-5">
                     <div className="flex items-center gap-2">
-                      <ChartNoAxesCombined size={15} className="text-[#176b50]" aria-hidden />
+                      <ChartNoAxesCombined size={15} className="text-[#7a5af8]" aria-hidden />
                       <h2 className="text-[0.95rem]">Latest mastery changes</h2>
                     </div>
                     {overview.masteryChanges.length === 0 ? (
-                      <p className="mt-2 text-[0.77rem] leading-relaxed text-[#68756d]">
+                      <p className="mt-2 text-[0.77rem] leading-relaxed text-[#667085]">
                         A change needs two mastery snapshots for the same topic. Take another diagnostic
                         on a measured topic.
                       </p>
@@ -370,20 +363,20 @@ export default async function ProgressPage({
                             <div className="flex items-baseline justify-between gap-2">
                               <Link
                                 href={`/learn/${change.topicId}`}
-                                className="truncate text-[0.79rem] font-medium text-[#34483c] hover:text-[#176b50]"
+                                className="truncate text-[0.79rem] font-medium text-[#344054] hover:text-[#7a5af8]"
                               >
                                 {change.topicName}
                               </Link>
                               <span
                                 className={`shrink-0 font-mono text-[0.68rem] ${
-                                  change.change >= 0 ? "text-[#14533f]" : "text-[#8b2e22]"
+                                  change.change >= 0 ? "text-[#027a48]" : "text-[#b42318]"
                                 }`}
                               >
                                 {change.change >= 0 ? "+" : ""}
                                 {Math.round(change.change)} pts
                               </span>
                             </div>
-                            <p className="mt-0.5 text-[0.66rem] text-[#85928a]">
+                            <p className="mt-0.5 text-[0.66rem] text-[#98a2b3]">
                               {Math.round(change.previous)}% → {Math.round(change.next)}%
                             </p>
                           </li>
@@ -395,32 +388,32 @@ export default async function ProgressPage({
                   <section className="card p-5">
                     <h2 className="text-[0.95rem]">Attempt history</h2>
                     {overview.attempts.length === 0 ? (
-                      <p className="mt-2 text-[0.77rem] leading-relaxed text-[#68756d]">
+                      <p className="mt-2 text-[0.77rem] leading-relaxed text-[#667085]">
                         No attempts recorded for this subject.
                       </p>
                     ) : (
-                      <ul className="mt-2 divide-y divide-[#eef1ea]">
+                      <ul className="mt-2 divide-y divide-[#f2f4f7]">
                         {overview.attempts.slice(0, 8).map((attempt) => (
                           <li key={attempt.id} className="py-2 first:pt-0 last:pb-0">
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="text-[0.74rem] text-[#3f5147]">
+                              <span className="text-[0.74rem] text-[#344054]">
                                 {formatDate(attempt.submittedAt ?? attempt.startedAt)}
                               </span>
                               <StatusBadge status={attempt.status} />
                             </div>
-                            <p className="mt-0.5 text-[0.66rem] text-[#85928a]">
+                            <p className="mt-0.5 text-[0.66rem] text-[#98a2b3]">
                               {attempt.questionCount} questions ·{" "}
                               {attempt.status === "submitted" ? (
                                 <Link
                                   href={`/diagnostics/${attempt.id}/results`}
-                                  className="text-[#176b50] hover:underline"
+                                  className="text-[#7a5af8] hover:underline"
                                 >
                                   results
                                 </Link>
                               ) : (
                                 <Link
                                   href={`/diagnostics/${attempt.id}`}
-                                  className="text-[#176b50] hover:underline"
+                                  className="text-[#7a5af8] hover:underline"
                                 >
                                   resume
                                 </Link>

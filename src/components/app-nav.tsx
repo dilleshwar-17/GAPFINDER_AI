@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const sections = [
   {
@@ -39,7 +40,7 @@ const sections = [
   {
     label: "Learn & review",
     items: [
-      { href: "/assistant", label: "Source assistant", icon: MessageSquareText },
+      { href: "/assistant", label: "BUDDY", icon: MessageSquareText },
       { href: "/progress", label: "Progress", icon: ChartNoAxesCombined },
       { href: "/settings", label: "Settings", icon: Settings },
     ],
@@ -91,26 +92,29 @@ export function MobileNav({
 
   return (
     <div className="lg:hidden">
-      <div className="flex h-14 items-center justify-between border-b border-[#dfe5da] bg-[#f7f7f1] px-4">
+      <div className="flex h-14 items-center justify-between border-b border-[#eaecf0] bg-[#f9fafb] px-4">
         <Brand />
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm"
-          aria-expanded={open}
-          aria-controls="mobile-nav"
-          onClick={() => setOpen((value) => !value)}
-        >
-          {open ? <X size={15} aria-hidden /> : <Menu size={15} aria-hidden />}
-          Menu
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            onClick={() => setOpen((value) => !value)}
+          >
+            {open ? <X size={15} aria-hidden /> : <Menu size={15} aria-hidden />}
+            Menu
+          </button>
+        </div>
       </div>
       {open ? (
         <nav
           id="mobile-nav"
           aria-label="Workspace"
-          className="border-b border-[#dfe5da] bg-[#12382d] px-4 pb-4 pt-3"
+          className="border-b border-[#eaecf0] bg-[#171f2e] px-4 pb-4 pt-3"
         >
-          <p className="mb-2 text-[0.72rem] text-[#9db2a6]">
+          <p className="mb-2 text-[0.72rem] text-[#98a2b3]">
             {displayName}
             {isDemo ? " · shared demo" : ""}
           </p>

@@ -8,8 +8,8 @@ export default function ResetPasswordPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
       <p className="eyebrow">Account recovery</p>
-      <h1 className="display-lg mt-3 text-[#12382d]">No reset token can be accepted.</h1>
-      <p className="mt-4 text-[0.93rem] leading-relaxed text-[#5a6a60]">
+      <h1 className="display-lg mt-3 text-[#171f2e]">No reset token can be accepted.</h1>
+      <p className="mt-4 text-[0.93rem] leading-relaxed text-[#475467]">
         Password-reset tokens require an email delivery service that this deployment does not have.
         This page does not accept or validate a token, because no legitimate token can be issued.
       </p>
@@ -23,7 +23,7 @@ export default function ResetPasswordPage() {
 
       <div className="card mt-6 p-5">
         <h2 className="text-[0.95rem]">If you are locked out</h2>
-        <p className="mt-1 text-[0.82rem] leading-relaxed text-[#64746a]">
+        <p className="mt-1 text-[0.82rem] leading-relaxed text-[#475467]">
           This build has no operator recovery console. A deployment operator can recreate the local
           SQLite database, which removes all accounts and data, or you can register a new account.
           Neither action is offered as a self-service button here because both are destructive or

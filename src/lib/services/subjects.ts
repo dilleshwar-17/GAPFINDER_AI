@@ -83,50 +83,82 @@ export function listSubjects(ownerId: string): SubjectSummary[] {
     "SELECT * FROM subjects WHERE owner_id = ? ORDER BY created_at DESC",
     ownerId,
   );
+  if (subjects.length === 0) return [];
+
+  // One grouped query per aggregate instead of four queries per subject.
+  const documentCounts = new Map<string, number>();
+  for (const row of db.all<{ subject_id: string; count: number }>(
+    `SELECT subject_id, COUNT(*) AS count
+       FROM documents
+      WHERE owner_id = ? AND status = 'ready'
+      GROUP BY subject_id`,
+    ownerId,
+  )) {
+    documentCounts.set(row.subject_id, row.count);
+  }
+
+  const topicCounts = new Map<string, number>();
+  for (const row of db.all<{ subject_id: string; count: number }>(
+    `SELECT subject_id, COUNT(*) AS count
+       FROM topics
+      WHERE owner_id = ?
+      GROUP BY subject_id`,
+    ownerId,
+  )) {
+    topicCounts.set(row.subject_id, row.count);
+  }
+
+  const attemptCounts = new Map<string, { count: number; last: string | null }>();
+  for (const row of db.all<{ subject_id: string; count: number; last: string | null }>(
+    `SELECT subject_id, COUNT(*) AS count, MAX(submitted_at) AS last
+       FROM quiz_attempts
+      WHERE owner_id = ? AND status = 'submitted'
+      GROUP BY subject_id`,
+    ownerId,
+  )) {
+    attemptCounts.set(row.subject_id, { count: row.count, last: row.last });
+  }
+
+  const bandCounts = new Map<string, number>();
+  for (const row of db.all<{
+    subject_id: string;
+    classification: TopicClassification;
+    count: number;
+  }>(
+    `WITH latest AS (
+       SELECT ms.subject_id, ms.classification,
+              ROW_NUMBER() OVER (
+                PARTITION BY ms.topic_id
+                ORDER BY ms.created_at DESC, ms.id DESC
+              ) AS row_number
+         FROM mastery_snapshots ms
+        WHERE ms.owner_id = ?
+     )
+     SELECT subject_id, classification, COUNT(*) AS count
+       FROM latest
+      WHERE row_number = 1
+      GROUP BY subject_id, classification`,
+    ownerId,
+  )) {
+    bandCounts.set(`${row.subject_id}:${row.classification}`, row.count);
+  }
 
   return subjects.map((subject) => {
-    const documents = db.get<{ count: number }>(
-      "SELECT COUNT(*) AS count FROM documents WHERE owner_id = ? AND subject_id = ? AND status = 'ready'",
-      ownerId,
-      subject.id,
-    );
-    const topicCount = db.get<{ count: number }>(
-      "SELECT COUNT(*) AS count FROM topics WHERE owner_id = ? AND subject_id = ?",
-      ownerId,
-      subject.id,
-    );
-    const attempts = db.get<{ count: number; last: string | null }>(
-      `SELECT COUNT(*) AS count, MAX(submitted_at) AS last
-         FROM quiz_attempts
-        WHERE owner_id = ? AND subject_id = ? AND status = 'submitted'`,
-      ownerId,
-      subject.id,
-    );
-    const bands = db.all<{ classification: TopicClassification; count: number }>(
-      `WITH latest AS (
-         SELECT ms.classification,
-                ROW_NUMBER() OVER (PARTITION BY ms.topic_id ORDER BY ms.created_at DESC) AS row_number
-           FROM mastery_snapshots ms
-          WHERE ms.owner_id = ? AND ms.subject_id = ?
-       )
-       SELECT classification, COUNT(*) AS count FROM latest WHERE row_number = 1 GROUP BY classification`,
-      ownerId,
-      subject.id,
-    );
+    const attempts = attemptCounts.get(subject.id) ?? { count: 0, last: null };
     const countOf = (classification: TopicClassification) =>
-      bands.find((row) => row.classification === classification)?.count ?? 0;
+      bandCounts.get(`${subject.id}:${classification}`) ?? 0;
 
     return {
       ...subject,
-      readyDocuments: documents?.count ?? 0,
-      topicCount: topicCount?.count ?? 0,
-      submittedAttempts: attempts?.count ?? 0,
+      readyDocuments: documentCounts.get(subject.id) ?? 0,
+      topicCount: topicCounts.get(subject.id) ?? 0,
+      submittedAttempts: attempts.count,
       assessedTopics:
         countOf("weak") + countOf("developing") + countOf("strong"),
       weakTopics: countOf("weak"),
       developingTopics: countOf("developing"),
       strongTopics: countOf("strong"),
-      lastAttemptAt: attempts?.last ?? null,
+      lastAttemptAt: attempts.last,
     };
   });
 }

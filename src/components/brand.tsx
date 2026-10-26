@@ -5,33 +5,45 @@ export function Brand({ tone = "dark" }: { tone?: "dark" | "light" }) {
   return (
     <Link href="/" className="inline-flex items-center gap-2.5" aria-label="GapFinder AI home">
       <span
-        className={`flex h-8 w-8 items-center justify-center rounded-[9px] ${
-          dark ? "bg-[#12382d]" : "bg-[#f7f7f1]"
+        className={`flex h-9 w-9 items-center justify-center rounded-[11px] ${
+          dark ? "text-white" : "bg-white/10 text-white ring-1 ring-white/15"
         }`}
+        style={dark ? { backgroundImage: "var(--brand-gradient)" } : undefined}
       >
         <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden>
           <path
             d="M8 22V11a3 3 0 0 1 3-3h6"
             fill="none"
-            stroke="#d7b56d"
+            stroke="currentColor"
+            strokeOpacity="0.92"
             strokeWidth="2.4"
             strokeLinecap="round"
           />
           <path
             d="M24 10v11a3 3 0 0 1-3 3h-6"
             fill="none"
-            stroke="#2fa77a"
+            stroke="currentColor"
+            strokeOpacity="0.55"
             strokeWidth="2.4"
             strokeLinecap="round"
           />
-          <circle cx="16" cy="16" r="2.2" fill={dark ? "#f7f7f1" : "#12382d"} />
+          <circle cx="16" cy="16" r="2.2" fill="currentColor" />
         </svg>
       </span>
       <span className="flex flex-col leading-none">
-        <span className={`text-[0.98rem] font-semibold tracking-tight ${dark ? "text-[#12382d]" : "text-[#f7f7f1]"}`}>
-          GapFinder <span className="text-[#2fa77a]">AI</span>
+        <span
+          className={`text-[1rem] font-bold tracking-[-0.02em] ${
+            dark ? "text-[#101828]" : "text-white"
+          }`}
+        >
+          GapFinder{" "}
+          <span className={dark ? "text-[#7a5af8]" : "text-[#bdb4fe]"}>AI</span>
         </span>
-        <span className={`mt-0.5 font-mono text-[0.54rem] uppercase tracking-[0.19em] ${dark ? "text-[#718078]" : "text-[#9db2a6]"}`}>
+        <span
+          className={`mt-1 text-[0.56rem] font-medium uppercase tracking-[0.16em] ${
+            dark ? "text-[#667085]" : "text-[#98a2b3]"
+          }`}
+        >
           Evidence-grounded study
         </span>
       </span>

@@ -134,13 +134,13 @@ export function PlanBuilder({
       </div>
 
       {error ? (
-        <p role="alert" className="mt-4 rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.8rem] text-[#7f2f24]">
+        <p role="alert" className="mt-4 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.8rem] text-[#b42318]">
           {error}
         </p>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e7ece3] pt-4">
-        <p className="max-w-md text-[0.72rem] leading-relaxed text-[#7a877f]">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#eaecf0] pt-4">
+        <p className="max-w-md text-[0.72rem] leading-relaxed text-[#667085]">
           Priority is computed as 0.5 × weakness + 0.3 × importance + 0.2 × urgency, plus a bounded
           prerequisite boost when an explicit syllabus dependency is measured weak.
         </p>
@@ -191,7 +191,7 @@ export function TaskChecklist({
 
   if (tasks.length === 0) {
     return (
-      <p className="text-[0.82rem] text-[#68756d]">
+      <p className="text-[0.82rem] text-[#667085]">
         This plan has no scheduled tasks. Increase the daily budget or extend the exam date.
       </p>
     );
@@ -200,7 +200,7 @@ export function TaskChecklist({
   return (
     <div>
       {error ? (
-        <p role="alert" className="mb-3 rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.78rem] text-[#7f2f24]">
+        <p role="alert" className="mb-3 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.78rem] text-[#b42318]">
           {error}
         </p>
       ) : null}
@@ -213,14 +213,14 @@ export function TaskChecklist({
               key={task.id}
               className={`rounded-[10px] border px-3.5 py-3 transition ${
                 completed
-                  ? "border-[#dce8dd] bg-[#f4faf5]"
-                  : "border-[#e1e7e1] bg-white"
+                  ? "border-[#d9d6fe] bg-[#f4f3ff]"
+                  : "border-[#eaecf0] bg-white"
               }`}
             >
               <div className="flex items-start gap-3">
                 <button
                   type="button"
-                  className="mt-0.5 shrink-0 text-[#176b50] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-0.5 shrink-0 text-[#7a5af8] disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() => toggle(task)}
                   disabled={isDemo || pendingId === task.id}
                   aria-label={completed ? `Mark ${task.topicName} as pending` : `Mark ${task.topicName} as completed`}
@@ -238,25 +238,25 @@ export function TaskChecklist({
                   <div className="flex flex-wrap items-center gap-2">
                     <p
                       className={`text-[0.85rem] font-medium ${
-                        completed ? "text-[#4b6b56] line-through" : "text-[#2c4034]"
+                        completed ? "text-[#344054] line-through" : "text-[#344054]"
                       }`}
                     >
                       {task.topicName}
                     </p>
                     <StatusBadge status={status} />
-                    <span className="font-mono text-[0.65rem] text-[#7a877f]">
+                    <span className="font-mono text-[0.65rem] text-[#667085]">
                       {task.durationMinutes} min · priority {Math.round(task.priority)}
                     </span>
                   </div>
-                  <p className="mt-1 text-[0.77rem] leading-relaxed text-[#5d6d63]">{task.objective}</p>
-                  <p className="mt-1 text-[0.68rem] text-[#85928a]">{task.priorityReason}</p>
+                  <p className="mt-1 text-[0.77rem] leading-relaxed text-[#475467]">{task.objective}</p>
+                  <p className="mt-1 text-[0.68rem] text-[#98a2b3]">{task.priorityReason}</p>
                 </div>
               </div>
             </li>
           );
         })}
       </ol>
-      <p className="mt-3 flex items-center gap-1.5 text-[0.7rem] text-[#85928a]">
+      <p className="mt-3 flex items-center gap-1.5 text-[0.7rem] text-[#98a2b3]">
         <CalendarDays size={12} aria-hidden />
         {isDemo
           ? "Task changes are disabled in the shared demo."

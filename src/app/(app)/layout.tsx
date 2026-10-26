@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { requirePageUser } from "@/lib/auth/page";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNav, SidebarNav } from "@/components/app-nav";
 import { LogoutButton } from "@/components/auth-forms";
 import { DemoBanner } from "@/components/ui";
@@ -14,10 +15,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-[#f7f7f1] lg:grid lg:grid-cols-[252px_1fr]">
-      <aside className="no-print sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[#12382d] px-4 py-5 lg:flex">
-        <div className="px-1">
+    <div className="min-h-screen bg-[#f9fafb] lg:grid lg:grid-cols-[252px_1fr]">
+      <aside className="no-print sticky top-0 hidden h-screen flex-col overflow-y-auto bg-[#171f2e] px-4 py-5 lg:flex">
+        <div className="flex items-center justify-between gap-2 px-1">
           <Brand tone="light" />
+          <ThemeToggle className="theme-toggle-dark" />
         </div>
 
         <Link href="/diagnostics" className="btn btn-gold btn-sm mt-5 w-full justify-center">
@@ -28,14 +30,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <SidebarNav />
 
         <div className="mt-auto space-y-3 pt-6">
-          <div className="rounded-lg border border-[#2c5746] bg-[#174535]/70 p-3">
+          <div className="rounded-lg border border-[#344054] bg-[#1a2231]/70 p-3">
             <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2fa77a]/20 font-mono text-[0.66rem] font-semibold text-[#c4e8d6]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#7a5af8]/20 font-mono text-[0.66rem] font-semibold text-[#d9d6fe]">
                 {user.displayName.slice(0, 1).toUpperCase()}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-[0.78rem] font-medium text-[#eef4ee]">{user.displayName}</p>
-                <p className="truncate text-[0.66rem] text-[#9db2a6]">
+                <p className="truncate text-[0.78rem] font-medium text-[#f2f4f7]">{user.displayName}</p>
+                <p className="truncate text-[0.66rem] text-[#98a2b3]">
                   {user.isDemo ? "Shared demo" : user.email}
                 </p>
               </div>
@@ -43,16 +45,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <div className="mt-2.5 flex items-center justify-between gap-2">
               <Link
                 href="/settings"
-                className="text-[0.68rem] text-[#aec7b7] underline-offset-2 hover:text-white hover:underline"
+                className="text-[0.68rem] text-[#d0d5dd] underline-offset-2 hover:text-white hover:underline"
               >
                 Settings
               </Link>
-              <span className="text-[#aec7b7]">
+              <span className="text-[#d0d5dd]">
                 <LogoutButton compact />
               </span>
             </div>
           </div>
-          <p className="px-1 text-[0.62rem] leading-relaxed text-[#799284]">
+          <p className="px-1 text-[0.62rem] leading-relaxed text-[#98a2b3]">
             Mastery bands are provisional heuristics. Check the cited source before relying on a
             diagnosis.
           </p>
@@ -61,7 +63,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <div className="flex min-h-screen min-w-0 flex-col">
         <MobileNav displayName={user.displayName} isDemo={user.isDemo} />
-        <main id="main-content" className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main
+          id="main-content"
+          className="relative flex-1 bg-[radial-gradient(900px_420px_at_85%_-10%,rgba(122,90,248,0.08),transparent_60%)] px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+        >
           <div className="mx-auto w-full max-w-6xl">
             {user.isDemo ? <DemoBanner /> : null}
             {children}

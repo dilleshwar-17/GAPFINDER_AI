@@ -36,6 +36,24 @@ export function UploadForm({
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  function chooseFile(candidate: File | null | undefined) {
+    if (!candidate) return;
+    if (candidate.size > maxUploadMb * 1024 * 1024) {
+      setFile(null);
+      setError(`Files must be ${maxUploadMb} MB or smaller.`);
+      return;
+    }
+    setError(null);
+    setFile(candidate);
+  }
+
+  function formatSize(bytes: number) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 102.4) / 10} KB`;
+    return `${Math.round(bytes / (1024 * 1024) * 10) / 10} MB`;
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,9 +91,9 @@ export function UploadForm({
 
   if (subjects.length === 0) {
     return (
-      <div className="card border-dashed bg-[#fcfcf8] p-6">
+      <div className="card border-dashed bg-[#fcfcfd] p-6">
         <h2 className="text-[1rem]">Create a subject first</h2>
-        <p className="mt-1 text-[0.84rem] leading-relaxed text-[#68756d]">
+        <p className="mt-1 text-[0.84rem] leading-relaxed text-[#667085]">
           Material must belong to a subject. Create one, then return to upload a syllabus and notes.
         </p>
         <a href="/subjects?intent=create" className="btn btn-primary btn-sm mt-4">
@@ -88,7 +106,7 @@ export function UploadForm({
   return (
     <form onSubmit={onSubmit} className="card p-5 sm:p-6">
       {isDemo ? (
-        <div className="mb-4 rounded-lg border border-[#e8d6a8] bg-[#faf6ea] px-3 py-2 text-[0.78rem] leading-relaxed text-[#6d5418]">
+        <div className="mb-4 rounded-lg border border-[#fedf89] bg-[#fffaeb] px-3 py-2 text-[0.78rem] leading-relaxed text-[#b54708]">
           Uploads are blocked in the shared demo workspace. Create a personal account to add your own
           material.
         </div>
@@ -140,13 +158,47 @@ export function UploadForm({
           <span className="label" id="upload-file-label">
             File
           </span>
-          <div className="rounded-xl border border-dashed border-[#cbd7cd] bg-[#fbfcf8] px-4 py-6 text-center">
-            <FileUp size={22} className="mx-auto text-[#49806b]" aria-hidden />
-            <p className="mt-2 text-[0.84rem] font-medium text-[#34483c]">
-              {file ? file.name : "Choose a PDF, TXT or Markdown file"}
+          <div
+            className={`upload-zone rounded-xl border border-dashed px-4 py-6 text-center ${
+              dragActive
+                ? "border-[#7a5af8] bg-[#f4f3ff]"
+                : "border-[#d0d5dd] bg-[#fcfcfd]"
+            }`}
+            onClick={() => inputRef.current?.click()}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setDragActive(true);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragActive(true);
+            }}
+            onDragLeave={(event) => {
+              event.preventDefault();
+              setDragActive(false);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragActive(false);
+              chooseFile(event.dataTransfer.files?.[0]);
+            }}
+          >
+            <FileUp
+              size={22}
+              className={`mx-auto ${dragActive ? "text-[#6938ef]" : "text-[#7a5af8]"}`}
+              aria-hidden
+            />
+            <p className="mt-2 text-[0.84rem] font-medium text-[#344054]">
+              {dragActive
+                ? "Drop the file to attach it"
+                : file
+                  ? file.name
+                  : "Drag a PDF, TXT or Markdown file here"}
             </p>
-            <p className="mt-1 text-[0.74rem] text-[#7a877f]">
-              Maximum {maxUploadMb} MB. The file is extracted, chunked and embedded before it is listed as indexed.
+            <p className="mt-1 text-[0.74rem] text-[#667085]">
+              {file
+                ? `${formatSize(file.size)} · ready to extract and index`
+                : `or browse your device · maximum ${maxUploadMb} MB`}
             </p>
             <input
               ref={inputRef}
@@ -155,35 +207,69 @@ export function UploadForm({
               accept=".pdf,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
               className="sr-only"
               aria-labelledby="upload-file-label"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              onChange={(event) => chooseFile(event.target.files?.[0])}
             />
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm mt-3"
-              onClick={() => inputRef.current?.click()}
-            >
-              {file ? "Choose a different file" : "Browse files"}
-            </button>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  inputRef.current?.click();
+                }}
+              >
+                {file ? "Choose a different file" : "Browse files"}
+              </button>
+              {file ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setFile(null);
+                    if (inputRef.current) inputRef.current.value = "";
+                  }}
+                >
+                  Remove
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       </fieldset>
 
       {error ? (
-        <p role="alert" className="mt-4 rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.8rem] text-[#7f2f24]">
+        <p role="alert" className="mt-4 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.8rem] text-[#b42318]">
           {error}
         </p>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e7ece3] pt-4">
-        <p className="max-w-md text-[0.72rem] leading-relaxed text-[#7a877f]">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#eaecf0] pt-4">
+        <p className="max-w-md text-[0.72rem] leading-relaxed text-[#667085]">
           Duplicate files in the same subject are rejected by content hash. If no AI provider is
           configured, local non-neural embeddings are used and question generation falls back to a
           deterministic source-grounded generator.
         </p>
-        <button type="submit" className="btn btn-primary" disabled={pending || isDemo || !file}>
-          {pending ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <FileUp size={15} aria-hidden />}
-          {pending ? "Extracting and indexing…" : "Upload and index"}
-        </button>
+        <div className="flex flex-col items-start gap-1.5 sm:items-end">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={pending || isDemo || !file}
+            aria-describedby={!file ? "upload-submit-hint" : undefined}
+          >
+            {pending ? (
+              <Loader2 size={15} className="animate-spin" aria-hidden />
+            ) : (
+              <FileUp size={15} aria-hidden />
+            )}
+            {pending ? "Extracting and indexing…" : "Upload and index"}
+          </button>
+          {!file ? (
+            <p id="upload-submit-hint" className="text-[0.68rem] text-[#667085]">
+              Attach a file to enable this button.
+            </p>
+          ) : null}
+        </div>
       </div>
     </form>
   );

@@ -109,7 +109,7 @@ export function DiagnosticStarter({
         </Callout>
 
         {result.skipped.length > 0 ? (
-          <div className="rounded-[10px] border border-[#ecd8af] bg-[#fbf5e8] px-4 py-3 text-[0.82rem] text-[#6f5117]">
+          <div className="rounded-[10px] border border-[#fedf89] bg-[#fffaeb] px-4 py-3 text-[0.82rem] text-[#b54708]">
             <p className="mb-1 font-semibold">Some selected topics were skipped</p>
             <ul className="list-disc space-y-1 pl-4">
               {result.skipped.map((topic) => (
@@ -122,7 +122,7 @@ export function DiagnosticStarter({
         ) : null}
 
         {result.warnings.length > 0 ? (
-          <div className="rounded-[10px] border border-[#cfe0e9] bg-[#f1f7fa] px-4 py-3 text-[0.82rem] text-[#2c5265]">
+          <div className="rounded-[10px] border border-[#b9e6fe] bg-[#f0f9ff] px-4 py-3 text-[0.82rem] text-[#344054]">
             <p className="mb-1 font-semibold">Generation notes</p>
             <ul className="list-disc space-y-1 pl-4">
               {result.warnings.map((warning) => (
@@ -155,10 +155,10 @@ export function DiagnosticStarter({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[0.78rem] text-[#6b7a71]">
+        <p className="text-[0.78rem] text-[#667085]">
           {subjectName}: select up to {maxTopics} topics · {selected.length} selected
         </p>
-        <span className="inline-flex items-center gap-1 text-[0.7rem] text-[#7a877f]">
+        <span className="inline-flex items-center gap-1 text-[0.7rem] text-[#667085]">
           <Sparkles size={12} aria-hidden />
           No answer key is sent to the browser
         </span>
@@ -174,28 +174,28 @@ export function DiagnosticStarter({
               key={topic.id}
               className={`flex cursor-pointer items-start gap-3 rounded-[10px] border px-3.5 py-3 transition ${
                 checked
-                  ? "border-[#176b50] bg-[#f2f9f4]"
+                  ? "border-[#7a5af8] bg-[#f4f3ff]"
                   : disabled
-                    ? "cursor-not-allowed border-[#e7ece3] bg-[#fbfbf7] opacity-60"
-                    : "border-[#e1e7e1] bg-white hover:border-[#b9cdbf]"
+                    ? "cursor-not-allowed border-[#eaecf0] bg-[#f9fafb] opacity-60"
+                    : "border-[#eaecf0] bg-white hover:border-[#bdb4fe]"
               }`}
             >
               <input
                 type="checkbox"
-                className="mt-1 h-4 w-4 accent-[#176b50]"
+                className="mt-1 h-4 w-4 accent-[#7a5af8]"
                 checked={checked}
                 disabled={disabled || pending}
                 onChange={() => toggle(topic.id)}
               />
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
-                  <span className="text-[0.86rem] font-medium text-[#2c4034]">{topic.name}</span>
+                  <span className="text-[0.86rem] font-medium text-[#344054]">{topic.name}</span>
                   <MasteryBadge
                     classification={topic.classification}
                     sufficient={topic.sufficient}
                   />
                 </span>
-                <span className="mt-1 block text-[0.71rem] text-[#7a877f]">
+                <span className="mt-1 block text-[0.71rem] text-[#667085]">
                   {topic.questionCount} cached question{topic.questionCount === 1 ? "" : "s"} ·{" "}
                   {topic.sourceCount} linked source{topic.sourceCount === 1 ? "" : "s"}
                   {topic.sufficient && topic.mastery !== null ? (
@@ -211,14 +211,14 @@ export function DiagnosticStarter({
       </fieldset>
 
       {selected.length >= maxTopics ? (
-        <p className="flex items-center gap-1.5 text-[0.72rem] text-[#9a6414]">
+        <p className="flex items-center gap-1.5 text-[0.72rem] text-[#b54708]">
           <AlertTriangle size={13} aria-hidden />
           Three topics is the server limit for one diagnostic. Deselect one to choose another.
         </p>
       ) : null}
 
       {error ? (
-        <div role="alert" className="rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.8rem] text-[#7f2f24]">
+        <div role="alert" className="rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.8rem] text-[#b42318]">
           <p className="font-medium">{error}</p>
           {issues.length > 0 ? (
             <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-[0.75rem]">
@@ -232,8 +232,8 @@ export function DiagnosticStarter({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e7ece3] pt-4">
-        <p className="max-w-md text-[0.72rem] leading-relaxed text-[#7a877f]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eaecf0] pt-4">
+        <p className="max-w-md text-[0.72rem] leading-relaxed text-[#667085]">
           Questions are retrieved from your material, checked against real chunk IDs, and stored before
           the attempt starts. A topic without enough evidence is reported, not filled in.
         </p>

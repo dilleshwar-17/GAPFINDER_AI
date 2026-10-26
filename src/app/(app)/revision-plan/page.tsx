@@ -25,6 +25,7 @@ import {
   Stat,
 } from "@/components/ui";
 import { PlanBuilder, TaskChecklist } from "@/components/plan-workspace";
+import { SubjectFilter } from "@/components/subject-filter";
 
 export const metadata: Metadata = { title: "Revision plan" };
 export const dynamic = "force-dynamic";
@@ -94,19 +95,11 @@ export default async function RevisionPlanPage({
         />
       ) : (
         <>
-          <div className="mb-5 flex flex-wrap items-center gap-2">
-            {subjects.map((subject) => (
-              <Link
-                key={subject.id}
-                href={`/revision-plan?subject=${subject.id}`}
-                className={
-                  subject.id === selectedSubjectId ? "badge badge-strong" : "badge badge-outline"
-                }
-              >
-                {subject.name}
-              </Link>
-            ))}
-          </div>
+          <SubjectFilter
+            basePath="/revision-plan"
+            subjects={subjects}
+            selectedId={selectedSubjectId}
+          />
 
           {!selectedSubject ? null : (
             <>
@@ -148,7 +141,7 @@ export default async function RevisionPlanPage({
                           action={
                             <Link
                               href={`/progress?subject=${selectedSubject.id}`}
-                              className="text-[0.76rem] font-medium text-[#176b50] hover:underline"
+                              className="text-[0.76rem] font-medium text-[#7a5af8] hover:underline"
                             >
                               Progress
                             </Link>
@@ -182,7 +175,7 @@ export default async function RevisionPlanPage({
                                   <td>
                                     <Link
                                       href={`/learn/${entry.topicId}`}
-                                      className="font-medium text-[#2c4034] hover:text-[#176b50]"
+                                      className="font-medium text-[#344054] hover:text-[#7a5af8]"
                                     >
                                       {entry.name}
                                     </Link>
@@ -192,7 +185,7 @@ export default async function RevisionPlanPage({
                                   </td>
                                   <td>
                                     {entry.mastery === null ? (
-                                      <span className="text-[#85928a]">Not assessed</span>
+                                      <span className="text-[#98a2b3]">Not assessed</span>
                                     ) : (
                                       `${Math.round(entry.mastery)}%`
                                     )}
@@ -225,13 +218,13 @@ export default async function RevisionPlanPage({
                       <section className="card p-5">
                         <div className="flex items-center justify-between gap-2">
                           <h2 className="text-[0.98rem]">Budget</h2>
-                          <Clock3 size={16} className="text-[#176b50]" aria-hidden />
+                          <Clock3 size={16} className="text-[#7a5af8]" aria-hidden />
                         </div>
-                        <p className="mt-2 text-[0.76rem] text-[#68756d]">
+                        <p className="mt-2 text-[0.76rem] text-[#667085]">
                           {plan.minutesPerDay} minutes per day · {plan.sessionMinutes}-minute sessions
                         </p>
                         <div className="mt-3">
-                          <div className="mb-1 flex justify-between text-[0.7rem] text-[#7a877f]">
+                          <div className="mb-1 flex justify-between text-[0.7rem] text-[#667085]">
                             <span>Allocated</span>
                             <span className="font-mono">
                               {plan.allocatedMinutes} / {plan.capacityMinutes} min
@@ -249,20 +242,20 @@ export default async function RevisionPlanPage({
                         </div>
                         <dl className="mt-4 space-y-1.5 text-[0.74rem]">
                           <div className="flex justify-between gap-3">
-                            <dt className="text-[#718078]">Capacity</dt>
-                            <dd className="text-[#3f5147]">{plan.capacityMinutes} min</dd>
+                            <dt className="text-[#667085]">Capacity</dt>
+                            <dd className="text-[#344054]">{plan.capacityMinutes} min</dd>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <dt className="text-[#718078]">Allocated</dt>
-                            <dd className="text-[#3f5147]">{plan.allocatedMinutes} min</dd>
+                            <dt className="text-[#667085]">Allocated</dt>
+                            <dd className="text-[#344054]">{plan.allocatedMinutes} min</dd>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <dt className="text-[#718078]">Exam</dt>
-                            <dd className="text-[#3f5147]">{formatDate(plan.examDate)}</dd>
+                            <dt className="text-[#667085]">Exam</dt>
+                            <dd className="text-[#344054]">{formatDate(plan.examDate)}</dd>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <dt className="text-[#718078]">Trigger</dt>
-                            <dd className="text-[#3f5147]">{plan.trigger.replace(/_/g, " ")}</dd>
+                            <dt className="text-[#667085]">Trigger</dt>
+                            <dd className="text-[#344054]">{plan.trigger.replace(/_/g, " ")}</dd>
                           </div>
                         </dl>
                       </section>
@@ -270,10 +263,10 @@ export default async function RevisionPlanPage({
                       {plan.changeSummary.length > 0 ? (
                         <section className="card p-5">
                           <h2 className="text-[0.98rem]">What changed</h2>
-                          <ul className="mt-2 space-y-1.5 text-[0.77rem] leading-relaxed text-[#5d6d63]">
+                          <ul className="mt-2 space-y-1.5 text-[0.77rem] leading-relaxed text-[#475467]">
                             {plan.changeSummary.map((item) => (
                               <li key={item} className="flex gap-2">
-                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#2fa77a]" />
+                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#7a5af8]" />
                                 {item}
                               </li>
                             ))}
@@ -283,20 +276,20 @@ export default async function RevisionPlanPage({
 
                       <section className="card p-5">
                         <div className="flex items-center gap-2">
-                          <History size={15} className="text-[#176b50]" aria-hidden />
+                          <History size={15} className="text-[#7a5af8]" aria-hidden />
                           <h2 className="text-[0.95rem]">Plan history</h2>
                         </div>
                         {history.length <= 1 ? (
-                          <p className="mt-2 text-[0.77rem] leading-relaxed text-[#68756d]">
+                          <p className="mt-2 text-[0.77rem] leading-relaxed text-[#667085]">
                             This is the first plan version. Submitting a diagnostic versions it forward
                             while preserving completed tasks.
                           </p>
                         ) : (
-                          <ul className="mt-2 divide-y divide-[#eef1ea]">
+                          <ul className="mt-2 divide-y divide-[#f2f4f7]">
                             {history.map((entry) => (
                               <li key={entry.id} className="py-2 first:pt-0 last:pb-0">
                                 <div className="flex items-center justify-between gap-2">
-                                  <span className="text-[0.78rem] font-medium text-[#3f5147]">
+                                  <span className="text-[0.78rem] font-medium text-[#344054]">
                                     v{entry.version}
                                   </span>
                                   {entry.status === "active" ? (
@@ -305,7 +298,7 @@ export default async function RevisionPlanPage({
                                     <Badge tone="neutral">Superseded</Badge>
                                   )}
                                 </div>
-                                <p className="mt-0.5 text-[0.68rem] text-[#7a877f]">
+                                <p className="mt-0.5 text-[0.68rem] text-[#667085]">
                                   {formatDateTime(entry.createdAt)} · {entry.allocatedMinutes} min ·{" "}
                                   {entry.tasks.filter((task) => task.status === "completed").length} completed
                                 </p>
@@ -317,10 +310,10 @@ export default async function RevisionPlanPage({
 
                       <section className="card p-5">
                         <div className="flex items-center gap-2">
-                          <CalendarDays size={15} className="text-[#176b50]" aria-hidden />
+                          <CalendarDays size={15} className="text-[#7a5af8]" aria-hidden />
                           <h2 className="text-[0.95rem]">Plan rules</h2>
                         </div>
-                        <ul className="mt-2 space-y-2 text-[0.75rem] leading-relaxed text-[#64746a]">
+                        <ul className="mt-2 space-y-2 text-[0.75rem] leading-relaxed text-[#475467]">
                           <li>The horizon is capped at 14 days even when the exam is further away.</li>
                           <li>Maximum 12 tasks; each session is bounded to 20–90 minutes.</li>
                           <li>Completed tasks stay complete when the plan is regenerated.</li>
@@ -350,7 +343,7 @@ export default async function RevisionPlanPage({
                   <aside className="space-y-4">
                     <section className="card p-5">
                       <p className="eyebrow mb-2">Before a plan helps</p>
-                      <ol className="space-y-2 text-[0.79rem] leading-relaxed text-[#5d6d63]">
+                      <ol className="space-y-2 text-[0.79rem] leading-relaxed text-[#475467]">
                         <li>1. Index at least one syllabus or notes file.</li>
                         <li>2. Build or extract the topic map.</li>
                         <li>3. Submit a short diagnostic so weakness has evidence.</li>
@@ -367,7 +360,7 @@ export default async function RevisionPlanPage({
 
                     <section className="card p-5">
                       <h2 className="text-[0.95rem]">What the planner uses</h2>
-                      <p className="mt-2 text-[0.77rem] leading-relaxed text-[#64746a]">
+                      <p className="mt-2 text-[0.77rem] leading-relaxed text-[#475467]">
                         Only leaf topics are scheduled. Measured weakness is the largest component;
                         importance comes from the topic map and urgency from the remaining days. When an
                         explicit prerequisite is measured weak, a bounded boost changes the order.

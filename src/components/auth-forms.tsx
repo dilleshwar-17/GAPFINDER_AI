@@ -9,7 +9,7 @@ import { apiRequest, messageForError } from "@/lib/client/api";
 function FieldError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <p className="mt-1.5 text-[0.76rem] font-medium text-[#8b2e22]" role="alert">
+    <p className="mt-1.5 text-[0.76rem] font-medium text-[#b42318]" role="alert">
       {message}
     </p>
   );
@@ -59,7 +59,7 @@ export function LoginForm({ next }: { next?: string }) {
           <label htmlFor="login-password" className="label">
             Password
           </label>
-          <Link href="/forgot-password" className="mb-1 text-[0.74rem] text-[#176b50] hover:underline">
+          <Link href="/forgot-password" className="mb-1 text-[0.74rem] text-[#7a5af8] hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -75,7 +75,7 @@ export function LoginForm({ next }: { next?: string }) {
         />
       </div>
       {error ? (
-        <div id="login-error" role="alert" className="rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.8rem] text-[#7f2f24]">
+        <div id="login-error" role="alert" className="rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.8rem] text-[#b42318]">
           {error}
         </div>
       ) : null}
@@ -164,7 +164,7 @@ export function SignupForm() {
         </p>
       </div>
       {error ? (
-        <div role="alert" className="rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.8rem] text-[#7f2f24]">
+        <div role="alert" className="rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.8rem] text-[#b42318]">
           {error}
         </div>
       ) : null}
@@ -172,13 +172,13 @@ export function SignupForm() {
         {pending ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
         {pending ? "Creating account…" : "Create account"}
       </button>
-      <p className="text-[0.72rem] leading-relaxed text-[#6b7a71]">
+      <p className="text-[0.72rem] leading-relaxed text-[#667085]">
         By creating an account you agree to the{" "}
-        <Link href="/terms" className="underline hover:text-[#176b50]">
+        <Link href="/terms" className="underline hover:text-[#7a5af8]">
           terms
         </Link>{" "}
         and acknowledge the{" "}
-        <Link href="/privacy" className="underline hover:text-[#176b50]">
+        <Link href="/privacy" className="underline hover:text-[#7a5af8]">
           privacy notice
         </Link>
         . Upload only material you are permitted to use.
@@ -218,7 +218,7 @@ export function DemoLaunchButton({
         {pending ? "Preparing demo…" : label}
       </button>
       {error ? (
-        <p role="alert" className="mt-2 text-[0.76rem] text-[#8b2e22]">
+        <p role="alert" className="mt-2 text-[0.76rem] text-[#b42318]">
           {error}
         </p>
       ) : null}

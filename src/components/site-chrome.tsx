@@ -1,28 +1,33 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function PublicHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#e4e9e0] bg-[#f7f7f1]/92 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-[#eaecf0] bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Brand />
-        <nav aria-label="Main" className="hidden items-center gap-6 text-[0.82rem] text-[#4b5c52] md:flex">
-          <Link href="/#method" className="hover:text-[#176b50]">
+        <nav
+          aria-label="Main"
+          className="hidden items-center gap-7 text-[0.82rem] font-medium text-[#475467] md:flex"
+        >
+          <Link href="/#method" className="transition hover:text-[#6938ef]">
             Method
           </Link>
-          <Link href="/#workflow" className="hover:text-[#176b50]">
-            Workflow
+          <Link href="/#buddy" className="transition hover:text-[#6938ef]">
+            BUDDY
           </Link>
-          <Link href="/demo-access" className="hover:text-[#176b50]">
+          <Link href="/demo-access" className="transition hover:text-[#6938ef]">
             Demo
           </Link>
-          <Link href="/privacy" className="hover:text-[#176b50]">
+          <Link href="/privacy" className="transition hover:text-[#6938ef]">
             Privacy
           </Link>
         </nav>
         <div className="flex items-center gap-2">
-          <Link href="/login" className="btn btn-ghost btn-sm">
+          <ThemeToggle />
+          <Link href="/login" className="btn btn-ghost btn-sm hidden sm:inline-flex">
             Sign in
           </Link>
           <Link href="/signup" className="btn btn-primary btn-sm">
@@ -31,34 +36,60 @@ export function PublicHeader() {
           </Link>
         </div>
       </div>
+      <nav
+        aria-label="Sections"
+        className="border-t border-[#eaecf0] md:hidden"
+      >
+        <div className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-4 py-2 text-[0.76rem] font-medium text-[#475467] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <Link href="/#method" className="shrink-0 py-0.5 transition hover:text-[#6938ef]">
+            Method
+          </Link>
+          <Link href="/#buddy" className="shrink-0 py-0.5 transition hover:text-[#6938ef]">
+            BUDDY
+          </Link>
+          <Link href="/demo-access" className="shrink-0 py-0.5 transition hover:text-[#6938ef]">
+            Demo
+          </Link>
+          <Link href="/privacy" className="shrink-0 py-0.5 transition hover:text-[#6938ef]">
+            Privacy
+          </Link>
+          <Link href="/login" className="shrink-0 py-0.5 transition hover:text-[#6938ef]">
+            Sign in
+          </Link>
+        </div>
+      </nav>
     </header>
   );
 }
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-[#e4e9e0] bg-[#f2f3ec]">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div className="flex flex-wrap items-start justify-between gap-8">
+    <footer className="relative overflow-hidden bg-[#101828] text-[#98a2b3]">
+      <div
+        className="pointer-events-none absolute -top-40 left-1/2 h-80 w-[52rem] -translate-x-1/2 rounded-full bg-[#7a5af8]/25 blur-3xl"
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        <div className="flex flex-wrap items-start justify-between gap-10">
           <div className="max-w-sm">
-            <Brand />
-            <p className="mt-3 text-[0.8rem] leading-relaxed text-[#66766d]">
+            <Brand tone="light" />
+            <p className="mt-4 text-[0.82rem] leading-relaxed text-[#98a2b3]">
               A study-diagnosis tool that grounds every question and explanation in the material you
               upload. It reports evidence, not certainty.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-x-10 gap-y-2 text-[0.8rem] text-[#526158] sm:grid-cols-3">
-            <Link href="/demo-access" className="hover:text-[#176b50]">Demo access</Link>
-            <Link href="/privacy" className="hover:text-[#176b50]">Privacy</Link>
-            <Link href="/terms" className="hover:text-[#176b50]">Terms</Link>
-            <Link href="/login" className="hover:text-[#176b50]">Sign in</Link>
-            <Link href="/signup" className="hover:text-[#176b50]">Create account</Link>
-            <Link href="/forgot-password" className="hover:text-[#176b50]">Password help</Link>
+          <div className="grid grid-cols-2 gap-x-12 gap-y-2.5 text-[0.82rem] text-[#98a2b3] sm:grid-cols-3">
+            <Link href="/demo-access" className="transition hover:text-white">Demo access</Link>
+            <Link href="/privacy" className="transition hover:text-white">Privacy</Link>
+            <Link href="/terms" className="transition hover:text-white">Terms</Link>
+            <Link href="/login" className="transition hover:text-white">Sign in</Link>
+            <Link href="/signup" className="transition hover:text-white">Create account</Link>
+            <Link href="/forgot-password" className="transition hover:text-white">Password help</Link>
           </div>
         </div>
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#e0e5dc] pt-5 text-[0.7rem] text-[#7a877f]">
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#1d2939] pt-6 text-[0.72rem] text-[#667085]">
           <p>© {new Date().getUTCFullYear()} GapFinder AI. Educational decision support, not an official grade.</p>
-          <p className="font-mono uppercase tracking-[0.13em]">Built for evidence, not guesswork</p>
+          <p className="font-medium uppercase tracking-[0.14em]">Built for evidence, not guesswork</p>
         </div>
       </div>
     </footer>

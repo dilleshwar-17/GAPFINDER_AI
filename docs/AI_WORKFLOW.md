@@ -31,8 +31,9 @@ endpoint so a reviewer can see which path is active.
 ### Inputs
 
 - the target topic (name, description),
-- the retrieved evidence chunks (up to `RETRIEVAL_TOP_K`),
-- the maximum question count for that topic,
+- the retrieved evidence chunks (up to 8 for a diagnostic; BUDDY asks for up to
+  6),
+- the maximum question count for that topic (3),
 - prompt hashes already used in the subject (deduplication).
 
 ### Gemini path
@@ -80,13 +81,13 @@ to the exact evidence set, validates option counts and answer indices, enforces
 unique prompt hashes per subject, and writes `questions` + `question_sources` in
 one transaction. Rejected questions are counted, not silently stored.
 
-## 2. Topic explanation (assistant)
+## 2. Topic explanation (BUDDY)
 
 ### Inputs
 
 - the selected topic (must be owned by the caller),
 - the learner's question (3–600 characters),
-- evidence retrieved for `topic + question`.
+- evidence retrieved for `topic + question` with `topK = 6`.
 
 ### Grounding
 
@@ -111,6 +112,23 @@ one transaction. Rejected questions are counted, not silently stored.
 - Nothing from the document can cause a tool call, a write, or a change in
   authorization scope.
 
+### Voice input and output
+
+- The UI is labelled **BUDDY**. Dictation and spoken replies are client-side
+  conveniences layered on the same `/api/assistant` contract; they add no new
+  server prompt, storage or authorization path.
+- Dictation uses the browser's Speech Recognition API. Interim words appear in
+  a live panel while the learner speaks; final words settle into the editable
+  question box before submission, so the learner can correct them.
+- Spoken replies use the browser's speech synthesis. Answer text is converted to
+  plain speech locally; audio is never generated or stored on the server. A fixed
+  caption dock follows `Utterance.onboundary` events to highlight the current
+  word and show progress. Where a browser reports no boundaries, the dock shows
+  the full reply with an indeterminate progress bar instead.
+- If a browser lacks either API, the relevant control is disabled with an
+  explanatory title and typing still works. No answer or citation logic depends
+  on voice support.
+
 ## 3. Short-answer evaluation
 
 - Multiple-choice answers are always scored by exact index comparison.
@@ -134,7 +152,7 @@ Scoring is detailed in [`SCORING_AND_GAP_ANALYSIS.md`](SCORING_AND_GAP_ANALYSIS.
 - operation kind (generation, evaluation, explanation),
 - provider and model name,
 - status (`ok`, `fallback`, `error`),
-- a short reason / count,
+- a short reason / count, truncated to 300 characters,
 - timestamp.
 
 It never stores prompts, passages, answers or model output. This makes provider

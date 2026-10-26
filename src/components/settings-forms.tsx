@@ -10,7 +10,7 @@ function Notice({ message, tone }: { message: string; tone: "success" | "error" 
     return (
       <p
         role="status"
-        className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[#bcded0] bg-[#f0f9f4] px-3 py-2 text-[0.78rem] text-[#14533f]"
+        className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[#a6f4c5] bg-[#ecfdf3] px-3 py-2 text-[0.78rem] text-[#027a48]"
       >
         <CheckCircle2 size={13} aria-hidden />
         {message}
@@ -20,7 +20,7 @@ function Notice({ message, tone }: { message: string; tone: "success" | "error" 
   return (
     <p
       role="alert"
-      className="mt-3 rounded-lg border border-[#ecc8c1] bg-[#fbf0ed] px-3 py-2 text-[0.78rem] text-[#7f2f24]"
+      className="mt-3 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-3 py-2 text-[0.78rem] text-[#b42318]"
     >
       {message}
     </p>
@@ -61,11 +61,11 @@ export function ProfileForm({
   return (
     <form onSubmit={onSubmit} className="card p-5">
       <div className="flex items-center gap-2">
-        <UserRound size={15} className="text-[#176b50]" aria-hidden />
+        <UserRound size={15} className="text-[#7a5af8]" aria-hidden />
         <h2 className="text-[0.98rem]">Profile</h2>
       </div>
-      <p className="mt-1 text-[0.75rem] leading-relaxed text-[#7a877f]">
-        Signed in as <span className="font-medium text-[#3f5147]">{email}</span>
+      <p className="mt-1 text-[0.75rem] leading-relaxed text-[#667085]">
+        Signed in as <span className="font-medium text-[#344054]">{email}</span>
         {isDemo ? " · shared demo account" : ""}
       </p>
       <div className="mt-4">
@@ -134,10 +134,10 @@ export function PasswordForm({ isDemo }: { isDemo: boolean }) {
   return (
     <form onSubmit={onSubmit} className="card p-5">
       <div className="flex items-center gap-2">
-        <KeyRound size={15} className="text-[#176b50]" aria-hidden />
+        <KeyRound size={15} className="text-[#7a5af8]" aria-hidden />
         <h2 className="text-[0.98rem]">Password</h2>
       </div>
-      <p className="mt-1 text-[0.75rem] leading-relaxed text-[#7a877f]">
+      <p className="mt-1 text-[0.75rem] leading-relaxed text-[#667085]">
         {isDemo
           ? "The demo account password is managed by the operator and cannot be changed from the shared workspace."
           : "Changing your password revokes every other session. This browser stays signed in."}
@@ -246,7 +246,7 @@ export function PreferencesForm({
   return (
     <form onSubmit={onSubmit} className="card p-5">
       <h2 className="text-[0.98rem]">Study preferences</h2>
-      <p className="mt-1 text-[0.75rem] leading-relaxed text-[#7a877f]">
+      <p className="mt-1 text-[0.75rem] leading-relaxed text-[#667085]">
         These defaults prefill the plan builder. The server still enforces the same limits on every
         request.
       </p>

@@ -14,16 +14,16 @@ export default async function SignupPage() {
         <h1 id="signup-heading" className="text-[1.35rem]">
           Create your workspace
         </h1>
-        <p className="mt-1.5 text-[0.82rem] leading-relaxed text-[#64746a]">
+        <p className="mt-1.5 text-[0.82rem] leading-relaxed text-[#475467]">
           Start with a subject you are preparing for. You will upload material, build a topic map and
           take a short diagnostic before any mastery figure is reported.
         </p>
         <div className="mt-5">
           <SignupForm />
         </div>
-        <p className="mt-5 border-t border-[#e7ece3] pt-4 text-[0.8rem] text-[#65756b]">
+        <p className="mt-5 border-t border-[#eaecf0] pt-4 text-[0.8rem] text-[#475467]">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-[#176b50] hover:underline">
+          <Link href="/login" className="font-medium text-[#7a5af8] hover:underline">
             Sign in
           </Link>
           .
@@ -32,7 +32,7 @@ export default async function SignupPage() {
 
       <section className="max-w-lg lg:order-first">
         <p className="eyebrow">What you get</p>
-        <h2 className="display-lg mt-3 text-[#12382d]">A diagnosis you can inspect line by line.</h2>
+        <h2 className="display-lg mt-3 text-[#171f2e]">A diagnosis you can inspect line by line.</h2>
         <ol className="mt-7 space-y-5">
           {[
             ["Sources first", "Upload a syllabus, notes and past paper. Each chunk keeps its document, page and heading."],
@@ -41,17 +41,17 @@ export default async function SignupPage() {
             ["No hidden answer keys", "Expected answers and rubrics are withheld from the quiz payload until you submit."],
           ].map(([title, body], index) => (
             <li key={title} className="flex gap-4">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#cfdbcF] bg-[#f8faf4] font-mono text-[0.66rem] font-semibold text-[#176b50]">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#d0d5dd] bg-[#f9fafb] font-mono text-[0.66rem] font-semibold text-[#7a5af8]">
                 {index + 1}
               </span>
               <div>
                 <h3 className="text-[0.92rem]">{title}</h3>
-                <p className="mt-1 text-[0.81rem] leading-relaxed text-[#64746a]">{body}</p>
+                <p className="mt-1 text-[0.81rem] leading-relaxed text-[#475467]">{body}</p>
               </div>
             </li>
           ))}
         </ol>
-        <div className="mt-8 rounded-xl border border-[#e8d6a8] bg-[#faf6ea] p-4 text-[0.78rem] leading-relaxed text-[#6d5418]">
+        <div className="mt-8 rounded-xl border border-[#fedf89] bg-[#fffaeb] p-4 text-[0.78rem] leading-relaxed text-[#b54708]">
           <strong className="font-semibold">Before you upload:</strong> use material you are allowed to
           process. Files are stored in this deployment&apos;s database and are sent to the configured
           embedding or language-model provider only when that provider is enabled.

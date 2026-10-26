@@ -74,16 +74,19 @@ does not duplicate the workspace.
 Interactive (normal service calls, session-scoped):
 
 - browse the dashboard, subjects, topic map, materials, document detail,
-  diagnostics, results, reports, revision plan, learn pages, assistant,
+  diagnostics, results, reports, revision plan, learn pages, BUDDY,
   progress and settings;
 - start a **practice** diagnostic and answer it;
-- ask the assistant grounded questions and inspect citations.
+- ask BUDDY grounded questions, dictate a question, hear the reply read aloud,
+  and inspect citations.
 
-Practice submissions by demo visitors are scored and stored, and their mastery
-snapshots are recorded for that attempt, but they **do not rewrite the shared
-active plan or the baseline mastery picture** unless an internal `allowDemo`
-seeding flag is set. This keeps the reference workspace coherent for the next
-visitor.
+Practice submissions by demo visitors are scored and stored, but the demo path
+skips both mastery-snapshot refresh and plan refresh. Practice therefore **does
+not** add mastery history, move the shared baseline, or rewrite the active plan.
+The internal `allowDemo` option is reserved for the seeding routine, which builds
+the reference workspace deliberately. This keeps the workspace coherent for the
+next visitor. Practice attempts are visible to later visitors because the demo is
+one shared owner.
 
 ## What is blocked
 
@@ -99,9 +102,11 @@ disabled buttons:
 - profile (display name) changes;
 - password changes.
 
-Attempting any of these returns `403 FORBIDDEN` with a message explaining that
-the shared demo is read-only and a personal account is needed. The UI disables
-the corresponding controls and shows the same explanation.
+Attempting a resource write (uploads, subject/topic/plan/task changes) returns
+`403 FORBIDDEN`. Preference and profile updates return `409 CONFLICT`, and a
+password change returns `403`. Every message explains that the shared demo is
+read-only and a personal account is needed. The UI disables the corresponding
+controls and shows the same explanation.
 
 The app shell shows a persistent **“shared demo”** banner so a reviewer is never
 in doubt about which workspace they are in.

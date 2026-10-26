@@ -108,8 +108,15 @@ React **19.3.1**, Vitest **5.0.5**.
 | `npm run lint` | **Passed** — no output, no errors |
 | `npm run typecheck` | **Passed** — no output, no errors |
 | `npm test` | **Passed** — 8 test files, **127 tests** |
-| `npm run build` | **Passed** — compiled successfully; 21 static pages generated; all app/API/proxy routes present |
+| `npm run build` | **Passed** — compiled successfully; 21 static generation tasks reported (actual prerendered public/app routes are fewer; all routes compiled) |
 | `npm run smoke` against production server | **Passed — 49 passed, 0 failed** |
+
+Re-verified after the UI retheme, BUDDY voice/theme work, and live transcription:
+lint, typecheck, 127 Vitest tests, production build (21 static generation tasks) and
+the 49-check smoke suite all passed. Those runs confirm delivery and server
+rendering; they do not exercise microphone capture, speech playback, word
+boundary captions or theme transitions in a real browser (see
+`KNOWN_LIMITATIONS.md` §1.6).
 
 ### Exact smoke procedure
 
@@ -137,6 +144,10 @@ Smoke testing http://localhost:3100
 49 passed, 0 failed
 ```
 
+One check only runs on a fresh workspace: once the demo account already has a
+resumable diagnostic, the suite reuses it and reports **48** checks instead of
+49. Both totals must have zero failures; re-verified after the BUDDY/theme work.
+
 The 49 checks cover:
 
 - health, DB query, demo enablement;
@@ -147,7 +158,7 @@ The 49 checks cover:
 - dashboard/subjects/reports rendering and the demo banner;
 - subject discovery and every seeded dynamic page;
 - topic → learn page;
-- grounded assistant request, resolved citations, authorised document IDs,
+- grounded BUDDY request, resolved citations, authorised document IDs,
   invalid-input rejection;
 - materials → document detail;
 - diagnostic results and runner;

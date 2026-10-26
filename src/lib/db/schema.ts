@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS documents (
 );
 CREATE INDEX IF NOT EXISTS idx_documents_owner_subject ON documents(owner_id, subject_id);
 CREATE INDEX IF NOT EXISTS idx_documents_sha ON documents(owner_id, sha256);
+CREATE INDEX IF NOT EXISTS idx_documents_owner_status ON documents(owner_id, status, subject_id);
 
 CREATE TABLE IF NOT EXISTS document_chunks (
   id TEXT PRIMARY KEY,
@@ -173,6 +174,7 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
 );
 CREATE INDEX IF NOT EXISTS idx_attempts_owner_subject ON quiz_attempts(owner_id, subject_id);
 CREATE INDEX IF NOT EXISTS idx_attempts_started ON quiz_attempts(owner_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_attempts_owner_status ON quiz_attempts(owner_id, status, submitted_at DESC);
 
 CREATE TABLE IF NOT EXISTS answers (
   id TEXT PRIMARY KEY,
@@ -209,6 +211,7 @@ CREATE TABLE IF NOT EXISTS mastery_snapshots (
 );
 CREATE INDEX IF NOT EXISTS idx_snapshots_topic ON mastery_snapshots(topic_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_snapshots_owner_subject ON mastery_snapshots(owner_id, subject_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_snapshots_owner_topic ON mastery_snapshots(owner_id, topic_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS revision_plans (
   id TEXT PRIMARY KEY,
@@ -248,6 +251,7 @@ CREATE TABLE IF NOT EXISTS revision_tasks (
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_plan ON revision_tasks(plan_id, position);
 CREATE INDEX IF NOT EXISTS idx_tasks_owner ON revision_tasks(owner_id, status);
+CREATE INDEX IF NOT EXISTS idx_tasks_owner_status_plan ON revision_tasks(owner_id, status, plan_id);
 
 -- Operational telemetry with no document text: provider, model, outcome and a short reason.
 CREATE TABLE IF NOT EXISTS ai_events (
