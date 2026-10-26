@@ -1,11 +1,19 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db, resetDatabase } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { syncSupabaseUser } from "@/lib/auth/session";
+import { assertWritableAccount } from "@/lib/services/guards";
 import { insertSubject, insertUser } from "./fixtures";
+
+const originalDemoEmail = process.env.SUPABASE_DEMO_EMAIL;
 
 beforeEach(() => {
   resetDatabase();
+});
+
+afterEach(() => {
+  if (originalDemoEmail === undefined) Reflect.deleteProperty(process.env, "SUPABASE_DEMO_EMAIL");
+  else process.env.SUPABASE_DEMO_EMAIL = originalDemoEmail;
 });
 
 describe("syncSupabaseUser", () => {
@@ -87,5 +95,52 @@ describe("syncSupabaseUser", () => {
         "legacy-user",
       ))?.auth_user_id,
     ).toBeNull();
+  });
+
+  it("marks the configured Supabase demo identity as read-only", async () => {
+    process.env.SUPABASE_DEMO_EMAIL = "Shared-Demo@example.test";
+
+    const user = await syncSupabaseUser({
+      id: "supabase-demo-user",
+      email: "shared-demo@example.test",
+      email_confirmed_at: "2026-10-26T10:00:00.000Z",
+      user_metadata: {},
+      app_metadata: {},
+    });
+
+    expect(user.isDemo).toBe(true);
+    expect(
+      (await db.get<{ is_demo: number }>("SELECT is_demo FROM users WHERE id = ?", user.id))
+        ?.is_demo,
+    ).toBe(1);
+    await expect(assertWritableAccount(user.id, "material uploads")).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+  });
+
+  it("upgrades an existing configured demo profile to read-only without changing its owner id", async () => {
+    process.env.SUPABASE_DEMO_EMAIL = "shared-demo@example.test";
+    await insertUser({
+      id: "existing-demo-user",
+      email: "shared-demo@example.test",
+      isDemo: false,
+    });
+
+    const user = await syncSupabaseUser({
+      id: "supabase-demo-user",
+      email: "shared-demo@example.test",
+      email_confirmed_at: "2026-10-26T10:00:00.000Z",
+      user_metadata: {},
+      app_metadata: {},
+    });
+
+    expect(user).toMatchObject({ id: "existing-demo-user", isDemo: true });
+    expect(
+      (await db.get<{ is_demo: number }>(
+        "SELECT is_demo FROM users WHERE id = ?",
+        "existing-demo-user",
+      ))?.is_demo,
+    ).toBe(1);
   });
 });

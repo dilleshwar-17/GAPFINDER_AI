@@ -112,6 +112,30 @@ async function expectNotFound(run: () => Promise<unknown>): Promise<void> {
 }
 
 describe("upload -> extraction -> retrieval pipeline", () => {
+  it("returns the processed document directly after upload", async () => {
+    const document = await ingestDocument({
+      ownerId,
+      subjectId,
+      filename: "qa-additional-notes.txt",
+      mimeType: "text/plain",
+      kind: "notes",
+      bytes: new TextEncoder().encode(
+        "The cell membrane controls what enters and leaves a cell through selective permeability. " +
+          "It is made of a phospholipid bilayer with proteins embedded throughout the structure. " +
+          "Small nonpolar molecules can move directly across the bilayer, while charged particles " +
+          "require channels or carrier proteins to cross the membrane.",
+      ),
+    });
+
+    expect(document).toMatchObject({
+      filename: "qa-additional-notes.txt",
+      status: "ready",
+      errorMessage: null,
+      citationCount: 0,
+    });
+    expect(document.chunkCount).toBeGreaterThan(0);
+  });
+
   it("indexes a readable text file with chunks and stable source metadata", async () => {
     const documents = await listDocuments(ownerId, subjectId);
     expect(documents).toHaveLength(1);

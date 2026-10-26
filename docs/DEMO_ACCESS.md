@@ -21,11 +21,12 @@ through the normal password form.
 
 When Supabase Auth is configured, the endpoint instead signs in the configured
 Supabase demo user using `SUPABASE_DEMO_EMAIL` and the server-only
-`SUPABASE_DEMO_PASSWORD`. The Supabase user must have trusted
-`app_metadata.is_demo=true`. The endpoint refuses a Supabase identity not
-marked as demo. This production path still depends on application data in the
-local SQLite database and is therefore not suitable for Vercel until the data
-layer is migrated.
+`SUPABASE_DEMO_PASSWORD`. The server marks the exact configured email as a
+demo account in the application database; trusted `app_metadata.is_demo=true`
+and an existing demo flag are also honored. The endpoint refuses a Supabase
+identity not marked as demo. This production path still depends on application
+data in the local SQLite database and is therefore not suitable for Vercel
+until the data layer is migrated.
 
 No credential is displayed, logged, or returned. In local mode the account's
 password is a random 32-byte value stored only as a scrypt hash, so the ordinary

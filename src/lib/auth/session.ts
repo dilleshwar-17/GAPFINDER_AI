@@ -95,7 +95,11 @@ export async function syncSupabaseUser(user: {
       ? user.user_metadata.full_name.trim()
       : null);
   const displayName = existing?.display_name ?? metadataName ?? email.split("@")[0];
-  const isDemo = existing?.is_demo === 1 || user.app_metadata.is_demo === true;
+  const configuredDemoEmail = process.env.SUPABASE_DEMO_EMAIL?.trim().toLowerCase();
+  const isDemo =
+    existing?.is_demo === 1 ||
+    user.app_metadata.is_demo === true ||
+    (configuredDemoEmail !== undefined && email === configuredDemoEmail);
 
   if (existing) {
     await db.run(

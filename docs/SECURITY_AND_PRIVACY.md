@@ -141,7 +141,9 @@ an equivalent shared store. This is listed in the limitations.
 - In local mode, its password is a 32-byte random value generated at
   provisioning time, stored only as a scrypt hash, and never printed, logged,
   or returned in an API response. Supabase mode uses the configured
-  server-only demo credentials and requires trusted `app_metadata.is_demo`.
+  server-only demo credentials; the exact configured demo email, trusted
+  `app_metadata.is_demo`, or an existing demo flag marks its app profile
+  read-only.
 - Entry is via `POST /api/auth/demo`: local mode issues a `gf_session`;
   Supabase mode establishes the provider's SSR session.
 - Writes are blocked server-side by `assertWritableAccount` for uploads,

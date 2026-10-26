@@ -56,6 +56,38 @@ export interface LibraryDocument extends DocumentView {
   excerpt: string | null;
 }
 
+type DocumentViewRow = Pick<
+  DocumentRow,
+  | "id"
+  | "filename"
+  | "kind"
+  | "mime_type"
+  | "size_bytes"
+  | "status"
+  | "error_message"
+  | "page_count"
+  | "chunk_count"
+  | "created_at"
+  | "processed_at"
+>;
+
+function toDocumentView(row: DocumentViewRow, citationCount: number): DocumentView {
+  return {
+    id: row.id,
+    filename: row.filename,
+    kind: row.kind,
+    mimeType: row.mime_type,
+    sizeBytes: row.size_bytes,
+    status: row.status,
+    errorMessage: row.error_message,
+    pageCount: row.page_count,
+    chunkCount: row.chunk_count,
+    createdAt: row.created_at,
+    processedAt: row.processed_at,
+    citationCount,
+  };
+}
+
 
 function classifyFile(filename: string, mimeType: string): "pdf" | "text" {
   const lower = filename.toLowerCase();
@@ -110,20 +142,7 @@ export async function listDocuments(ownerId: string, subjectId: string): Promise
       ownerId,
       row.id,
     );
-    return {
-      id: row.id,
-      filename: row.filename,
-      kind: row.kind,
-      mimeType: row.mime_type,
-      sizeBytes: row.size_bytes,
-      status: row.status,
-      errorMessage: row.error_message,
-      pageCount: row.page_count,
-      chunkCount: row.chunk_count,
-      createdAt: row.created_at,
-      processedAt: row.processed_at,
-      citationCount: citations?.count ?? 0,
-    };
+    return toDocumentView(row, citations?.count ?? 0);
   }));
 }
 
@@ -230,6 +249,19 @@ export async function getDocumentOwned(ownerId: string, documentId: string): Pro
   );
   if (!document) throw notFound("That document was not found in your workspace.");
   return document;
+}
+
+async function getDocumentViewOwned(ownerId: string, documentId: string): Promise<DocumentView> {
+  const document = await db.get<DocumentViewRow>(
+    `SELECT id, filename, kind, mime_type, size_bytes, status, error_message,
+            page_count, chunk_count, created_at, processed_at
+       FROM documents
+      WHERE id = ? AND owner_id = ?`,
+    documentId,
+    ownerId,
+  );
+  if (!document) throw notFound("That document was not found in your workspace.");
+  return toDocumentView(document, 0);
 }
 
 async function processStoredDocument(document: DocumentRow): Promise<void> {
@@ -390,7 +422,7 @@ export async function ingestDocument(input: UploadInput): Promise<DocumentView> 
 
   const stored = await getDocumentOwned(input.ownerId, id);
   await processStoredDocument(stored);
-  return (await listDocuments(input.ownerId, input.subjectId)).find((document) => document.id === id)!;
+  return getDocumentViewOwned(input.ownerId, id);
 }
 
 export async function retryDocument(
@@ -412,7 +444,7 @@ export async function retryDocument(
   );
   const refreshed = await getDocumentOwned(ownerId, documentId);
   await processStoredDocument(refreshed);
-  return (await listDocuments(ownerId, document.subject_id)).find((entry) => entry.id === documentId)!;
+  return getDocumentViewOwned(ownerId, documentId);
 }
 
 export async function deleteDocument(ownerId: string, documentId: string): Promise<{ subjectId: string }> {

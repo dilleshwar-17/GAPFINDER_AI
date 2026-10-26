@@ -235,7 +235,7 @@ This deletes the configured SQLite file (`DATABASE_PATH`, default `data/gapfinde
 - **Node version:** requires Node >= 22.5 because of `node:sqlite`. Verify with `node -v`.
 - **Voice not working:** Speech Recognition/synthesis depend on the browser and OS. If controls are disabled, type the question — no feature requires voice.
 - **Empty retrieval / abstentions:** Ensure material is uploaded, extracted and `ready`, or try re-processing after a provider change.
-- **Demo missing:** In local mode, check `DISABLE_DEMO` and that `/api/auth/demo` is not rate-limited. With Supabase Auth, configure the demo account variables and mark the Supabase user `app_metadata.is_demo=true`. A production demo still needs durable app data.
+- **Demo missing:** In local mode, check `DISABLE_DEMO` and that `/api/auth/demo` is not rate-limited. With Supabase Auth, configure `SUPABASE_DEMO_EMAIL` and `SUPABASE_DEMO_PASSWORD` for the shared account. Its configured email is marked read-only in the app profile; trusted `app_metadata.is_demo=true` is also recognized. A production demo still needs durable app data.
 - **Port already in use:** Set `PORT` or stop the existing process.
 
 
