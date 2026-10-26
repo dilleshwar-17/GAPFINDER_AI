@@ -4,6 +4,7 @@ import { redirectIfSignedIn } from "@/lib/auth/page";
 import { SignupForm } from "@/components/auth-forms";
 
 export const metadata: Metadata = { title: "Create an account" };
+export const dynamic = "force-dynamic";
 
 export default async function SignupPage() {
   await redirectIfSignedIn();

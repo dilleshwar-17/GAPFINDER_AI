@@ -3,8 +3,21 @@
 This document records the local setup, Supabase Auth configuration, Vercel
 deployment prerequisites, and the remaining release blockers.
 
-**Status: not deployed.** No Supabase project or Vercel deployment was
-configured or tested in this session.
+**Status: Preview deployed; not production-ready.** On 2026-10-26, the
+current local working tree was deployed to
+`https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app`. Vercel
+reported the deployment Ready; the homepage, login, and signup returned HTTP
+200, and an unauthenticated dashboard request redirected to login. The health
+endpoint reported a database error, so this deployment is not verified as a
+working data-backed application.
+
+This Preview is protected by Vercel Authentication. Do not treat route
+availability as proof that Supabase login, learner data persistence, uploads,
+or the student workflow work end-to-end. An independent Production deployment
+from GitHub `main` commit `2907ca9` was also observed on 2026-10-26. After
+explicit approval, the Production alias was rolled back to the preceding Ready
+deployment (`dpl_8WWKfFKfkaauwFkhjeGHXWaRCPZH`). The alias was verified, but
+the active Production application was not tested end-to-end.
 
 ---
 
@@ -29,6 +42,7 @@ npm run dev
 Open `http://localhost:3000`. The SQLite file is created automatically at
 `data/gapfinder.db` (or `DATABASE_PATH`).
 To exercise Supabase Auth locally, configure `NEXT_PUBLIC_SUPABASE_URL`,
+either `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or
 `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_SITE_URL` in `.env.local`.
 
 ### Useful commands
@@ -80,7 +94,8 @@ Copy `.env.example` and set values. The important ones:
 | Variable | Default | Required | Notes |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | unset | Supabase Auth | Project URL; public configuration |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | unset | Supabase Auth | Public anon key only; never a service-role key |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | unset | Supabase Auth | Preferred public key; never a service-role key |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | unset | Supabase Auth | Legacy public key; used when publishable key is unset |
 | `NEXT_PUBLIC_SITE_URL` | localhost URL | production auth links | Canonical HTTPS site origin |
 | `SUPABASE_DEMO_EMAIL` | unset | hosted demo | Server-only demo identity |
 | `SUPABASE_DEMO_PASSWORD` | unset | hosted demo | Server-only secret |
@@ -114,13 +129,54 @@ use the repository's SQLite database. The added `auth_user_id` mapping is a
 non-destructive SQLite schema change; it is not a Postgres migration or a data
 transfer.
 
+## 4. Preview verification record
+
+The following commands were run against the exact Preview URL above:
+
+```powershell
+vercel deploy --yes
+vercel inspect https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app
+vercel curl https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app/ -I
+vercel curl https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app/login -I
+vercel curl https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app/signup -I
+vercel curl https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app/dashboard -I
+vercel curl https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app/api/health
+```
+
+`vercel inspect` reported target `preview` and status `Ready`; `/`, `/login`,
+and `/signup` returned HTTP 200. An unauthenticated `/dashboard` request
+returned HTTP 307 to the login page. A prior Preview request had returned 500
+because `AuthSessionMissingError` was thrown as a server failure; missing
+sessions are now treated as anonymous while other Supabase errors still
+surface. `/api/health` returned `status: degraded` and `database: error`. Its
+handler suppresses the underlying SQLite exception, so the specific runtime
+cause is not established by this check. No Supabase credentials were submitted
+and no mutating student-workflow actions were run. Vercel Preview readiness
+means the deployment built and was assigned; it does not mean application
+health or production readiness.
+
+## 5. Production rollback record
+
+The supplied build log showed a Production deployment from GitHub `main`
+commit `2907ca9`. Vercel inspection showed it had moved the production alias.
+Following explicit approval, it was rolled back with:
+
+```powershell
+vercel rollback https://gapfinder-91wkw35oa-dilleshwar-17s-projects.vercel.app --yes
+vercel inspect https://gapfinder-ai-dilleshwar-rao.vercel.app
+```
+
+The alias now points to the preceding Ready deployment. No production database
+was changed. This rollback is not evidence that the active Production
+application or its data layer is healthy.
+
 If you switch embedding providers, existing chunks are excluded from retrieval
 (model/dimension mismatch). Re-process the documents (document detail →
 **Retry processing**) or reset and re-upload.
 
 ---
 
-## 4. Verification results for this build
+## 6. Verification results for this build
 
 Environment: Windows, Node **v26.5.1**, npm **12.0.2**, Next.js **16.4.3**,
 React **19.3.1**, Vitest **5.0.5**.
@@ -129,11 +185,12 @@ React **19.3.1**, Vitest **5.0.5**.
 | --- | --- |
 | `npm run lint` | **Passed** — no lint errors |
 | `npm run typecheck` | **Passed** — no TypeScript errors |
-| `npm test` | **Passed** — 9 test files, **130 tests** |
-| `npm run build` | **Passed** — all routes compiled after resolving the duplicate `middleware.ts`/`proxy.ts` conflict |
+| `npm test` | **Passed** — 11 test files, **138 tests** |
+| Local `npm run build` | **Blocked** — Windows `EPERM` unlinking `.next/static` while a local Next server was running |
+| Vercel Preview build | **Passed** — latest deployment Ready |
 | `npm run smoke` | **Not run** for the current auth/theme changes |
-| Live Supabase Auth flow | **Blocked** — no Supabase environment or email provider configured |
-| Vercel deployment | **Not run** — no Vercel token or explicit deployment approval |
+| Live Supabase Auth flow | **Not tested** — no credentials submitted; only the unauthenticated guard was checked |
+| Vercel Preview health | **Failed** — `/api/health` reports a SQLite database error |
 
 The current unit suite uses an in-memory SQLite database and does not contact
 Supabase or Gemini. The blue glass theme was visually inspected in the
@@ -191,21 +248,24 @@ The 49 checks cover:
 ### What was not run
 
 - No browser automation (Playwright/Puppeteer not installed).
-- No live Gemini call (no key).
-- No deployment.
+- No live Gemini/RAG request (no provider-backed call was made).
+- No end-to-end Supabase login, upload, or learner workflow on Preview.
 - No cross-platform (Linux/macOS) run.
 - No load or concurrency test.
 
 ---
 
-## 5. Deployment blockers (current)
+## 7. Deployment blockers (current)
 
-### 5.1 No hosting credentials or authorization
+### 7.1 Preview deployment does not establish production readiness
 
-No Vercel CLI/token or Supabase project credentials were configured. No URL is
-claimed and no deployment was attempted.
+A Preview has been deployed and its public routes and unauthenticated guard
+were checked. The health endpoint reports a SQLite database error. A separate
+Production deployment from GitHub `main` commit `2907ca9` was observed and
+rolled back to the previous Ready deployment with approval. Neither the
+Production application nor its data persistence was verified end-to-end.
 
-### 5.2 SQLite is not durable on serverless
+### 7.2 SQLite is not durable on serverless
 
 `node:sqlite` writes a local file. On Vercel (or any ephemeral/serverless host)
 the filesystem is not durable or shared, so sessions, uploads and learner data
@@ -213,14 +273,14 @@ would disappear or diverge between instances. This build is therefore suitable
 for a **single long-lived Node process with a persistent disk**, not for
 serverless.
 
-### 5.3 No Supabase Postgres application-data adapter
+### 7.3 No Supabase Postgres application-data adapter
 
 Supabase Auth is integrated, but the application's relational data path remains
 synchronous SQLite. No Postgres adapter, migration runner, pgvector index, or
 Supabase Storage integration exists. Auth-only configuration does **not** make
 student records durable on Vercel.
 
-### 5.4 Supabase email and account migration are unverified
+### 7.4 Supabase email and account migration are unverified
 
 Password reset and email confirmation require Supabase Auth email delivery and
 redirect allow-list configuration; neither was live-tested. Existing local
@@ -231,7 +291,7 @@ were changed here.
 
 ---
 
-## 6. Vercel setup (after the data-layer blocker is resolved)
+## 8. Vercel setup (after the data-layer blocker is resolved)
 
 Vercel automatically detects this Next.js App Router project; no custom
 `vercel.json` is currently required. Use the repository root, npm, and the
@@ -243,9 +303,9 @@ Before connecting the production domain:
 
 1. Provision the durable application database and file-storage migration; do
    not rely on `DATABASE_PATH` on Vercel.
-2. Configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and
-   environment-specific `NEXT_PUBLIC_SITE_URL` in Vercel. Use a public anon key
-   only; never expose a service-role key through `NEXT_PUBLIC_`.
+2. Configure `NEXT_PUBLIC_SUPABASE_URL`, either public key variable, and
+   environment-specific `NEXT_PUBLIC_SITE_URL` in Vercel. Never expose a
+   service-role key through `NEXT_PUBLIC_`.
 3. Add the production and preview `/auth/callback` origins to Supabase Auth's
    redirect allow list; configure email confirmation and password recovery
    delivery.
@@ -260,7 +320,7 @@ Before connecting the production domain:
 
 These are deployment instructions, not evidence of a completed deployment.
 
-## 7. Recommended production architecture (not implemented here)
+## 9. Recommended production architecture (not implemented here)
 
 ```
 CDN / TLS
@@ -287,7 +347,7 @@ Required code work:
 
 ---
 
-## 8. Single-server deployment (works with current data layer)
+## 10. Single-server deployment (works with current data layer)
 
 If you have a VM or container with a persistent disk:
 
@@ -309,7 +369,7 @@ behind TLS is important for production.
 
 ---
 
-## 9. Deployment checklist
+## 11. Deployment checklist
 
 - [ ] Node >= 22.5 on the host
 - [ ] `DATABASE_PATH` on a durable, writable volume
@@ -327,7 +387,7 @@ behind TLS is important for production.
 
 ---
 
-## 10. Rollback
+## 12. Rollback
 
 - Application: redeploy the previous build artifact.
 - Database: restore the last SQLite backup (or Postgres snapshot). There are no

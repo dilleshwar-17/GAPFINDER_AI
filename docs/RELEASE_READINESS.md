@@ -1,18 +1,34 @@
 # Release Readiness
 
-**Status: NOT READY for production Vercel deployment.**
+**Status: NOT READY for production Vercel deployment.** A protected Preview
+deployment exists, but its health endpoint reports a database error.
 
 ## Verified
 
 - Next.js 16.4.3 production build passes after consolidating Next's
   `middleware.ts`/`proxy.ts` entry point.
 - `npm run lint` and `npm run typecheck` pass.
-- `npm test` passes: 9 test files, 130 tests. This is an offline suite using
+- `npm test` passes: 11 test files, 138 tests. This is an offline suite using
   in-memory SQLite and deterministic providers.
 - Supabase Auth flows are wired in code and the SSR proxy validates configured
   provider identity; live Supabase verification is still required.
+- Production auth now fails closed with a service-unavailable response when
+  Supabase Auth configuration is absent; the non-production SQLite fallback
+  remains available for local development and tests.
 - Blue glassmorphism styling is shared across public and signed-in layouts and
   was visually inspected on a desktop browser.
+- A Vercel Preview deployment was created and is Ready. Its homepage, login,
+  and signup routes returned HTTP 200 through authenticated CLI requests.
+- An unauthenticated Preview dashboard request now redirects to login rather
+  than failing with `AuthSessionMissingError`; other Supabase errors remain
+  surfaced.
+- The Preview health endpoint returned `status: degraded` and
+  `database: error`; this confirms the SQLite-backed application is not healthy
+  on the Vercel runtime.
+- A separate Production deployment from GitHub `main` commit `2907ca9` was
+  observed from the supplied build log and Vercel metadata, then rolled back
+  with explicit approval. The Production alias now points to the preceding
+  Ready deployment; neither deployment has been verified end-to-end here.
 
 ## Release blockers
 
@@ -26,15 +42,17 @@
    No database was modified or migrated.
 4. **File persistence:** uploads remain SQLite BLOBs; no hosted object storage
    path exists.
-5. **Production verification:** smoke, ownership, upload/RAG/citation, mobile,
-   accessibility, load, and concurrency tests against a durable preview
-   deployment have not been run.
-6. **Operations:** no deployment, backup/restore, alerting, or rollback
-   verification was performed.
+5. **End-to-end verification:** authentication, ownership, upload/RAG/citation,
+   mobile, accessibility, load, and concurrency tests have not been run. The
+   current Preview cannot serve as a healthy data-backed test environment
+   because its database health check fails.
+6. **Operations:** Preview has been deployed, but backup/restore, alerting, and
+   rollback have not been verified. The separate Production deployment noted
+   above has not received end-to-end verification.
 
 ## Approval gate
 
-Do not deploy or claim production readiness until the application data/storage
+Do not promote or claim production readiness until the application data/storage
 layer is durable, all Supabase auth and ownership flows pass against a
-non-production project, regression and production-build checks pass, and an
-authorized preview deployment is verified end-to-end.
+non-production project, regression and production-build checks pass, and a
+healthy authorized preview deployment is verified end-to-end.

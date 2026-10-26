@@ -134,7 +134,7 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
       data: { user },
       error,
     } = await supabase.auth.getUser();
-    if (error) throw error;
+    if (error && error.name !== "AuthSessionMissingError") throw error;
     return user ? syncSupabaseUser(user) : null;
   }
 

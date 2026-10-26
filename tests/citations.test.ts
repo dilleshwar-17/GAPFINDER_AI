@@ -5,6 +5,7 @@ import {
   citationView,
   excerpt,
   resolveQuestionSources,
+  stripInternalCitationLabels,
   validateCitationIds,
 } from "@/lib/domain/citations";
 import type { EvidenceChunk } from "@/lib/domain/types";
@@ -37,6 +38,13 @@ describe("excerpt", () => {
     expect(result.length).toBeLessThanOrEqual(61);
     expect(result.endsWith("…")).toBe(true);
     expect(result.trimEnd()).toBe(result);
+  });
+});
+
+describe("stripInternalCitationLabels", () => {
+  it("removes internal passage labels from answer text", () => {
+    expect(stripInternalCitationLabels("A claim [P1] and another [p12]."))
+      .toBe("A claim and another.");
   });
 });
 

@@ -4,6 +4,7 @@ import { redirectIfSignedIn, safeNextPath } from "@/lib/auth/page";
 import { LoginForm } from "@/components/auth-forms";
 
 export const metadata: Metadata = { title: "Sign in" };
+export const dynamic = "force-dynamic";
 
 export default async function LoginPage({
   searchParams,

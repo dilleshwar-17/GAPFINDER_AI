@@ -18,6 +18,10 @@ export function excerpt(text: string, limit = 420): string {
   return `${(boundary > limit * 0.6 ? cut.slice(0, boundary) : cut).trim()}…`;
 }
 
+export function stripInternalCitationLabels(text: string): string {
+  return text.replace(/\s*\[P\d+\]/gi, "");
+}
+
 export function citationView(evidence: EvidenceChunk): CitationView {
   return {
     chunkId: evidence.chunkId,

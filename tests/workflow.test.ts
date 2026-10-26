@@ -389,6 +389,8 @@ describe("gap analysis, planning, progress and grounded assistance", () => {
     expect(answer.method).toBe("deterministic-extractive");
     expect(answer.citations.length).toBeGreaterThan(0);
     expect(answer.answerMarkdown.length).toBeGreaterThan(0);
+    expect(answer.answerMarkdown).not.toMatch(/\[P\d+\]/i);
+    expect(answer.answerMarkdown).toContain("Check the source details below");
     for (const citation of answer.citations) {
       expect(citation.documentId).toBe(documentId);
       expect(citation.chunkId).toBeTruthy();

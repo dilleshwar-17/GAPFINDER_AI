@@ -9,7 +9,8 @@ is **not** covered.
 
 ## 1. Authentication
 
-When `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set,
+When `NEXT_PUBLIC_SUPABASE_URL` and either
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set,
 sign-in, registration, password updates, and recovery use Supabase Auth through
 the SSR client. Password storage, confirmation, and reset tokens are managed by
 Supabase; this repository does not receive or log plaintext credentials beyond

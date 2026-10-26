@@ -8,6 +8,9 @@ blockers. It is not a third-party security audit.
 | Issue | Evidence | Status |
 | --- | --- | --- |
 | Next.js production build rejected simultaneous `middleware.ts` and `proxy.ts` | `npm run build` initially failed with the Next.js duplicate-file error. The Supabase cookie refresh/route guard was consolidated into `src/proxy.ts`; a subsequent production build passed. | Fixed and build-verified |
+| Auth API routes could fall back to local SQLite auth in production without Supabase configuration | The proxy matcher did not cover every auth endpoint; canonical login and registration handlers selected local auth when Supabase variables were absent. `isSupabaseAuthConfigured()` now raises a safe 503 in production when configuration is missing. | Fixed; regression-tested |
+| Preview Supabase Auth key name did not match the app's configuration | The Preview project had `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, while the app required only `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Both key names are now accepted; an unauthenticated protected request on the updated Preview reached the expected login redirect. | Fixed; regression-tested and Preview-verified |
+| Missing Supabase session returned HTTP 500 on auth pages and protected routes | Runtime logs showed `AuthSessionMissingError` being thrown from `getUser()` when no session cookie existed. The proxy and `getCurrentUser()` now treat this specific error as an anonymous session and continue to surface other Supabase errors. | Fixed; regression-tested and Preview-verified |
 
 ## Unresolved
 

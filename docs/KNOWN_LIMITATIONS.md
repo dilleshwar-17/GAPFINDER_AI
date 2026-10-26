@@ -10,7 +10,7 @@ a hidden defect; where a limitation could mislead a learner, the UI says so too.
 
 ### 1.1 Live Gemini was not exercised
 
-No `GEMINI_API_KEY` was available. Every verification run used:
+No Gemini API request was made. Local verification used:
 
 - deterministic lexical embeddings (`gapfinder-hash-v1`, 512 dims),
 - the deterministic question generator,
@@ -21,12 +21,20 @@ The Gemini code paths (question generation, short-answer evaluation, explanation
 neural embeddings) are implemented, schema-constrained and type-checked, but
 **were not run against the live provider**. A configured key is required to
 validate latency, quota behaviour, schema compliance and answer quality.
+The Preview environment has provider configuration, but no paid/provider-backed
+call was made there.
 
-### 1.2 No deployment
+### 1.2 Preview deployment is not healthy for learner data
 
-The app was **not deployed**. No Vercel CLI, `VERCEL_TOKEN`, GitHub token, or
-hosting authorization was available. `docs/DEPLOYMENT.md` describes the intended
-path and its blockers; it does not claim a live URL.
+A protected Preview deployment is available at
+<https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app>. The homepage
+and auth pages respond, and unauthenticated protected requests redirect to
+login. However, `/api/health` reports `database: error`; application data still
+uses local SQLite and is not durable on Vercel. Supabase login credentials,
+document upload, and the full learner workflow have not been exercised on the
+Preview. A separate Production deployment from GitHub `main` commit `2907ca9`
+was observed and rolled back to the previous Ready deployment; the active
+Production application has not been end-to-end verified.
 
 ### 1.3 No browser automation
 

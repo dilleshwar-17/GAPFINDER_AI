@@ -151,10 +151,12 @@ Run on Windows, Node v26.5.1, npm 12.0.2:
 
 | Command | Result |
 | --- | --- |
-| `npm run lint` | **Passed** — no errors or warnings |
-| `npm run typecheck` | **Passed** — no errors |
-| `npm test` | **Passed** — 9 files, **130 tests** |
-| `npm run build` | **Passed** — all routes compiled after consolidating Next.js 16 `proxy.ts` |
+| `npm run lint` | **Passed** after Supabase auth changes |
+| `npm run typecheck` | **Passed** after Supabase auth changes |
+| `npm test` | **Passed** — 11 files, **138 tests** |
+| Local `npm run build` | **Blocked** — Windows `EPERM` while unlinking `.next/static` with a local Next server running |
+| Vercel Preview build | **Passed** — latest Preview reported Ready |
+| Preview health | **Failed** — `/api/health` reports `database: error` |
 | `npm run smoke` | **Not run** for the current Supabase/theme changes |
 
 The smoke suite covers public pages, auth guards, cross-origin rejection, demo
@@ -191,7 +193,7 @@ role keys or other secrets in them.
 | Variable | Default | Required | Notes |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | unset | for Supabase Auth | Supabase project URL. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | unset | for Supabase Auth | Public/anon key only; never the service-role key. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY` | unset | for Supabase Auth | Public key only; the legacy anon key remains supported. Never use a service-role key. |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | production auth links | Must be the canonical HTTPS deployment origin in production. |
 | `SUPABASE_DEMO_EMAIL` | unset | for Supabase-hosted demo | Server-only demo account address. |
 | `SUPABASE_DEMO_PASSWORD` | unset | for Supabase-hosted demo | Server-only secret; never commit or expose. |
@@ -221,7 +223,7 @@ This deletes the configured SQLite file (`DATABASE_PATH`, default `data/gapfinde
 ## Deployment
 
 - **Local / self-hosted:** `npm run build && npm start` (set `PORT` and `DATABASE_PATH` to a writable persistent location).
-- **Vercel:** the Next.js build is supported, and Supabase Auth routes are wired. A durable Supabase/Postgres application data adapter is not implemented. Do not treat this repository as production-ready on Vercel until SQLite persistence and uploaded-file storage are migrated. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Vercel Preview:** deployed at <https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app>. Pages and the unauthenticated redirect respond, but `/api/health` reports a database error. The Production alias was rolled back to its prior Ready deployment after a separate GitHub deployment; this does not establish production health. A durable Supabase/Postgres application data adapter is not implemented; do not treat this repository as production-ready on Vercel until SQLite persistence and uploaded-file storage are migrated. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Troubleshooting
 
