@@ -14,6 +14,8 @@ mock: uploads are parsed and persisted, embeddings are stored, sessions are
 server-issued and revoked, ownership is checked in SQL, and diagnostics are
 scored from stored answers.
 
+Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
+
 ---
 
 ## What is real (and what is not)

@@ -250,8 +250,9 @@ without retention. A long-running deployment needs housekeeping.
 - **No secret rotation story.**
 - **No load, soak, or concurrency testing.** `DatabaseSync` is synchronous;
   heavy concurrent uploads would block the event loop.
-- **No git history in the delivered workspace** unless the author initialises and
-  pushes it; deployment and CI depend on that step.
+- **No CI or deployment pipeline.** The source is committed and pushed to
+  `https://github.com/dilleshwar-17/GAPFINDER_AI` on branch `main`, but no CI
+  workflow is configured and no hosting provider was connected.
 
 ---
 
