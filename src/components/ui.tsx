@@ -316,7 +316,7 @@ export function DemoBanner() {
   return (
     <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#fedf89] bg-[#fffaeb] px-4 py-2.5 text-[0.78rem] text-[#b54708]">
       <p>
-        <strong className="font-semibold">DEMO WORKSPACE</strong> — You are exploring seeded sample learning data.
+        <strong className="font-semibold">SAMPLE WORKSPACE</strong> — You are exploring shared sample learning data.
         Sample results are not a real student&apos;s outcomes.
       </p>
       <Link href="/demo-access" className="font-semibold underline decoration-[#f79009] underline-offset-2">

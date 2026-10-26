@@ -109,8 +109,7 @@ export default async function ResultsPage({
         <div className="mb-5">
           <Callout tone="gold" title="Practice attempt in the shared demo">
             This attempt is scored and saved for this browser session, but it deliberately does not
-            overwrite the seeded mastery history or plan that every visitor sees. The measured topic
-            values below are the shared seed values.
+            overwrite the shared sample plan that visitors explore. Your practice results are calculated above.
           </Callout>
         </div>
       ) : null}

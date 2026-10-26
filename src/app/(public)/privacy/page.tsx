@@ -34,10 +34,7 @@ export default function PrivacyPage() {
 
         <h2>Where data is stored</h2>
         <p>
-          Data is stored in a single SQLite database opened by the Node server. The path is controlled by
-          the <code>DATABASE_PATH</code> environment variable. Session cookies are HTTP-only and only a
-          SHA-256 hash of the session token is stored. The database is not encrypted at rest by the
-          application; rely on host-disk encryption if that is required.
+          Application data is stored in a secure server database. Session cookies are HTTP-only, and passwords and session tokens are hashed securely.
         </p>
 
         <h2>When data leaves the server</h2>

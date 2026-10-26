@@ -209,7 +209,7 @@ export function TopicMap({
 
       {isDemo ? (
         <div className="rounded-lg border border-[#fedf89] bg-[#fffaeb] px-3 py-2 text-[0.78rem] leading-relaxed text-[#b54708]">
-          The seeded topic map is shared and read-only. Create a personal account to extract or add
+          The sample topic map is shared and read-only. Create a personal account to extract or add
           topics.
         </div>
       ) : null}

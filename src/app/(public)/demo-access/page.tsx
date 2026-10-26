@@ -22,9 +22,8 @@ export default async function DemoAccessPage() {
         <p className="eyebrow">Judge and reviewer access</p>
         <h1 className="display-lg mt-3 text-[#171f2e]">A coherent workspace, without a published password.</h1>
         <p className="mt-4 text-[0.94rem] leading-relaxed text-[#475467]">
-          The demo is a dedicated, seeded account. The button below asks the server to provision or
-          reuse that account and to issue a normal HTTP-only session cookie. No demo credential is
-          printed here, in the repository, or in the interface.
+          The demo provides a shared sample learning workspace. The button below provisions or
+          connects you to this workspace with a secure session cookie without requiring password entry.
         </p>
       </div>
 
@@ -55,7 +54,7 @@ export default async function DemoAccessPage() {
             </p>
             <p className="flex items-start gap-2">
               <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#7a5af8]" aria-hidden />
-              Sample citations resolve to the seeded document pages.
+              Sample citations link directly to original document pages.
             </p>
           </div>
 
@@ -87,11 +86,11 @@ export default async function DemoAccessPage() {
           ) : null}
 
           <div className="mt-6 border-t border-[#eaecf0] pt-4">
-            <p className="eyebrow mb-2">How to reset or disable</p>
+            <p className="eyebrow mb-2">Workspace Availability</p>
             <p className="text-[0.78rem] leading-relaxed text-[#475467]">
               {status.enabled
-                ? "An operator can set DISABLE_DEMO=1 to withdraw access, or reset the SQLite database with `npm run db:reset`. Deleting the reserved demo user also forces a clean re-seed on the next entry."
-                : "Set DISABLE_DEMO to 0 or remove it, then restart the server to re-enable the demo."}
+                ? "This sample workspace is available for public preview and evaluation."
+                : "The sample workspace is currently disabled by administrator policy."}
             </p>
           </div>
         </section>
@@ -99,13 +98,12 @@ export default async function DemoAccessPage() {
         <div className="space-y-4">
           <section className="card-forest p-5">
             <Eye size={18} className="text-[#9b8afb]" aria-hidden />
-            <h2 className="mt-3 text-[1rem] text-[#ffffff]">What is seeded</h2>
+            <h2 className="mt-3 text-[1rem] text-[#ffffff]">Sample Subject</h2>
             <p className="mt-2 text-[0.78rem] leading-relaxed text-[#bdb4fe]">
               {status.subjectName}
             </p>
             <p className="mt-2 text-[0.75rem] leading-relaxed text-[#98a2b3]">
-              The seed is idempotent. Re-entering the demo does not duplicate subjects, attempts or
-              plans.
+              Re-entering the sample workspace reuses the existing course structure without creating duplicates.
             </p>
           </section>
 
@@ -121,7 +119,7 @@ export default async function DemoAccessPage() {
               </li>
               <li className="flex gap-2">
                 <RefreshCcw size={13} className="mt-0.5 shrink-0 text-[#dc6803]" aria-hidden />
-                Practice submissions are stored but do not mutate shared mastery or the seeded plan.
+                Practice submissions are evaluated for you without overwriting the shared sample plan.
               </li>
               <li className="flex gap-2">
                 <Eye size={13} className="mt-0.5 shrink-0 text-[#dc6803]" aria-hidden />
@@ -147,14 +145,10 @@ export default async function DemoAccessPage() {
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-[#667085]">Demo email</dt>
+                <dt className="text-[#667085]">Workspace Account</dt>
                 <dd className="font-mono text-[0.7rem] text-[#344054]">{status.email}</dd>
               </div>
             </dl>
-            <p className="mt-3 text-[0.7rem] leading-relaxed text-[#667085]">
-              The email is shown only for operator diagnostics; it has a random stored password that is
-              not disclosed.
-            </p>
           </section>
         </div>
       </div>
