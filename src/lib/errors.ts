@@ -80,6 +80,27 @@ export function publicError(error: unknown): {
     };
   }
 
+  if (error instanceof Error) {
+    if (error.name === "ExtractionError") {
+      return {
+        status: 400,
+        body: { error: { code: "EXTRACTION_FAILED", message: error.message } },
+      };
+    }
+    if (error.name === "CitationValidationError") {
+      return {
+        status: 422,
+        body: { error: { code: "INSUFFICIENT_EVIDENCE", message: error.message } },
+      };
+    }
+    if (error.name === "ProviderError") {
+      return {
+        status: 502,
+        body: { error: { code: "PROVIDER_UNAVAILABLE", message: error.message } },
+      };
+    }
+  }
+
   // Unexpected errors are logged without request bodies or document text.
   console.error("[gapfinder] unhandled server error:", error instanceof Error ? error.message : "unknown");
   return {
