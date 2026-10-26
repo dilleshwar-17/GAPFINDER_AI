@@ -2,6 +2,29 @@ import { z } from "zod";
 import { db, newId, nowIso } from "@/lib/db";
 import { hashPassword, verifyPassword, DUMMY_PASSWORD_HASH } from "@/lib/auth/password";
 import { conflict, validationError } from "@/lib/errors";
+
+async function supabaseAuthRequest(endpoint: string, body: Record<string, unknown>): Promise<any> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+
+  try {
+    const res = await fetch(`${url}/auth/v1/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": key,
+        "Authorization": `Bearer ${key}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 import type { AuthUser } from "@/lib/auth/session";
 
 export interface UserRecord {
@@ -38,6 +61,24 @@ export function findUserByEmail(email: string): UserRecord | undefined {
   );
 }
 
+export async function createUserAsync(input: {
+  displayName: string;
+  email: string;
+  password?: string;
+  passwordHash?: string;
+  isDemo?: boolean;
+}): Promise<AuthUser> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl && input.password) {
+    await supabaseAuthRequest("signup", {
+      email: input.email,
+      password: input.password,
+      data: { displayName: input.displayName },
+    });
+  }
+  return createUser(input);
+}
+
 export function createUser(input: {
   displayName: string;
   email: string;
@@ -68,6 +109,38 @@ export function createUser(input: {
     displayName: input.displayName.trim(),
     isDemo: input.isDemo ?? false,
   };
+}
+
+export async function authenticateAsync(email: string, password: string): Promise<AuthUser | null> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl) {
+    const sbRes = await supabaseAuthRequest("token?grant_type=password", { email, password });
+    if (sbRes && sbRes.user) {
+      let record = findUserByEmail(email);
+      if (!record) {
+        const displayName = sbRes.user.user_metadata?.displayName || email.split("@")[0];
+        record = {
+          id: newId(),
+          email: email.trim().toLowerCase(),
+          password_hash: hashPassword(password),
+          display_name: displayName,
+          is_demo: 0,
+          created_at: nowIso(),
+        };
+        db.run(
+          "INSERT INTO users (id, email, password_hash, display_name, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+          record.id, record.email, record.password_hash, record.display_name, 0, record.created_at
+        );
+      }
+      return {
+        id: record.id,
+        email: record.email,
+        displayName: record.display_name,
+        isDemo: record.is_demo === 1,
+      };
+    }
+  }
+  return authenticate(email, password);
 }
 
 export function authenticate(email: string, password: string): AuthUser | null {

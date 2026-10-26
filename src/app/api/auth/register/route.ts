@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleRoute, jsonOk, readJson, requireSameOrigin, clientKey } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
-import { createUser, registrationSchema } from "@/lib/services/auth";
+import { createUserAsync, registrationSchema } from "@/lib/services/auth";
 import { assertEmailNotReserved } from "@/lib/services/demo-seed-guard";
 import { attachSessionCookie, createSession } from "@/lib/auth/session";
 import { AppError } from "@/lib/errors";
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
     const payload = await readJson(request, registrationSchema);
     assertEmailNotReserved(payload.email);
-    const user = createUser(payload);
+    const user = await createUserAsync(payload);
     const session = createSession(user.id);
     const response: NextResponse = jsonOk({ user }, 201);
     attachSessionCookie(response, request, session.token);

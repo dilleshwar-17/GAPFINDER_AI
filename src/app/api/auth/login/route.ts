@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleRoute, jsonOk, readJson, requireSameOrigin, clientKey } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
-import { authenticate, loginSchema } from "@/lib/services/auth";
+import { authenticateAsync, loginSchema } from "@/lib/services/auth";
 import { attachSessionCookie, createSession } from "@/lib/auth/session";
 import { AppError } from "@/lib/errors";
 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const user = authenticate(payload.email, payload.password);
+    const user = await authenticateAsync(payload.email, payload.password);
     if (!user) {
       throw new AppError(401, "UNAUTHENTICATED", "Email or password is incorrect.");
     }
