@@ -149,7 +149,7 @@ export function DiagnosticStarter({
     <div className="space-y-4">
       {isDemo ? (
         <Callout tone="gold" title="Practice mode in the shared demo">
-          This diagnostic is scored and saved for you, but it does not change the seeded mastery history
+          This diagnostic is scored and saved for you, but it does not change the sample mastery history
           or revision plan that other reviewers see. Uploads and subject changes are disabled.
         </Callout>
       ) : null}

@@ -64,7 +64,7 @@ export function PlanBuilder({
   if (isDemo) {
     return (
       <Callout tone="gold" title="Plan generation is disabled in the shared demo">
-        You can complete practice diagnostics and mark seeded tasks, but plan generation and task
+        You can complete practice diagnostics and mark sample tasks, but plan generation and task
         changes are blocked to keep the shared workspace stable. Create a personal account to build and
         version your own plan.
       </Callout>

@@ -68,7 +68,7 @@ export default async function OnboardingPage() {
             <section className="card p-5">
               <p className="eyebrow mb-2">Not sure yet?</p>
               <p className="text-[0.8rem] leading-relaxed text-[#475467]">
-                Explore the seeded demo instead. It is a shared, read-only sample workspace with a
+                Explore the sample workspace instead. It is a shared, read-only sample workspace with a
                 complete Biology loop already in place.
               </p>
               <Link href="/demo-access" className="btn btn-secondary btn-sm mt-3">

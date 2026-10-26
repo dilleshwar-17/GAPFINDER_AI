@@ -24,10 +24,7 @@ export default function ResetPasswordPage() {
       <div className="card mt-6 p-5">
         <h2 className="text-[0.95rem]">If you are locked out</h2>
         <p className="mt-1 text-[0.82rem] leading-relaxed text-[#475467]">
-          This build has no operator recovery console. A deployment operator can recreate the local
-          SQLite database, which removes all accounts and data, or you can register a new account.
-          Neither action is offered as a self-service button here because both are destructive or
-          require operator authority.
+          Account recovery requires administrator assistance for security reasons. You can register a new account or contact your system administrator.
         </p>
       </div>
 

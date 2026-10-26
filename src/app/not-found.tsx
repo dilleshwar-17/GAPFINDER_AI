@@ -31,7 +31,7 @@ export default function NotFound() {
       <div className="card mt-10 p-5">
         <h2 className="text-[0.95rem]">Looking for the shared demo?</h2>
         <p className="mt-1.5 text-[0.82rem] leading-relaxed text-[#667085]">
-          The demo is a seeded, read-only workspace. Opening it provisions a verified session for this
+          The demo is a sample, read-only workspace. Opening it provisions a verified session for this
           browser; no password is published.
         </p>
         <Link href="/demo-access" className="btn btn-gold btn-sm mt-3">

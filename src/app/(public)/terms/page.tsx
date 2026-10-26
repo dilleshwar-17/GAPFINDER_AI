@@ -39,9 +39,7 @@ export default function TermsPage() {
 
         <h2>Availability</h2>
         <p>
-          The demo and this build may be withdrawn or reset without notice. The SQLite implementation is
-          not durable on ephemeral serverless storage and should not be treated as a production system of
-          record.
+          The demo and preview deployment may be updated or reset periodically. Important study records should be saved or exported.
         </p>
 
         <h2>Intellectual property</h2>

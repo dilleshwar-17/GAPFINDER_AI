@@ -52,7 +52,7 @@ export default async function AssessmentPage({
             <span>{view.totalMarks} marks</span>
             <span aria-hidden>·</span>
             <span>Started {formatDateTime(view.startedAt)}</span>
-            {view.generator.startsWith("demo-seed") ? <Badge tone="demo">Seeded demo</Badge> : null}
+            {view.generator.startsWith("demo-seed") ? <Badge tone="demo">Sample Assessment</Badge> : null}
           </>
         }
         actions={

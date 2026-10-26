@@ -115,7 +115,7 @@ const faqs = [
   {
     question: "Does the shared demo change its data?",
     answer:
-      "No. The demo is a read-only sample workspace. Practice diagnostics are scored for you, but they do not write mastery history or version the seeded plan. Uploads and workspace edits are blocked on the server.",
+      "No. The demo is a read-only sample workspace. Practice diagnostics are scored for you, but they do not write mastery history or version the sample plan. Uploads and workspace edits are blocked on the server.",
   },
   {
     question: "Are the mastery bands official?",
@@ -172,12 +172,12 @@ export default function LandingPage() {
                 Start with your own material
                 <ArrowRight size={16} aria-hidden />
               </Link>
-              <DemoLaunchButton label="Open the seeded demo" className="btn btn-secondary btn-lg" />
+              <DemoLaunchButton label="Open the sample workspace" className="btn btn-secondary btn-lg" />
             </div>
 
             <p className="mx-auto mt-4 max-w-xl text-[0.74rem] leading-relaxed text-[#667085]">
               One-click demo. No password is published. Practice attempts are scored but never change
-              the seeded mastery history or plan.
+              the shared sample plan.
             </p>
           </div>
 
@@ -414,7 +414,7 @@ export default function LandingPage() {
             {
               icon: Lock,
               title: "Read-only demo",
-              body: "Explore the whole loop without changing seed data.",
+              body: "Explore the whole loop without changing sample data.",
             },
           ].map((item) => (
             <div key={item.title} className="flex items-start gap-3">
@@ -821,7 +821,7 @@ export default function LandingPage() {
             <div className="max-w-xl">
               <p className="eyebrow text-[#bdb4fe]">Try the loop</p>
               <h2 className="display-lg mt-3 text-white">
-                See a seeded workspace before you upload anything.
+                Explore a sample workspace before you upload anything.
               </h2>
               <p className="mt-4 text-[0.9rem] leading-relaxed text-[#d0d5dd]">
                 The demo holds a coherent Biology workspace: three indexed sources, a topic map,

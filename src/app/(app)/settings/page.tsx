@@ -78,7 +78,7 @@ export default async function SettingsPage() {
         <div className="mb-5">
           <Callout tone="gold" title="Shared demo workspace">
             This account is shared and read-only. Profile, password and preference changes are blocked.
-            Practice diagnostics are still scored and saved, but they do not change the seeded mastery
+            Practice diagnostics are still scored and saved, but they do not change the sample mastery
             history or plan.
           </Callout>
         </div>
@@ -146,7 +146,7 @@ export default async function SettingsPage() {
                   <li>Mastery bands are heuristics, not validated exam predictions.</li>
                   <li>Short answers are scored against rubric concepts with lexical matching fallback.</li>
                   <li>Password reset email delivery is not configured in this build.</li>
-                  <li>Storage is a single SQLite file; a serverless deployment does not persist it safely.</li>
+                  <li>Application data is managed by server database storage.</li>
                 </ul>
                 <Link
                   href="/demo-access"
