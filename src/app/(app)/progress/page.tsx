@@ -40,10 +40,10 @@ export default async function ProgressPage({
 }) {
   const user = await requirePageUser();
   const params = await searchParams;
-  const subjects = listSubjects(user.id);
-  const selectedSubjectId = resolveSubjectId(user, params.subject) ?? subjects[0]?.id ?? null;
+  const subjects = await listSubjects(user.id);
+  const selectedSubjectId = (await resolveSubjectId(user, params.subject)) ?? subjects[0]?.id ?? null;
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId) ?? null;
-  const overview = selectedSubject ? getProgressOverview(user.id, selectedSubject.id) : null;
+  const overview = selectedSubject ? await getProgressOverview(user.id, selectedSubject.id) : null;
   const percentages = overview
     ? overview.scoreSeries
         .map((point) => point.percentage)

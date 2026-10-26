@@ -29,14 +29,14 @@ export async function POST(request: Request) {
       if (error || !data.user) {
         throw new AppError(401, "UNAUTHENTICATED", "Email or password is incorrect.");
       }
-      return jsonOk({ user: syncSupabaseUser(data.user) });
+      return jsonOk({ user: await syncSupabaseUser(data.user) });
     }
 
-    const user = authenticate(payload.email, payload.password);
+    const user = await authenticate(payload.email, payload.password);
     if (!user) {
       throw new AppError(401, "UNAUTHENTICATED", "Email or password is incorrect.");
     }
-    const session = createSession(user.id);
+    const session = await createSession(user.id);
     const response: NextResponse = jsonOk({ user });
     attachSessionCookie(response, request, session.token);
     return response;

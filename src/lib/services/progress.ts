@@ -48,14 +48,14 @@ export interface ProgressOverview {
   notAssessedCount: number;
 }
 
-export function getProgressOverview(ownerId: string, subjectId: string): ProgressOverview {
-  getSubjectOwned(ownerId, subjectId);
-  const attempts = listAttempts(ownerId, subjectId);
+export async function getProgressOverview(ownerId: string, subjectId: string): Promise<ProgressOverview> {
+  await getSubjectOwned(ownerId, subjectId);
+  const attempts = await listAttempts(ownerId, subjectId);
   const submitted = attempts.filter((attempt) => attempt.status === "submitted");
-  const plan = getActivePlan(ownerId, subjectId);
-  const topics = listTopics(ownerId, subjectId).filter((topic) => topic.childCount === 0);
+  const plan = await getActivePlan(ownerId, subjectId);
+  const topics = (await listTopics(ownerId, subjectId)).filter((topic) => topic.childCount === 0);
 
-  const rows = db.all<{
+  const rows = await db.all<{
     topic_id: string;
     topic_name: string;
     mastery: number;
@@ -191,10 +191,10 @@ export interface DashboardData {
   nextAction: { label: string; href: string; detail: string };
 }
 
-export function getDashboard(ownerId: string): DashboardData {
-  const subjects = listSubjects(ownerId);
+export async function getDashboard(ownerId: string): Promise<DashboardData> {
+  const subjects = await listSubjects(ownerId);
 
-  const recentAttempts = db.all<{
+  const recentAttempts = await db.all<{
     id: string;
     subject_id: string;
     subject_name: string;
@@ -212,7 +212,7 @@ export function getDashboard(ownerId: string): DashboardData {
     ownerId,
   );
 
-  const weakTopics = db.all<{
+  const weakTopics = await db.all<{
     topic_id: string;
     subject_id: string;
     subject_name: string;
@@ -239,7 +239,7 @@ export function getDashboard(ownerId: string): DashboardData {
     ownerId,
   );
 
-  const pendingTasks = db.all<{
+  const pendingTasks = await db.all<{
     id: string;
     subject_id: string;
     subject_name: string;

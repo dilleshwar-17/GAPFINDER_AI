@@ -34,14 +34,14 @@ export default async function AssistantPage({
 }) {
   const user = await requirePageUser();
   const params = await searchParams;
-  const subjects = listSubjects(user.id);
-  const requestedSubjectId = resolveSubjectId(user, params.subject) ?? subjects[0]?.id ?? null;
+  const subjects = await listSubjects(user.id);
+  const requestedSubjectId = (await resolveSubjectId(user, params.subject)) ?? subjects[0]?.id ?? null;
   const selectedSubject = subjects.find((subject) => subject.id === requestedSubjectId) ?? null;
 
   let topics: TopicView[] = [];
   if (selectedSubject) {
     try {
-      topics = listTopics(user.id, selectedSubject.id);
+      topics = await listTopics(user.id, selectedSubject.id);
     } catch (error) {
       pageNotFoundIfMissing(error);
     }

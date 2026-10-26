@@ -58,7 +58,7 @@ export default async function LearnTopicPage({
 
   let context;
   try {
-    context = getTopicContext(user.id, topicId);
+    context = await getTopicContext(user.id, topicId);
   } catch (error) {
     pageNotFoundIfMissing(error);
   }
@@ -68,8 +68,8 @@ export default async function LearnTopicPage({
   let subject;
   let topics: TopicView[];
   try {
-    subject = getSubjectOwned(user.id, subjectId);
-    topics = listTopics(user.id, subjectId);
+    subject = await getSubjectOwned(user.id, subjectId);
+    topics = await listTopics(user.id, subjectId);
   } catch (error) {
     pageNotFoundIfMissing(error);
   }
@@ -78,12 +78,12 @@ export default async function LearnTopicPage({
   const topic = topics.find((entry) => entry.id === topicId);
   if (!topic) notFound();
 
-  const sources = getTopicSources(user.id, topicId);
-  const prerequisites = getPrerequisites(user.id, topicId);
+  const sources = await getTopicSources(user.id, topicId);
+  const prerequisites = await getPrerequisites(user.id, topicId);
   const subTopics = topics.filter((entry) => entry.parentId === topicId);
-  const report = getGapReport(user.id, subjectId);
+  const report = await getGapReport(user.id, subjectId);
   const gapTopic: GapTopic | undefined = report.topics.find((entry) => entry.topicId === topicId);
-  const plan = getActivePlan(user.id, subjectId);
+  const plan = await getActivePlan(user.id, subjectId);
   const planTasks = plan ? plan.tasks.filter((task) => task.topicId === topicId) : [];
 
   return (

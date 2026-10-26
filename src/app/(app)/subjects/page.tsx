@@ -14,7 +14,7 @@ export default async function SubjectsPage({
 }) {
   const user = await requirePageUser();
   const params = await searchParams;
-  const subjects = listSubjects(user.id);
+  const subjects = await listSubjects(user.id);
 
   return (
     <>

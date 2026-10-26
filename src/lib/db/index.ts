@@ -1,23 +1,121 @@
 import { DatabaseSync, type StatementSync } from "node:sqlite";
+import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { Pool, types, type PoolClient } from "pg";
 import { SCHEMA_SQL } from "./schema";
 
 /**
- * SQLite via Node's built-in driver is the implementation used for this build.
- * The schema is intentionally PostgreSQL-compatible in shape so that a hosted
- * Postgres/pgvector adapter can replace this module without changing domain logic.
+ * SQLite remains the local-development backend; DATABASE_URL selects hosted
+ * PostgreSQL. Both backends expose the same parameterized SQL interface.
  */
 const SCHEMA_VERSION = 2;
 const GLOBAL_KEY = "__gapfinder_db__";
 
 export type SqlParam = string | number | bigint | null | Uint8Array;
 
+export type MaybePromise<T> = T | Promise<T>;
+
 export interface Queryable {
-  all<T>(sql: string, ...params: SqlParam[]): T[];
-  get<T>(sql: string, ...params: SqlParam[]): T | undefined;
-  run(sql: string, ...params: SqlParam[]): { changes: number | bigint };
+  all<T>(sql: string, ...params: SqlParam[]): MaybePromise<T[]>;
+  get<T>(sql: string, ...params: SqlParam[]): MaybePromise<T | undefined>;
+  run(sql: string, ...params: SqlParam[]): MaybePromise<{ changes: number | bigint }>;
+}
+
+type TransactionContext =
+  | { kind: "postgres"; client: PoolClient }
+  | { kind: "sqlite" };
+
+const transactionContext = new AsyncLocalStorage<TransactionContext>();
+let postgresPool: Pool | null = null;
+let sqliteTransactionQueue: Promise<void> = Promise.resolve();
+let sqliteTransactionBarrier: Promise<void> | null = null;
+
+types.setTypeParser(types.builtins.INT8, (value) => {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) {
+    throw new RangeError("PostgreSQL BIGINT value exceeds JavaScript's safe integer range.");
+  }
+  return parsed;
+});
+
+export function isPostgresConfigured(): boolean {
+  return Boolean(process.env.DATABASE_URL?.trim());
+}
+
+function getPostgresPool(): Pool {
+  if (postgresPool) return postgresPool;
+  const connectionString = process.env.DATABASE_URL?.trim();
+  if (!connectionString) throw new Error("DATABASE_URL is required for PostgreSQL storage.");
+
+  const url = new URL(connectionString);
+  if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") {
+    throw new Error("DATABASE_URL must use the postgres:// or postgresql:// scheme.");
+  }
+  const localHost = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  postgresPool = new Pool({
+    connectionString,
+    max: 1,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 5_000,
+    ssl: localHost ? undefined : { rejectUnauthorized: true },
+  });
+  return postgresPool;
+}
+
+export function postgresPlaceholders(sql: string): string {
+  let result = "";
+  let parameterIndex = 0;
+  let quote: "'" | '"' | null = null;
+  for (let index = 0; index < sql.length; index += 1) {
+    const character = sql[index];
+    if (quote) {
+      result += character;
+      if (character === quote) {
+        if (sql[index + 1] === quote) {
+          result += sql[index + 1];
+          index += 1;
+        } else {
+          quote = null;
+        }
+      }
+      continue;
+    }
+    if (character === "'" || character === '"') {
+      quote = character;
+      result += character;
+      continue;
+    }
+    if (character === "?") {
+      result += `$${++parameterIndex}`;
+      continue;
+    }
+    result += character;
+  }
+  return result;
+}
+
+function queryPostgres<Row>(
+  sql: string,
+  params: SqlParam[],
+): Promise<{ rows: Row[]; rowCount: number | null }> {
+  const context = transactionContext.getStore();
+  const values = params.map((param) => (param instanceof Uint8Array ? Buffer.from(param) : param));
+  const query = context?.kind === "postgres"
+    ? context.client.query(postgresPlaceholders(sql), values)
+    : getPostgresPool().query(postgresPlaceholders(sql), values);
+  return query.then((result) => ({
+    rows: result.rows as Row[],
+    rowCount: result.rowCount,
+  }));
+}
+
+function querySqlite<Row>(fn: () => Row): MaybePromise<Row> {
+  if (!sqliteTransactionBarrier || transactionContext.getStore()?.kind === "sqlite") {
+    return fn();
+  }
+  return sqliteTransactionBarrier.then(fn);
 }
 
 function resolveDatabasePath(): string {
@@ -75,29 +173,75 @@ export function getConnection(): DatabaseSync {
 }
 
 export const db: Queryable = {
-  all<T>(sql: string, ...params: SqlParam[]): T[] {
-    return getStatement(sql).all(...params) as unknown as T[];
+  all<T>(sql: string, ...params: SqlParam[]): MaybePromise<T[]> {
+    if (isPostgresConfigured()) {
+      return queryPostgres<T>(sql, params).then((result) => result.rows);
+    }
+    return querySqlite(() => getStatement(sql).all(...params) as unknown as T[]);
   },
-  get<T>(sql: string, ...params: SqlParam[]): T | undefined {
-    return getStatement(sql).get(...params) as unknown as T | undefined;
+  get<T>(sql: string, ...params: SqlParam[]): MaybePromise<T | undefined> {
+    if (isPostgresConfigured()) {
+      return queryPostgres<T>(sql, params).then((result) => result.rows[0]);
+    }
+    return querySqlite(() => getStatement(sql).get(...params) as unknown as T | undefined);
   },
-  run(sql: string, ...params: SqlParam[]) {
-    const result = getStatement(sql).run(...params);
-    return { changes: Number(result.changes) };
+  run(sql: string, ...params: SqlParam[]): MaybePromise<{ changes: number | bigint }> {
+    if (isPostgresConfigured()) {
+      return queryPostgres(sql, params).then((result) => ({ changes: result.rowCount ?? 0 }));
+    }
+    return querySqlite(() => {
+      const result = getStatement(sql).run(...params);
+      return { changes: Number(result.changes) };
+    });
   },
 };
 
-export function transaction<T>(fn: () => T): T {
-  const connection = getConnection();
-  connection.exec("BEGIN IMMEDIATE");
-  try {
-    const result = fn();
-    connection.exec("COMMIT");
-    return result;
-  } catch (error) {
-    connection.exec("ROLLBACK");
-    throw error;
+export function transaction<T>(fn: () => MaybePromise<T>): MaybePromise<T> {
+  const context = transactionContext.getStore();
+  if (isPostgresConfigured()) {
+    if (context?.kind === "postgres") return Promise.resolve(fn());
+    return (async () => {
+      const client = await getPostgresPool().connect();
+      try {
+        await client.query("BEGIN");
+        const result = await transactionContext.run({ kind: "postgres", client }, fn);
+        await client.query("COMMIT");
+        return result;
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
+    })();
   }
+
+  if (context?.kind === "sqlite") return fn();
+  const queued = sqliteTransactionQueue;
+  let releaseQueue!: () => void;
+  sqliteTransactionQueue = new Promise<void>((resolve) => {
+    releaseQueue = resolve;
+  });
+  return queued.then(async () => {
+    let releaseBarrier!: () => void;
+    sqliteTransactionBarrier = new Promise<void>((resolve) => {
+      releaseBarrier = resolve;
+    });
+    const connection = getConnection();
+    connection.exec("BEGIN IMMEDIATE");
+    try {
+      const result = await transactionContext.run({ kind: "sqlite" }, fn);
+      connection.exec("COMMIT");
+      return result;
+    } catch (error) {
+      connection.exec("ROLLBACK");
+      throw error;
+    } finally {
+      releaseBarrier();
+      sqliteTransactionBarrier = null;
+      releaseQueue();
+    }
+  });
 }
 
 /**
@@ -131,6 +275,9 @@ export function nowIso(): string {
 }
 
 export function resetDatabase(): void {
+  if (isPostgresConfigured()) {
+    throw new Error("resetDatabase is only available for local SQLite test databases.");
+  }
   const connection = getConnection();
   const tables = [
     "ai_events",

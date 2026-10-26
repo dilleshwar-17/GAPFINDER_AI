@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function GET() {
   return handleRoute(async () => {
     const user = await requireUser();
-    return jsonOk({ subjects: listSubjects(user.id) });
+    return jsonOk({ subjects: await listSubjects(user.id) });
   });
 }
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     requireSameOrigin(request);
     const user = await requireUser();
     const payload = await readJson(request, subjectInputSchema);
-    const subject = createSubject({
+    const subject = await createSubject({
       ownerId: user.id,
       name: payload.name,
       description: payload.description,

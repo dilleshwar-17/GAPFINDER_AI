@@ -9,8 +9,8 @@ beforeEach(() => {
 });
 
 describe("syncSupabaseUser", () => {
-  it("creates an app profile from a confirmed Supabase identity", () => {
-    const user = syncSupabaseUser({
+  it("creates an app profile from a confirmed Supabase identity", async () => {
+    const user = await syncSupabaseUser({
       id: "supabase-user-1",
       email: "  learner@example.com ",
       email_confirmed_at: "2026-10-26T10:00:00.000Z",
@@ -25,23 +25,23 @@ describe("syncSupabaseUser", () => {
       isDemo: false,
     });
     expect(
-      db.get<{ auth_user_id: string; password_hash: string }>(
+      await db.get<{ auth_user_id: string; password_hash: string }>(
         "SELECT auth_user_id, password_hash FROM users WHERE id = ?",
         user.id,
       ),
     ).toMatchObject({ auth_user_id: user.id });
   });
 
-  it("links a confirmed identity to the existing workspace without changing ownership ids", () => {
-    insertUser({
+  it("links a confirmed identity to the existing workspace without changing ownership ids", async () => {
+    await insertUser({
       id: "legacy-user",
       email: "learner@example.com",
       isDemo: false,
       displayName: "Existing learner",
     });
-    insertSubject({ id: "existing-subject", ownerId: "legacy-user" });
+    await insertSubject({ id: "existing-subject", ownerId: "legacy-user" });
 
-    const user = syncSupabaseUser({
+    const user = await syncSupabaseUser({
       id: "supabase-user-2",
       email: "learner@example.com",
       email_confirmed_at: "2026-10-26T10:00:00.000Z",
@@ -52,27 +52,27 @@ describe("syncSupabaseUser", () => {
     expect(user.id).toBe("legacy-user");
     expect(user.displayName).toBe("Existing learner");
     expect(
-      db.get<{ owner_id: string }>(
+      (await db.get<{ owner_id: string }>(
         "SELECT owner_id FROM subjects WHERE id = ?",
         "existing-subject",
-      )?.owner_id,
+      ))?.owner_id,
     ).toBe("legacy-user");
     expect(
-      db.get<{ auth_user_id: string }>(
+      (await db.get<{ auth_user_id: string }>(
         "SELECT auth_user_id FROM users WHERE id = ?",
         "legacy-user",
-      )?.auth_user_id,
+      ))?.auth_user_id,
     ).toBe("supabase-user-2");
   });
 
-  it("does not link an unconfirmed identity to an existing email", () => {
-    insertUser({
+  it("does not link an unconfirmed identity to an existing email", async () => {
+    await insertUser({
       id: "legacy-user",
       email: "learner@example.com",
       isDemo: false,
     });
 
-    expect(() =>
+    await expect(
       syncSupabaseUser({
         id: "unconfirmed-user",
         email: "learner@example.com",
@@ -80,12 +80,12 @@ describe("syncSupabaseUser", () => {
         user_metadata: {},
         app_metadata: {},
       }),
-    ).toThrowError(AppError);
+    ).rejects.toThrowError(AppError);
     expect(
-      db.get<{ auth_user_id: string | null }>(
+      (await db.get<{ auth_user_id: string | null }>(
         "SELECT auth_user_id FROM users WHERE id = ?",
         "legacy-user",
-      )?.auth_user_id,
+      ))?.auth_user_id,
     ).toBeNull();
   });
 });

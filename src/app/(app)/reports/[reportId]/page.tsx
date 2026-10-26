@@ -223,9 +223,9 @@ export default async function ReportDetailPage({
   let report;
   let plan;
   try {
-    subject = getSubjectOwned(user.id, reportId);
-    report = getGapReport(user.id, reportId);
-    plan = getActivePlan(user.id, reportId);
+    subject = await getSubjectOwned(user.id, reportId);
+    report = await getGapReport(user.id, reportId);
+    plan = await getActivePlan(user.id, reportId);
   } catch (error) {
     pageNotFoundIfMissing(error);
   }

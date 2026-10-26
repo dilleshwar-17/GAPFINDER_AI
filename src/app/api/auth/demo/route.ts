@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       if (error || !data.user) {
         throw new AppError(503, "PROVIDER_UNAVAILABLE", "The shared demo account is unavailable.");
       }
-      const user = syncSupabaseUser(data.user);
+      const user = await syncSupabaseUser(data.user);
       if (!user.isDemo) {
         throw new AppError(503, "PROVIDER_UNAVAILABLE", "The shared demo account is not marked as read-only.");
       }
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     }
 
     const user = await ensureDemoAccount();
-    const session = createSession(user.id);
+    const session = await createSession(user.id);
     const response: NextResponse = jsonOk({ user, destination: "/dashboard" });
     attachSessionCookie(response, request, session.token);
     return response;

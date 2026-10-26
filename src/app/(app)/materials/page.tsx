@@ -19,11 +19,11 @@ export default async function MaterialsPage({
 }) {
   const user = await requirePageUser();
   const params = await searchParams;
-  const subjects = listSubjects(user.id);
+  const subjects = await listSubjects(user.id);
   const filterSubjectId = subjects.some((subject) => subject.id === params.subject)
     ? params.subject
     : undefined;
-  const documents = listAllDocuments(user.id).filter(
+  const documents = (await listAllDocuments(user.id)).filter(
     (document) => !filterSubjectId || document.subjectId === filterSubjectId,
   );
   const activeSubject = subjects.find((subject) => subject.id === filterSubjectId);

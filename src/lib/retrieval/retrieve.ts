@@ -103,7 +103,7 @@ export async function retrieveEvidence(params: RetrievalParams): Promise<Retriev
       ? `AND c.document_id IN (${params.documentIds.map(() => "?").join(",")})`
       : "";
 
-  const candidates = db.all<ChunkCandidateRow>(
+  const candidates = await db.all<ChunkCandidateRow>(
     `SELECT c.id, c.document_id, c.text, c.page_number, c.section_heading, c.embedding,
             d.filename, d.kind
        FROM document_chunks c
@@ -122,7 +122,7 @@ export async function retrieveEvidence(params: RetrievalParams): Promise<Retriev
     ...(params.documentIds && params.documentIds.length > 0 ? params.documentIds : []),
   );
 
-  const totals = db.get<{ total: number }>(
+  const totals = await db.get<{ total: number }>(
     "SELECT COUNT(*) AS total FROM document_chunks WHERE owner_id = ? AND subject_id = ?",
     params.ownerId,
     params.subjectId,

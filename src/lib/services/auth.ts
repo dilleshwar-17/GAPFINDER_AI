@@ -31,29 +31,29 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Enter your password.").max(200),
 });
 
-export function findUserByEmail(email: string): UserRecord | undefined {
-  return db.get<UserRecord>(
+export async function findUserByEmail(email: string): Promise<UserRecord | undefined> {
+  return await db.get<UserRecord>(
     "SELECT id, email, password_hash, display_name, is_demo, created_at FROM users WHERE email = ?",
     email.trim().toLowerCase(),
   );
 }
 
-export function createUser(input: {
+export async function createUser(input: {
   displayName: string;
   email: string;
   password?: string;
   passwordHash?: string;
   isDemo?: boolean;
-}): AuthUser {
+}): Promise<AuthUser> {
   const email = input.email.trim().toLowerCase();
-  if (findUserByEmail(email)) {
+  if (await findUserByEmail(email)) {
     throw conflict("An account with that email already exists.");
   }
   if (!input.password && !input.passwordHash) {
     throw validationError("A password is required.");
   }
   const id = newId();
-  db.run(
+  await db.run(
     "INSERT INTO users (id, email, password_hash, display_name, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?)",
     id,
     email,
@@ -70,8 +70,8 @@ export function createUser(input: {
   };
 }
 
-export function authenticate(email: string, password: string): AuthUser | null {
-  const record = findUserByEmail(email);
+export async function authenticate(email: string, password: string): Promise<AuthUser | null> {
+  const record = await findUserByEmail(email);
   // Verify against a dummy hash when the account is missing to reduce timing differences.
   const valid = verifyPassword(password, record?.password_hash ?? DUMMY_PASSWORD_HASH);
   if (!record || !valid) return null;
@@ -83,15 +83,15 @@ export function authenticate(email: string, password: string): AuthUser | null {
   };
 }
 
-export function changePassword(userId: string, currentPassword: string, nextPassword: string): void {
-  const record = db.get<UserRecord>(
+export async function changePassword(userId: string, currentPassword: string, nextPassword: string): Promise<void> {
+  const record = await db.get<UserRecord>(
     "SELECT id, email, password_hash, display_name, is_demo, created_at FROM users WHERE id = ?",
     userId,
   );
   if (!record || !verifyPassword(currentPassword, record.password_hash)) {
     throw validationError("The current password is incorrect.");
   }
-  db.run(
+  await db.run(
     "UPDATE users SET password_hash = ? WHERE id = ?",
     hashPassword(nextPassword),
     userId,
@@ -106,12 +106,12 @@ export async function updateDisplayName(
   if (name.length < 2 || name.length > 80) {
     throw validationError("Use between 2 and 80 characters for your name.");
   }
-  const record = db.get<UserRecord>("SELECT id, email, display_name, is_demo FROM users WHERE id = ?", userId);
+  const record = await db.get<UserRecord>("SELECT id, email, display_name, is_demo FROM users WHERE id = ?", userId);
   if (!record) throw validationError("That account was not found.");
   if (record.is_demo === 1) {
     throw conflict("The shared demo profile cannot be changed. Create a personal account to edit a profile.");
   }
-  db.run("UPDATE users SET display_name = ? WHERE id = ?", name, userId);
+  await db.run("UPDATE users SET display_name = ? WHERE id = ?", name, userId);
   return {
     id: record.id,
     email: record.email,

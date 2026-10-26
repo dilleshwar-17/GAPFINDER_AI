@@ -12,7 +12,7 @@ export async function PATCH(
     requireSameOrigin(request);
     const user = await requireUser();
     const { taskId } = await context.params;
-    const task = toggleRevisionTask(user.id, taskId);
+    const task = await toggleRevisionTask(user.id, taskId);
     return jsonOk({ task });
   });
 }

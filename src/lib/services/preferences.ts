@@ -39,8 +39,8 @@ const DEFAULTS: Preferences = {
   updatedAt: null,
 };
 
-export function getPreferences(userId: string): Preferences {
-  const row = db.get<PreferencesRow>(
+export async function getPreferences(userId: string): Promise<Preferences> {
+  const row = await db.get<PreferencesRow>(
     "SELECT * FROM user_preferences WHERE user_id = ?",
     userId,
   );
@@ -54,18 +54,18 @@ export function getPreferences(userId: string): Preferences {
   };
 }
 
-export function savePreferences(
+export async function savePreferences(
   userId: string,
   input: PreferencesInput,
   options: { completeOnboarding?: boolean; lastSubjectId?: string | null } = {},
-): Preferences {
-  if (isDemoUser(userId)) {
+): Promise<Preferences> {
+  if (await isDemoUser(userId)) {
     throw conflict("The shared demo workspace cannot change study preferences.");
   }
-  const existing = getPreferences(userId);
+  const existing = await getPreferences(userId);
   const onboardingCompleted =
     options.completeOnboarding === true ? 1 : existing.onboardingCompleted ? 1 : 0;
-  db.run(
+  await db.run(
     `INSERT INTO user_preferences
       (user_id, minutes_per_day, session_minutes, onboarding_completed, last_subject_id, updated_at)
      VALUES (?, ?, ?, ?, ?, ?)
@@ -85,9 +85,9 @@ export function savePreferences(
   return getPreferences(userId);
 }
 
-export function markOnboardingComplete(userId: string, lastSubjectId: string | null): void {
-  const existing = getPreferences(userId);
-  savePreferences(
+export async function markOnboardingComplete(userId: string, lastSubjectId: string | null): Promise<void> {
+  const existing = await getPreferences(userId);
+  await savePreferences(
     userId,
     { minutesPerDay: existing.minutesPerDay, sessionMinutes: existing.sessionMinutes },
     { completeOnboarding: true, lastSubjectId },

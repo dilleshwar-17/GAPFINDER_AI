@@ -44,14 +44,14 @@ export default async function RevisionPlanPage({
 }) {
   const user = await requirePageUser();
   const params = await searchParams;
-  const subjects = listSubjects(user.id);
-  const selectedSubjectId = resolveSubjectId(user, params.subject) ?? subjects[0]?.id ?? null;
+  const subjects = await listSubjects(user.id);
+  const selectedSubjectId = (await resolveSubjectId(user, params.subject)) ?? subjects[0]?.id ?? null;
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId) ?? null;
-  const preferences = getPreferences(user.id);
-  const plan = selectedSubject ? getActivePlan(user.id, selectedSubject.id) : null;
-  const history = selectedSubject ? listPlanHistory(user.id, selectedSubject.id) : [];
+  const preferences = await getPreferences(user.id);
+  const plan = selectedSubject ? await getActivePlan(user.id, selectedSubject.id) : null;
+  const history = selectedSubject ? await listPlanHistory(user.id, selectedSubject.id) : [];
   const leafTopics = selectedSubject
-    ? listTopics(user.id, selectedSubject.id).filter((topic) => topic.childCount === 0)
+    ? (await listTopics(user.id, selectedSubject.id)).filter((topic) => topic.childCount === 0)
     : [];
 
   return (

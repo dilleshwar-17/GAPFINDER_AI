@@ -17,7 +17,7 @@ export async function GET(request: Request) {
         error: userError,
       } = await supabase.auth.getUser();
       if (userError) throw userError;
-      if (user) syncSupabaseUser(user);
+      if (user) await syncSupabaseUser(user);
       return NextResponse.redirect(new URL(next, request.url));
     }
   }

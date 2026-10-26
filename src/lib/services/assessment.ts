@@ -74,8 +74,8 @@ function parseQuestionIds(raw: string): string[] {
   }
 }
 
-export function getAttemptOwned(ownerId: string, attemptId: string): AttemptRow {
-  const attempt = db.get<AttemptRow>(
+export async function getAttemptOwned(ownerId: string, attemptId: string): Promise<AttemptRow> {
+  const attempt = await db.get<AttemptRow>(
     "SELECT * FROM quiz_attempts WHERE id = ? AND owner_id = ?",
     attemptId,
     ownerId,
@@ -84,10 +84,10 @@ export function getAttemptOwned(ownerId: string, attemptId: string): AttemptRow 
   return attempt;
 }
 
-function questionsForAttempt(ownerId: string, attempt: AttemptRow): QuestionRow[] {
+async function questionsForAttempt(ownerId: string, attempt: AttemptRow): Promise<QuestionRow[]> {
   const ids = parseQuestionIds(attempt.question_ids_json);
   if (ids.length === 0) return [];
-  const rows = db.all<QuestionRow>(
+  const rows = await db.all<QuestionRow>(
     `SELECT * FROM questions
       WHERE owner_id = ? AND id IN (${ids.map(() => "?").join(",")})`,
     ownerId,
@@ -97,14 +97,14 @@ function questionsForAttempt(ownerId: string, attempt: AttemptRow): QuestionRow[
   return ids.map((id) => byId.get(id)).filter((row): row is QuestionRow => Boolean(row));
 }
 
-function existingQuestionsForTopic(
+async function existingQuestionsForTopic(
   ownerId: string,
   subjectId: string,
   topicId: string,
   limit: number,
   excludeIds: Set<string>,
-): QuestionRow[] {
-  const rows = db.all<QuestionRow>(
+): Promise<QuestionRow[]> {
+  const rows = await db.all<QuestionRow>(
     `SELECT q.*,
             (SELECT COUNT(*) FROM answers a WHERE a.question_id = q.id) AS usage
        FROM questions q
@@ -137,7 +137,7 @@ export async function startDiagnostic(
   subjectId: string,
   topicIds: string[],
 ): Promise<StartDiagnosticResult> {
-  const subject = getSubjectOwned(ownerId, subjectId);
+  const subject = await getSubjectOwned(ownerId, subjectId);
   const uniqueTopicIds = [...new Set(topicIds)].slice(0, MAX_TOPICS_PER_QUIZ);
   if (uniqueTopicIds.length === 0) {
     throw validationError("Select at least one topic to assess.");
@@ -147,10 +147,10 @@ export async function startDiagnostic(
   const warnings: string[] = [];
   const collected: QuestionRow[] = [];
   const methods = new Set<string>();
-  const existingPromptHashes = promptHashesForSubject(ownerId, subjectId);
+  const existingPromptHashes = await promptHashesForSubject(ownerId, subjectId);
 
   for (const topicId of uniqueTopicIds) {
-    const topic = getTopicOwned(ownerId, subjectId, topicId);
+    const topic = await getTopicOwned(ownerId, subjectId, topicId);
     try {
       const retrieval = await retrieveEvidence({
         ownerId,
@@ -180,7 +180,7 @@ export async function startDiagnostic(
       methods.add(generated.method);
       if (generated.note) warnings.push(`${topic.name}: ${generated.note}`);
 
-      const persisted = persistGeneratedQuestions({
+      const persisted = await persistGeneratedQuestions({
         ownerId,
         subjectId,
         topicId: topic.id,
@@ -195,7 +195,7 @@ export async function startDiagnostic(
       }
 
       const used = new Set(persisted.stored.map((question) => question.id));
-      const topUp = existingQuestionsForTopic(
+      const topUp = await existingQuestionsForTopic(
         ownerId,
         subjectId,
         topic.id,
@@ -249,7 +249,7 @@ export async function startDiagnostic(
         ? [...methods][0]
         : "mixed";
   const attemptId = newId();
-  db.run(
+  await db.run(
     `INSERT INTO quiz_attempts
       (id, owner_id, subject_id, status, question_ids_json, total_marks, score, started_at,
        submitted_at, generator)
@@ -367,11 +367,11 @@ function sourceViews(evidence: EvidenceChunk[], includeExcerpt: boolean): QuizSo
   }));
 }
 
-export function getQuizView(ownerId: string, attemptId: string): QuizView {
-  const attempt = getAttemptOwned(ownerId, attemptId);
-  const subject = getSubjectOwned(ownerId, attempt.subject_id);
-  const questions = questionsForAttempt(ownerId, attempt);
-  const answers = db.all<AnswerRow>(
+export async function getQuizView(ownerId: string, attemptId: string): Promise<QuizView> {
+  const attempt = await getAttemptOwned(ownerId, attemptId);
+  const subject = await getSubjectOwned(ownerId, attempt.subject_id);
+  const questions = await questionsForAttempt(ownerId, attempt);
+  const answers = await db.all<AnswerRow>(
     "SELECT * FROM answers WHERE attempt_id = ? AND owner_id = ?",
     attemptId,
     ownerId,
@@ -379,7 +379,7 @@ export function getQuizView(ownerId: string, attemptId: string): QuizView {
   const answerByQuestion = new Map(answers.map((answer) => [answer.question_id, answer]));
   const topicIds = [...new Set(questions.map((question) => question.topic_id))];
   const topicRows = topicIds.length
-    ? db.all<{ id: string; name: string }>(
+    ? await db.all<{ id: string; name: string }>(
         `SELECT id, name FROM topics WHERE owner_id = ? AND id IN (${topicIds.map(() => "?").join(",")})`,
         ownerId,
         ...topicIds,
@@ -388,6 +388,38 @@ export function getQuizView(ownerId: string, attemptId: string): QuizView {
   const topicNames = new Map(topicRows.map((row) => [row.id, row.name]));
   const submitted = attempt.status === "submitted";
   const draft = !submitted && attempt.draft_json ? parseDraft(attempt.draft_json) : [];
+
+  const questionViews = await Promise.all(questions.map(async (question) => {
+    const evidence = await getQuestionEvidence(ownerId, question.id);
+    const answer = answerByQuestion.get(question.id);
+    const base: QuizQuestionView = {
+      id: question.id,
+      topicId: question.topic_id,
+      topicName: topicNames.get(question.topic_id) ?? "Topic",
+      type: question.type,
+      difficulty: question.difficulty,
+      prompt: question.prompt,
+      options: parseOptions(question.options_json),
+      marks: question.marks,
+      sources: sourceViews(evidence, submitted),
+    };
+    if (submitted && answer) {
+      base.answer = {
+        score: answer.score,
+        maxMarks: answer.max_marks,
+        correctness: answer.correctness,
+        feedback: answer.feedback,
+        answerText: answer.answer_text,
+        selectedIndex: answer.selected_index,
+        evaluationMethod: answer.evaluation_method,
+        expectedAnswer: question.expected_answer,
+        rubric: parseStringArray(question.rubric_json),
+        matchedConcepts: parseStringArray(answer.matched_concepts_json),
+        missingConcepts: parseStringArray(answer.missing_concepts_json),
+      };
+    }
+    return base;
+  }));
 
   return {
     attemptId: attempt.id,
@@ -405,37 +437,7 @@ export function getQuizView(ownerId: string, attemptId: string): QuizView {
       topicId,
       topicName: topicNames.get(topicId) ?? "Topic",
     })),
-    questions: questions.map((question) => {
-      const evidence = getQuestionEvidence(ownerId, question.id);
-      const answer = answerByQuestion.get(question.id);
-      const base: QuizQuestionView = {
-        id: question.id,
-        topicId: question.topic_id,
-        topicName: topicNames.get(question.topic_id) ?? "Topic",
-        type: question.type,
-        difficulty: question.difficulty,
-        prompt: question.prompt,
-        options: parseOptions(question.options_json),
-        marks: question.marks,
-        sources: sourceViews(evidence, submitted),
-      };
-      if (submitted && answer) {
-        base.answer = {
-          score: answer.score,
-          maxMarks: answer.max_marks,
-          correctness: answer.correctness,
-          feedback: answer.feedback,
-          answerText: answer.answer_text,
-          selectedIndex: answer.selected_index,
-          evaluationMethod: answer.evaluation_method,
-          expectedAnswer: question.expected_answer,
-          rubric: parseStringArray(question.rubric_json),
-          matchedConcepts: parseStringArray(answer.matched_concepts_json),
-          missingConcepts: parseStringArray(answer.missing_concepts_json),
-        };
-      }
-      return base;
-    }),
+    questions: questionViews,
   };
 }
 
@@ -470,12 +472,12 @@ function parseDraft(raw: string): QuizDraftEntry[] {
   }
 }
 
-export function saveAttemptDraft(
+export async function saveAttemptDraft(
   ownerId: string,
   attemptId: string,
   submission: AttemptSubmission,
-): { savedAt: string } {
-  const attempt = getAttemptOwned(ownerId, attemptId);
+): Promise<{ savedAt: string }> {
+  const attempt = await getAttemptOwned(ownerId, attemptId);
   if (attempt.status !== "in_progress") {
     throw conflict("This attempt has already been submitted.");
   }
@@ -492,7 +494,7 @@ export function saveAttemptDraft(
       answerText: (entry.answerText ?? "").slice(0, 4000),
     });
   }
-  db.run(
+  await db.run(
     "UPDATE quiz_attempts SET draft_json = ? WHERE id = ? AND owner_id = ? AND status = 'in_progress'",
     JSON.stringify(draft),
     attemptId,
@@ -507,12 +509,12 @@ export async function submitAttempt(
   submission: AttemptSubmission,
   options: { allowDemo?: boolean } = {},
 ): Promise<SubmitResult> {
-  const attempt = getAttemptOwned(ownerId, attemptId);
+  const attempt = await getAttemptOwned(ownerId, attemptId);
   if (attempt.status === "submitted") {
     throw conflict("This attempt has already been submitted. Start a new diagnostic to retest.");
   }
 
-  const questions = questionsForAttempt(ownerId, attempt);
+  const questions = await questionsForAttempt(ownerId, attempt);
   if (questions.length === 0) {
     throw notFound("The questions for this attempt are no longer available.");
   }
@@ -590,7 +592,7 @@ export async function submitAttempt(
     let feedback = "";
     let method = "deterministic-concept-coverage-v1";
 
-    const evidence = getQuestionEvidence(ownerId, question.id);
+    const evidence = await getQuestionEvidence(ownerId, question.id);
     const modelEvaluation =
       answerText.length > 0 && evidence.length > 0
         ? await evaluateShortAnswerWithModel({
@@ -642,8 +644,8 @@ export async function submitAttempt(
 
   const scoreTotal = prepared.reduce((sum, item) => sum + item.score, 0);
 
-  transaction(() => {
-    const fresh = db.get<{ status: string }>(
+  await transaction(async () => {
+    const fresh = await db.get<{ status: string }>(
       "SELECT status FROM quiz_attempts WHERE id = ? AND owner_id = ?",
       attemptId,
       ownerId,
@@ -653,7 +655,7 @@ export async function submitAttempt(
     }
 
     for (const item of prepared) {
-      db.run(
+      await db.run(
         `INSERT INTO answers
           (id, attempt_id, question_id, owner_id, answer_text, selected_index, score, max_marks,
            correctness, feedback, matched_concepts_json, missing_concepts_json, evaluation_method, created_at)
@@ -675,7 +677,7 @@ export async function submitAttempt(
       );
     }
 
-    db.run(
+    await db.run(
       `UPDATE quiz_attempts
           SET status = 'submitted', score = ?, submitted_at = ?, draft_json = NULL
         WHERE id = ? AND owner_id = ? AND status = 'in_progress'`,
@@ -686,7 +688,7 @@ export async function submitAttempt(
     );
   });
 
-  const affected = db.all<{ topic_id: string }>(
+  const affected = await db.all<{ topic_id: string }>(
     `SELECT DISTINCT q.topic_id
        FROM answers a JOIN questions q ON q.id = a.question_id
       WHERE a.attempt_id = ? AND a.owner_id = ?`,
@@ -696,11 +698,11 @@ export async function submitAttempt(
   // Demo assessments are interactive practice only. They are scored and stored,
   // but they must not rewrite the shared seeded mastery history or revision plan
   // that every visitor sees. The seed routine opts back in with allowDemo.
-  if (!isDemoUser(ownerId) || options.allowDemo) {
-    refreshMasteryForAttempt(ownerId, attempt.subject_id, attemptId);
+  if (!(await isDemoUser(ownerId)) || options.allowDemo) {
+    await refreshMasteryForAttempt(ownerId, attempt.subject_id, attemptId);
   }
   let planUpdated = false;
-  if (!isDemoUser(ownerId) || options.allowDemo) {
+  if (!(await isDemoUser(ownerId)) || options.allowDemo) {
     try {
       planUpdated = await refreshActivePlanAfterAssessment(ownerId, attempt.subject_id);
     } catch (error) {
@@ -738,8 +740,8 @@ export interface AttemptWithSubject extends AttemptSummary {
   subjectName: string;
 }
 
-export function listAllAttempts(ownerId: string): AttemptWithSubject[] {
-  const rows = db.all<AttemptRow & { subject_name: string }>(
+export async function listAllAttempts(ownerId: string): Promise<AttemptWithSubject[]> {
+  const rows = await db.all<AttemptRow & { subject_name: string }>(
     `SELECT at.*, s.name AS subject_name
        FROM quiz_attempts at
        JOIN subjects s ON s.id = at.subject_id
@@ -763,8 +765,8 @@ export function listAllAttempts(ownerId: string): AttemptWithSubject[] {
   }));
 }
 
-export function listAttempts(ownerId: string, subjectId: string): AttemptSummary[] {
-  const rows = db.all<AttemptRow>(
+export async function listAttempts(ownerId: string, subjectId: string): Promise<AttemptSummary[]> {
+  const rows = await db.all<AttemptRow>(
     `SELECT * FROM quiz_attempts
       WHERE owner_id = ? AND subject_id = ?
       ORDER BY started_at DESC LIMIT 40`,
@@ -787,12 +789,12 @@ export function listAttempts(ownerId: string, subjectId: string): AttemptSummary
 
 export interface EvaluationCitation extends CitationView {}
 
-export function attemptCitations(ownerId: string, attemptId: string): EvaluationCitation[] {
-  const attempt = getAttemptOwned(ownerId, attemptId);
-  const questions = questionsForAttempt(ownerId, attempt);
+export async function attemptCitations(ownerId: string, attemptId: string): Promise<EvaluationCitation[]> {
+  const attempt = await getAttemptOwned(ownerId, attemptId);
+  const questions = await questionsForAttempt(ownerId, attempt);
   const citations: CitationView[] = [];
   for (const question of questions) {
-    const evidence = getQuestionEvidence(ownerId, question.id);
+    const evidence = await getQuestionEvidence(ownerId, question.id);
     try {
       const resolved = resolveQuestionSources(
         evidence.map((chunk) => chunk.chunkId),
@@ -806,8 +808,8 @@ export function attemptCitations(ownerId: string, attemptId: string): Evaluation
   return citations;
 }
 
-export function getQuestionForAttempt(ownerId: string, attemptId: string, questionId: string) {
-  const attempt = getAttemptOwned(ownerId, attemptId);
+export async function getQuestionForAttempt(ownerId: string, attemptId: string, questionId: string) {
+  const attempt = await getAttemptOwned(ownerId, attemptId);
   if (!parseQuestionIds(attempt.question_ids_json).includes(questionId)) {
     throw notFound("That question is not part of this attempt.");
   }

@@ -16,8 +16,8 @@ export async function PUT(request: Request) {
     requireSameOrigin(request);
     const user = await requireUser();
     const payload = await readJson(request, requestSchema);
-    if (payload.lastSubjectId) getSubjectOwned(user.id, payload.lastSubjectId);
-    const preferences = savePreferences(
+    if (payload.lastSubjectId) await getSubjectOwned(user.id, payload.lastSubjectId);
+    const preferences = await savePreferences(
       user.id,
       { minutesPerDay: payload.minutesPerDay, sessionMinutes: payload.sessionMinutes },
       { completeOnboarding: payload.completeOnboarding, lastSubjectId: payload.lastSubjectId ?? null },

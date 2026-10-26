@@ -215,8 +215,8 @@ export async function explainTopic(input: {
     };
   }
 
-  getSubjectOwned(input.ownerId, subjectId);
-  const topic = getTopicOwned(input.ownerId, subjectId, topicId);
+  await getSubjectOwned(input.ownerId, subjectId);
+  const topic = await getTopicOwned(input.ownerId, subjectId, topicId);
   const retrieval = await retrieveEvidence({
     ownerId: input.ownerId,
     subjectId: subjectId,

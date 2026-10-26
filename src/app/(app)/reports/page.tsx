@@ -18,13 +18,15 @@ export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
   const user = await requirePageUser();
-  const subjects = listSubjects(user.id);
+  const subjects = await listSubjects(user.id);
 
-  const cards = subjects.map((subject) => {
-    const report = getGapReport(user.id, subject.id);
-    const plan = getActivePlan(user.id, subject.id);
+  const cards = await Promise.all(subjects.map(async (subject) => {
+    const [report, plan] = await Promise.all([
+      getGapReport(user.id, subject.id),
+      getActivePlan(user.id, subject.id),
+    ]);
     return { subject, report, plan };
-  });
+  }));
 
   return (
     <>

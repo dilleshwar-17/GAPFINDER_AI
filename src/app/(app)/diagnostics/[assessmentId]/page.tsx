@@ -21,7 +21,7 @@ export default async function AssessmentPage({
 
   let view;
   try {
-    view = getQuizView(user.id, assessmentId);
+    view = await getQuizView(user.id, assessmentId);
   } catch (error) {
     pageNotFoundIfMissing(error);
   }

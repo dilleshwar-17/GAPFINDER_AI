@@ -16,7 +16,7 @@ before submission.
 Browser
   │  HTML (RSC) + small client islands
   ▼
-Next.js App Router  ──────────────►  Service layer  ──────►  SQLite (node:sqlite)
+Next.js App Router  ──────────────►  Service layer  ──────►  SQLite or PostgreSQL
   │  page.tsx / route.ts               src/lib/services        schema in src/lib/db
   │                                    domain rules
   ▼
@@ -98,15 +98,29 @@ Pure, testable rules with no I/O:
 
 ### 5. Data access — `src/lib/db`
 
-`index.ts` wraps `node:sqlite`'s `DatabaseSync` with:
+`index.ts` selects the database backend from server-only configuration:
 
-- one connection per process,
-- `PRAGMA foreign_keys = ON`,
-- schema application on first use,
-- `db.get`, `db.all`, `db.run`, and a `transaction(fn)` helper,
-- `newId()` (UUID), `nowIso()`, and `resetDatabase()` for tests.
+- when `DATABASE_URL` is set, parameterized asynchronous queries use a
+  `pg.Pool`, with transaction-scoped connections and `?` placeholders converted
+  to PostgreSQL placeholders;
+- otherwise, local development uses `node:sqlite`'s synchronous `DatabaseSync`,
+  applies the schema on first use, and enables foreign keys and WAL for file
+  databases;
+- both backends expose `db.get`, `db.all`, `db.run`, and
+  `transaction(fn)`; service functions await database work so the hosted path
+  remains asynchronous;
+- `newId()` creates UUIDs and `resetDatabase()` is restricted to SQLite/test
+  use.
 
-Embeddings are stored as `BLOB` (raw `Float32Array` bytes) alongside
+The explicit `npm run db:migrate:postgres` command derives an initial
+PostgreSQL schema from `src/lib/db/schema.ts`, converting `BLOB` to `BYTEA`.
+It is additive and idempotent for the initial schema; it does not transfer
+existing SQLite records and is not run automatically. The PostgreSQL adapter and
+schema have not been verified against a live hosted database.
+
+Original uploads and embeddings are stored in database binary columns (`BLOB`
+locally, `BYTEA` in PostgreSQL); there is no object-storage adapter. Embeddings
+contain raw `Float32Array` bytes alongside
 `embedding_model` and `embedding_dim`. Retrieval only compares chunks whose model
 and dimension match the *current* configuration, so a configuration change never
 silently mixes incompatible vectors.

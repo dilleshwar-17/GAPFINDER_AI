@@ -62,9 +62,9 @@ let firstAttemptId: string;
 
 beforeEach(async () => {
   resetDatabase();
-  insertUser({ id: OWNER_ID, email: "workflow-owner@example.test", isDemo: false });
-  insertUser({ id: OTHER_ID, email: "workflow-other@example.test", isDemo: false });
-  const subject = createSubject({
+  await insertUser({ id: OWNER_ID, email: "workflow-owner@example.test", isDemo: false });
+  await insertUser({ id: OTHER_ID, email: "workflow-other@example.test", isDemo: false });
+  const subject = await createSubject({
     ownerId: OWNER_ID,
     name: SUBJECT_NAME,
     description: "Synthetic material created only for automated tests.",
@@ -84,11 +84,11 @@ beforeEach(async () => {
   });
   documentId = document.id;
 
-  const extraction = extractTopics(ownerId, subjectId);
+  const extraction = await extractTopics(ownerId, subjectId);
   expect(extraction.source).toBe("syllabus");
   expect(extraction.created).toBeGreaterThan(0);
 
-  const leaf = listLeafTopics(ownerId, subjectId).find((topic) =>
+  const leaf = (await listLeafTopics(ownerId, subjectId)).find((topic) =>
     topic.name.toLowerCase().includes("cell membrane"),
   );
   expect(leaf).toBeDefined();
@@ -100,9 +100,9 @@ beforeEach(async () => {
   firstAttemptId = diagnostic.attemptId;
 });
 
-function expectNotFound(run: () => unknown): void {
+async function expectNotFound(run: () => Promise<unknown>): Promise<void> {
   try {
-    run();
+    await run();
   } catch (error) {
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).status).toBe(404);
@@ -112,22 +112,22 @@ function expectNotFound(run: () => unknown): void {
 }
 
 describe("upload -> extraction -> retrieval pipeline", () => {
-  it("indexes a readable text file with chunks and stable source metadata", () => {
-    const documents = listDocuments(ownerId, subjectId);
+  it("indexes a readable text file with chunks and stable source metadata", async () => {
+    const documents = await listDocuments(ownerId, subjectId);
     expect(documents).toHaveLength(1);
     expect(documents[0]?.status).toBe("ready");
     expect(documents[0]?.chunkCount).toBeGreaterThan(0);
     expect(documents[0]?.errorMessage).toBeNull();
 
-    const detail = getDocumentDetail(ownerId, documentId);
+    const detail = await getDocumentDetail(ownerId, documentId);
     expect(detail.document.id).toBe(documentId);
     expect(detail.chunks.length).toBe(documents[0]!.chunkCount);
     expect(detail.chunks.every((chunk) => chunk.excerpt.length > 0)).toBe(true);
     expect(detail.chunks.every((chunk) => chunk.charCount > 0)).toBe(true);
   });
 
-  it("creates topics only from headings present in the uploaded syllabus", () => {
-    const leaves = listLeafTopics(ownerId, subjectId);
+  it("creates topics only from headings present in the uploaded syllabus", async () => {
+    const leaves = await listLeafTopics(ownerId, subjectId);
     const names = leaves.map((topic) => topic.name.toLowerCase());
     expect(names.some((name) => name.includes("cell membrane"))).toBe(true);
     expect(names.some((name) => name.includes("mitochondria"))).toBe(true);
@@ -145,7 +145,7 @@ describe("upload -> extraction -> retrieval pipeline", () => {
         bytes: new TextEncoder().encode("not a supported study file"),
       }),
     ).rejects.toMatchObject({ code: "UNSUPPORTED_FILE", status: 415 });
-    expect(listDocuments(ownerId, subjectId)).toHaveLength(1);
+    expect(await listDocuments(ownerId, subjectId)).toHaveLength(1);
   });
 
   it("rejects an empty upload", async () => {
@@ -185,7 +185,7 @@ describe("upload -> extraction -> retrieval pipeline", () => {
         bytes: new TextEncoder().encode("%PDF-1.7 not a real document"),
       }),
     ).rejects.toMatchObject({ code: "EXTRACTION_FAILED" });
-    const failed = listDocuments(ownerId, subjectId).find(
+    const failed = (await listDocuments(ownerId, subjectId)).find(
       (document) => document.filename === "corrupted.pdf",
     );
     expect(failed?.status).toBe("failed");
@@ -196,7 +196,7 @@ describe("upload -> extraction -> retrieval pipeline", () => {
 
 describe("diagnostic and answer integrity", () => {
   it("does not leak the answer key before submission", async () => {
-    const view = getQuizView(ownerId, firstAttemptId);
+    const view = await getQuizView(ownerId, firstAttemptId);
     expect(view.status).toBe("in_progress");
     for (const question of view.questions) {
       expect(question.answer).toBeUndefined();
@@ -206,9 +206,9 @@ describe("diagnostic and answer integrity", () => {
   });
 
   it("persists deterministic scores and resolves every citation to the owned source", async () => {
-    const preSubmit = getQuizView(ownerId, firstAttemptId);
-    const answers = preSubmit.questions.map((question) => {
-      const row = db.get<{
+    const preSubmit = await getQuizView(ownerId, firstAttemptId);
+    const answers = await Promise.all(preSubmit.questions.map(async (question) => {
+      const row = (await db.get<{
         correct_index: number | null;
         expected_answer: string;
         type: string;
@@ -216,18 +216,18 @@ describe("diagnostic and answer integrity", () => {
         "SELECT correct_index, expected_answer, type FROM questions WHERE id = ? AND owner_id = ?",
         question.id,
         ownerId,
-      )!;
+      ))!;
       if (row.type === "mcq") {
         return { questionId: question.id, selectedIndex: row.correct_index ?? 0 };
       }
       return { questionId: question.id, answerText: row.expected_answer };
-    });
+    }));
 
     const result = await submitAttempt(ownerId, firstAttemptId, { answers });
     expect(result.score).toBe(result.totalMarks);
     expect(result.topicsUpdated).toBeGreaterThan(0);
 
-    const stored = db.all<{ score: number; max_marks: number; evaluation_method: string }>(
+    const stored = await db.all<{ score: number; max_marks: number; evaluation_method: string }>(
       "SELECT score, max_marks, evaluation_method FROM answers WHERE attempt_id = ? AND owner_id = ?",
       firstAttemptId,
       ownerId,
@@ -236,7 +236,7 @@ describe("diagnostic and answer integrity", () => {
     expect(stored.reduce((sum, row) => sum + row.score, 0)).toBe(result.score);
     expect(stored.every((row) => row.evaluation_method.startsWith("deterministic-"))).toBe(true);
 
-    const submitted = getQuizView(ownerId, firstAttemptId);
+    const submitted = await getQuizView(ownerId, firstAttemptId);
     expect(submitted.status).toBe("submitted");
     for (const question of submitted.questions) {
       expect(question.answer?.expectedAnswer).toBeTruthy();
@@ -250,7 +250,7 @@ describe("diagnostic and answer integrity", () => {
   });
 
   it("refuses a duplicate submission of the same attempt", async () => {
-    const preSubmit = getQuizView(ownerId, firstAttemptId);
+    const preSubmit = await getQuizView(ownerId, firstAttemptId);
     const answers = preSubmit.questions.map((question) => ({
       questionId: question.id,
       selectedIndex: 0,
@@ -261,7 +261,7 @@ describe("diagnostic and answer integrity", () => {
     await expect(
       submitAttempt(ownerId, firstAttemptId, { answers }),
     ).rejects.toMatchObject({ code: "CONFLICT", status: 409 });
-    const count = db.get<{ count: number }>(
+    const count = await db.get<{ count: number }>(
       "SELECT COUNT(*) AS count FROM answers WHERE attempt_id = ?",
       firstAttemptId,
     );
@@ -271,20 +271,20 @@ describe("diagnostic and answer integrity", () => {
 
 describe("gap analysis, planning, progress and grounded assistance", () => {
   it("computes mastery from submitted evidence and labels unassessed topics honestly", async () => {
-    const preSubmit = getQuizView(ownerId, firstAttemptId);
-    const answers = preSubmit.questions.map((question) => {
-      const row = db.get<{ correct_index: number | null; expected_answer: string; type: string }>(
+    const preSubmit = await getQuizView(ownerId, firstAttemptId);
+    const answers = await Promise.all(preSubmit.questions.map(async (question) => {
+      const row = (await db.get<{ correct_index: number | null; expected_answer: string; type: string }>(
         "SELECT correct_index, expected_answer, type FROM questions WHERE id = ? AND owner_id = ?",
         question.id,
         ownerId,
-      )!;
+      ))!;
       return row.type === "mcq"
         ? { questionId: question.id, selectedIndex: row.correct_index ?? 0 }
         : { questionId: question.id, answerText: row.expected_answer };
-    });
+    }));
     await submitAttempt(ownerId, firstAttemptId, { answers });
 
-    const report = getGapReport(ownerId, subjectId);
+    const report = await getGapReport(ownerId, subjectId);
     expect(report.summary.assessed).toBe(1);
     expect(report.summary.notAssessed).toBe(report.summary.leaves - 1);
     const measured = report.topics.find((topic) => topic.topicId === topicId);
@@ -296,22 +296,22 @@ describe("gap analysis, planning, progress and grounded assistance", () => {
     const unassessed = report.topics.filter((topic) => topic.topicId !== topicId);
     expect(unassessed.every((topic) => topic.mastery === null)).toBe(true);
 
-    const progress = getProgressOverview(ownerId, subjectId);
+    const progress = await getProgressOverview(ownerId, subjectId);
     expect(progress.topicTrends.some((trend) => trend.topicId === topicId)).toBe(true);
   });
 
   it("builds a time-bounded plan, preserves completed history, and adapts after a new assessment", async () => {
-    const preSubmit = getQuizView(ownerId, firstAttemptId);
-    const correctAnswers = preSubmit.questions.map((question) => {
-      const row = db.get<{ correct_index: number | null; expected_answer: string; type: string }>(
+    const preSubmit = await getQuizView(ownerId, firstAttemptId);
+    const correctAnswers = await Promise.all(preSubmit.questions.map(async (question) => {
+      const row = (await db.get<{ correct_index: number | null; expected_answer: string; type: string }>(
         "SELECT correct_index, expected_answer, type FROM questions WHERE id = ? AND owner_id = ?",
         question.id,
         ownerId,
-      )!;
+      ))!;
       return row.type === "mcq"
         ? { questionId: question.id, selectedIndex: row.correct_index ?? 0 }
         : { questionId: question.id, answerText: row.expected_answer };
-    });
+    }));
     await submitAttempt(ownerId, firstAttemptId, { answers: correctAnswers });
 
     const plan = await createRevisionPlan({
@@ -331,49 +331,50 @@ describe("gap analysis, planning, progress and grounded assistance", () => {
     expect(plan.pendingMinutes).toBeLessThanOrEqual(plan.capacityMinutes);
     expect(plan.tasks.every((task) => task.durationMinutes > 0)).toBe(true);
 
-    const completed = toggleRevisionTask(ownerId, plan.tasks[0]!.id);
+    const completed = await toggleRevisionTask(ownerId, plan.tasks[0]!.id);
     expect(completed.status).toBe("completed");
 
     const second = await startDiagnostic(ownerId, subjectId, [topicId]);
-    const wrongAnswers = getQuizView(ownerId, second.attemptId).questions.map((question) => {
-      const row = db.get<{ correct_index: number | null; type: string }>(
+    const secondView = await getQuizView(ownerId, second.attemptId);
+    const wrongAnswers = await Promise.all(secondView.questions.map(async (question) => {
+      const row = (await db.get<{ correct_index: number | null; type: string }>(
         "SELECT correct_index, type FROM questions WHERE id = ? AND owner_id = ?",
         question.id,
         ownerId,
-      )!;
+      ))!;
       return row.type === "mcq"
         ? { questionId: question.id, selectedIndex: ((row.correct_index ?? 0) + 1) % 4 }
         : { questionId: question.id, answerText: "I do not know." };
-    });
+    }));
     const secondResult = await submitAttempt(ownerId, second.attemptId, {
       answers: wrongAnswers,
     });
     expect(secondResult.planUpdated).toBe(true);
 
-    const active = getActivePlan(ownerId, subjectId);
+    const active = await getActivePlan(ownerId, subjectId);
     expect(active?.version).toBe(2);
     expect(active?.trigger).toBe("new_assessment");
     expect(active?.tasks.every((task) => task.status === "pending")).toBe(true);
     expect(active?.changeSummary.length).toBeGreaterThan(0);
 
-    const history = listPlanHistory(ownerId, subjectId);
+    const history = await listPlanHistory(ownerId, subjectId);
     const superseded = history.find((entry) => entry.version === 1);
     expect(superseded?.status).toBe("superseded");
     expect(superseded?.tasks.find((task) => task.id === completed.id)?.status).toBe("completed");
   });
 
   it("returns a citation-backed answer for an answerable question", async () => {
-    const preSubmit = getQuizView(ownerId, firstAttemptId);
-    const correctAnswers = preSubmit.questions.map((question) => {
-      const row = db.get<{ correct_index: number | null; expected_answer: string; type: string }>(
+    const preSubmit = await getQuizView(ownerId, firstAttemptId);
+    const correctAnswers = await Promise.all(preSubmit.questions.map(async (question) => {
+      const row = (await db.get<{ correct_index: number | null; expected_answer: string; type: string }>(
         "SELECT correct_index, expected_answer, type FROM questions WHERE id = ? AND owner_id = ?",
         question.id,
         ownerId,
-      )!;
+      ))!;
       return row.type === "mcq"
         ? { questionId: question.id, selectedIndex: row.correct_index ?? 0 }
         : { questionId: question.id, answerText: row.expected_answer };
-    });
+    }));
     await submitAttempt(ownerId, firstAttemptId, { answers: correctAnswers });
 
     const answer = await explainTopic({
@@ -398,9 +399,9 @@ describe("gap analysis, planning, progress and grounded assistance", () => {
   });
 
   it("abstains when a topic has no indexed evidence", async () => {
-    const context = getTopicContext(ownerId, topicId);
+    const context = await getTopicContext(ownerId, topicId);
     const manualTopicId = "manual-ribosome-topic";
-    db.run(
+    await db.run(
       `INSERT INTO topics
         (id, owner_id, subject_id, parent_id, name, description, importance, position,
          source_document_id, source_page, created_at)
@@ -428,11 +429,11 @@ describe("gap analysis, planning, progress and grounded assistance", () => {
 });
 
 describe("authorization and isolation", () => {
-  it("returns 404 when another account requests this workspace's resources", () => {
-    expectNotFound(() => getDocumentDetail(otherId, documentId));
-    expectNotFound(() => getQuizView(otherId, firstAttemptId));
-    expectNotFound(() => getGapReport(otherId, subjectId));
-    expectNotFound(() => getTopicContext(otherId, topicId));
-    expectNotFound(() => getProgressOverview(otherId, subjectId));
+  it("returns 404 when another account requests this workspace's resources", async () => {
+    await expectNotFound(() => getDocumentDetail(otherId, documentId));
+    await expectNotFound(() => getQuizView(otherId, firstAttemptId));
+    await expectNotFound(() => getGapReport(otherId, subjectId));
+    await expectNotFound(() => getTopicContext(otherId, topicId));
+    await expectNotFound(() => getProgressOverview(otherId, subjectId));
   });
 });

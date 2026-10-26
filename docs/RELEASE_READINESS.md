@@ -3,8 +3,18 @@
 **Status: NOT READY for production use.** Commit `0866985` is deployed to the
 Production alias, but its health endpoint reports a database error.
 
+The current local working tree adds an optional PostgreSQL adapter, an explicit
+initial schema migration, and async-safe service and page callers. This code has
+not been deployed or tested against a hosted database. `DATABASE_URL` is not
+configured locally, so the migration and live persistence checks were not run.
+
 ## Verified
 
+- Current working-tree `npm run typecheck` passes.
+- Current working-tree `npm run lint` passes.
+- Current working-tree `npm test` passes: 12 files, 143 tests. PostgreSQL adapter
+  tests are unit tests and do not connect to a live server.
+- Current working-tree `npm run build` passes on Next.js 16.4.3.
 - Next.js 16.4.3 production build passes after consolidating Next's
   `middleware.ts`/`proxy.ts` entry point.
 - `npm run lint` and `npm run typecheck` pass.
@@ -34,16 +44,17 @@ Production alias, but its health endpoint reports a database error.
 
 ## Release blockers
 
-1. **Durable application storage:** the application still uses local
-   `node:sqlite`. Vercel does not provide the durable shared filesystem this
-   implementation requires.
+1. **Hosted database setup and verification:** configure `DATABASE_URL`
+   securely, run the explicit initial PostgreSQL migration, and test durable
+   reads/writes on Preview. The adapter has not been connected to a live server.
 2. **Supabase Auth live verification:** configure a non-production project,
    callback allow-list, email confirmation, and reset delivery; test all flows.
-3. **Existing data migration:** preserve local learner records, map confirmed
-   identities, and require existing users to set/reset Supabase passwords.
-   No database was modified or migrated.
-4. **File persistence:** uploads remain SQLite BLOBs; no hosted object storage
-   path exists.
+3. **Existing data migration:** preserve any local learner records, map
+   confirmed identities, and require existing users to set/reset Supabase
+   passwords. The initial schema script does not copy data; no database was
+   modified or migrated.
+4. **File persistence and scale:** the current adapter stores original uploads
+   and embeddings in PostgreSQL `BYTEA`; no hosted object-storage path exists.
 5. **End-to-end verification:** authentication, ownership, upload/RAG/citation,
    mobile, accessibility, load, and concurrency tests have not been run. The
    Preview and Production cannot serve as healthy data-backed test environments

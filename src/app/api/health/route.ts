@@ -10,7 +10,7 @@ export async function GET() {
   return handleRoute(async () => {
     let database = "ok";
     try {
-      db.get<{ value: number }>("SELECT 1 AS value");
+      await db.get<{ value: number }>("SELECT 1 AS value");
     } catch {
       database = "error";
     }

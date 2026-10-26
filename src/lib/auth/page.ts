@@ -30,23 +30,23 @@ export function safeNextPath(value: string | string[] | undefined, fallback = "/
 }
 
 /** Resolves the subject a page should default to, validating ownership. */
-export function resolveSubjectId(
+export async function resolveSubjectId(
   user: AuthUser,
   requested: string | string[] | undefined,
-): string | null {
+): Promise<string | null> {
   const candidate = Array.isArray(requested) ? requested[0] : requested;
   if (candidate) {
     try {
-      getSubjectOwned(user.id, candidate);
+      await getSubjectOwned(user.id, candidate);
       return candidate;
     } catch {
       return null;
     }
   }
-  const preferences = getPreferences(user.id);
+  const preferences = await getPreferences(user.id);
   if (preferences.lastSubjectId) {
     try {
-      getSubjectOwned(user.id, preferences.lastSubjectId);
+      await getSubjectOwned(user.id, preferences.lastSubjectId);
       return preferences.lastSubjectId;
     } catch {
       return null;

@@ -22,8 +22,8 @@ export default async function TopicsPage({
   let subject;
   let topics;
   try {
-    subject = getSubjectOwned(user.id, subjectId);
-    topics = listTopics(user.id, subjectId);
+    subject = await getSubjectOwned(user.id, subjectId);
+    topics = await listTopics(user.id, subjectId);
   } catch (error) {
     pageNotFoundIfMissing(error);
   }

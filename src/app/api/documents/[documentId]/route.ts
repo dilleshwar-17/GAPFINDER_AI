@@ -12,7 +12,7 @@ export async function DELETE(
     requireSameOrigin(request);
     const user = await requireUser();
     const { documentId } = await context.params;
-    const result = deleteDocument(user.id, documentId);
+    const result = await deleteDocument(user.id, documentId);
     return jsonOk({ ok: true, subjectId: result.subjectId });
   });
 }

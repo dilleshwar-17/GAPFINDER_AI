@@ -30,7 +30,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const user = await requirePageUser();
-  const dashboard = getDashboard(user.id);
+  const dashboard = await getDashboard(user.id);
   const { totals, nextAction } = dashboard;
 
   return (

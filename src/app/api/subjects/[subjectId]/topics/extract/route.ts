@@ -12,7 +12,7 @@ export async function POST(
     requireSameOrigin(request);
     const user = await requireUser();
     const { subjectId } = await context.params;
-    const result = extractTopics(user.id, subjectId);
+    const result = await extractTopics(user.id, subjectId);
     return jsonOk({ result });
   });
 }

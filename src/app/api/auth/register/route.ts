@@ -36,15 +36,15 @@ export async function POST(request: Request) {
         throw new AppError(400, "VALIDATION_ERROR", "The account could not be created. Check the details and try again.");
       }
 
-      const user = data.user && data.session ? syncSupabaseUser(data.user) : null;
+      const user = data.user && data.session ? await syncSupabaseUser(data.user) : null;
       return jsonOk(
         { user, confirmationRequired: !data.session },
         201,
       );
     }
 
-    const user = createUser(payload);
-    const session = createSession(user.id);
+    const user = await createUser(payload);
+    const session = await createSession(user.id);
     const response: NextResponse = jsonOk({ user }, 201);
     attachSessionCookie(response, request, session.token);
     return response;

@@ -13,7 +13,7 @@ export async function POST(
     const user = await requireUser();
     const { subjectId } = await context.params;
     const payload = await readJson(request, createTopicSchema);
-    const topic = createTopic({ ownerId: user.id, subjectId, payload });
+    const topic = await createTopic({ ownerId: user.id, subjectId, payload });
     return jsonOk({ topic }, 201);
   });
 }

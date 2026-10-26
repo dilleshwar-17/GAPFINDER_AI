@@ -181,8 +181,10 @@ an equivalent shared store. This is listed in the limitations.
 
 ### Data location and retention
 
-- Data lives in the SQLite file at `DATABASE_PATH` (default
-  `data/gapfinder.db`), on the server's filesystem.
+- With `DATABASE_URL` unset, data lives in the SQLite file at `DATABASE_PATH`
+  (default `data/gapfinder.db`) on the server's filesystem. When configured,
+  the optional PostgreSQL adapter stores records and uploads in the selected
+  PostgreSQL database. That adapter has not been live-verified.
 - There is no automated retention or deletion policy in this build. Deleting a
   document cascades to its chunks and question-source links. Deleting a user
   cascades to all owned data. There is no self-service "delete my account" flow.
@@ -225,19 +227,21 @@ The existing automated tests and previously executed base-app smoke run include
 
 - **Supabase Auth is not live-verified.** This environment had no project URL,
   public key, configured email provider, or redirect allow-list to test.
-- **No durable application database adapter.** Supabase Auth is not Supabase
-  Postgres: records, uploads, and embeddings still use local SQLite, which is
-  not durable/shared on Vercel.
+- **PostgreSQL adapter is not live-verified.** Supabase Auth is separate from
+  Supabase Postgres. The working tree has an optional `DATABASE_URL` adapter and
+  explicit initial-schema migration, but no hosted connection or migration has
+  been tested; the deployed build still reports a database error.
 - **No Supabase Row Level Security policies are present.** Current resource
   isolation depends on authenticated server code and owner-scoped SQL queries.
-- **No completed account/data migration.** The local `auth_user_id` field only
-  supports linking in the local database; it does not migrate records to hosted
-  Postgres or provision/import Supabase users. Existing local users must set or
-  reset a Supabase password when a separately planned migration is performed.
+- **No completed account/data migration.** The initial PostgreSQL migration
+  creates schema only; it does not transfer local records or provision/import
+  Supabase users. Existing local users must set or reset a Supabase password
+  when a separately planned migration is performed.
 - **Email delivery depends on Supabase project configuration.** Recovery and
   confirmation have not been exercised against a live provider.
-- **No encryption at rest.** The SQLite file and any backups rely on OS/disk
-  encryption.
+- **No application-managed encryption at rest.** Local SQLite files and
+  backups rely on OS/disk encryption; encryption provided by a future hosted
+  PostgreSQL service has not been verified.
 - **No MFA**, no account lockout beyond rate limiting, no breached-password
   checks.
 - **No audit log** of who read what beyond `ai_events` and session rows.

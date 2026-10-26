@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function OnboardingPage() {
   const user = await requirePageUser();
   if (user.isDemo) redirect("/dashboard");
-  const preferences = getPreferences(user.id);
+  const preferences = await getPreferences(user.id);
 
   return (
     <div className="hero-wash min-h-screen">

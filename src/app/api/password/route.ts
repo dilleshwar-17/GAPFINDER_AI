@@ -32,10 +32,10 @@ export async function PATCH(request: Request) {
       return jsonOk({ ok: true });
     }
 
-    changePassword(user.id, payload.currentPassword, payload.nextPassword);
+    await changePassword(user.id, payload.currentPassword, payload.nextPassword);
     // Revoke every existing session, then issue a fresh one for this browser.
-    db.run("DELETE FROM sessions WHERE user_id = ?", user.id);
-    const session = createSession(user.id);
+    await db.run("DELETE FROM sessions WHERE user_id = ?", user.id);
+    const session = await createSession(user.id);
     const response: NextResponse = jsonOk({ ok: true });
     attachSessionCookie(response, request, session.token);
     return response;

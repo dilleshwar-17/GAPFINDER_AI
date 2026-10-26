@@ -34,11 +34,11 @@ export default async function DiagnosticsPage({
 }) {
   const user = await requirePageUser();
   const params = await searchParams;
-  const subjects = listSubjects(user.id);
-  const selectedSubjectId = resolveSubjectId(user, params.subject) ?? subjects[0]?.id ?? null;
+  const subjects = await listSubjects(user.id);
+  const selectedSubjectId = (await resolveSubjectId(user, params.subject)) ?? subjects[0]?.id ?? null;
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId) ?? null;
-  const leafTopics = selectedSubject ? listLeafTopics(user.id, selectedSubject.id) : [];
-  const attempts = listAllAttempts(user.id);
+  const leafTopics = selectedSubject ? await listLeafTopics(user.id, selectedSubject.id) : [];
+  const attempts = await listAllAttempts(user.id);
   const inProgress = attempts.filter((attempt) => attempt.status === "in_progress");
   const submitted = attempts.filter((attempt) => attempt.status === "submitted");
   const initialTopicId = Array.isArray(params.topic) ? params.topic[0] : params.topic;

@@ -9,7 +9,7 @@ export function recordAiEvent(input: {
   detail?: string;
 }): void {
   try {
-    db.run(
+    void Promise.resolve(db.run(
       `INSERT INTO ai_events (id, owner_id, kind, provider, model, status, detail, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       newId(),
@@ -20,9 +20,15 @@ export function recordAiEvent(input: {
       input.status,
       input.detail ? input.detail.slice(0, 300) : null,
       nowIso(),
-    );
+    )).catch(logFailure);
   } catch (error) {
-    // Telemetry must never break the user-facing request.
-    console.error("[gapfinder] failed to record AI event", error instanceof Error ? error.message : "unknown");
+    logFailure(error);
   }
+}
+
+function logFailure(error: unknown): void {
+  console.error(
+    "[gapfinder] failed to record AI event",
+    error instanceof Error ? error.message : "unknown",
+  );
 }

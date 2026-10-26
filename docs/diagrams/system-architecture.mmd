@@ -40,8 +40,14 @@ flowchart TB
   end
 
   subgraph Data["Persistence"]
-    DB[("SQLite via node:sqlite<br/>owner-scoped relational schema")]
-    FILES[("documents.file_data<br/>original bytes")]
+    SELECTDB["DATABASE_URL selects backend"]
+    SQLITE[("Local SQLite<br/>node:sqlite")]
+    POSTGRES[("Hosted PostgreSQL<br/>pg adapter")]
+    FILES[("Database binary columns<br/>BLOB / BYTEA uploads + embeddings")]
+    SELECTDB --> SQLITE
+    SELECTDB --> POSTGRES
+    SQLITE --> FILES
+    POSTGRES --> FILES
   end
 
   subgraph Identity["Authentication"]
@@ -69,7 +75,7 @@ flowchart TB
   SGAP --> MAST
   SPLAN --> PLAN
   SASM --> SCORE
-  Services --> DB
+  Services --> SELECTDB
   SDOC --> FILES
   EMB -.-> GEM
   GEN -.-> GEM

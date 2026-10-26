@@ -48,13 +48,13 @@ export default async function ResultsPage({
 
   let view;
   try {
-    view = getQuizView(user.id, assessmentId);
+    view = await getQuizView(user.id, assessmentId);
   } catch (error) {
     pageNotFoundIfMissing(error);
   }
   if (view.status !== "submitted") redirect(`/diagnostics/${view.attemptId}`);
 
-  const report = getGapReport(user.id, view.subjectId);
+  const report = await getGapReport(user.id, view.subjectId);
   const topicIds = [...new Set(view.questions.map((question) => question.topicId))];
   const measuredTopics = topicIds
     .map((topicId) => report.topics.find((topic) => topic.topicId === topicId))

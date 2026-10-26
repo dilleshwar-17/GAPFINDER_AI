@@ -14,7 +14,7 @@ export async function PUT(
     const user = await requireUser();
     const { assessmentId } = await context.params;
     const payload = await readJson(request, attemptSubmissionSchema);
-    const saved = saveAttemptDraft(user.id, assessmentId, payload);
+    const saved = await saveAttemptDraft(user.id, assessmentId, payload);
     return jsonOk({ savedAt: saved.savedAt });
   });
 }

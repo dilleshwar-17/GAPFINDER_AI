@@ -10,10 +10,11 @@ that learner's own uploads, and every question links back to the chunk, page
 and document it came from.
 
 This repository is a runnable Next.js application. Local development uses
-SQLite and the deterministic AI fallbacks. Supabase Auth is used when its
-environment is configured; service code still depends on the local SQLite
-database, so the current app is **not ready for a durable Vercel production
-deployment**.
+SQLite and deterministic AI fallbacks. Supabase Auth is available when
+configured. The application now has an optional PostgreSQL data adapter selected
+by `DATABASE_URL`, while retaining SQLite locally. The hosted database and
+migration have not been configured or live-verified, so production data-backed
+workflows remain **blocked pending database setup and verification**.
 
 Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
 
@@ -36,9 +37,11 @@ Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
 | Legacy local SQLite authentication | Used only when Supabase Auth variables are absent outside production |
 | Shared demo workspace via `/api/auth/demo` | Implemented locally; Supabase production demo needs a separately configured demo user |
 | Gemini LLM / neural embeddings | **Not executed** — no `GEMINI_API_KEY` was available, so the deterministic fallbacks ran |
-| Durable Supabase Postgres adapter and object storage | **Missing** — app data and uploads still use local SQLite |
-| Vercel production deployment | **Blocked** — local SQLite is not durable/shared on Vercel; no deployment was performed |
-| Live Supabase Auth or hosted database verification | **Blocked** — no Supabase environment was configured |
+| Optional PostgreSQL data adapter | Implemented in the current working tree; not connected to or verified against a hosted database |
+| PostgreSQL schema migration | Explicit, additive initial migration is available; not run against a hosted database |
+| Hosted object storage | Missing — original uploads and embeddings are stored as database binary data |
+| Vercel production data workflows | **Blocked** — `DATABASE_URL` is not configured in this environment and hosted persistence is unverified |
+| Live Supabase Auth or hosted database verification | **Blocked** — no live authenticated workflow or hosted database connection was tested |
 
 The deterministic fallbacks are honest, working implementations rather than
 stubs: lexical hash embeddings (`gapfinder-hash-v1`, 512 dims), extractive
@@ -50,8 +53,8 @@ source sentences. They are labelled as such in the UI and in
 
 ## Requirements
 
-- **Node.js >= 22.5** (this build was verified on Node **v26.5.1**). The
-  database driver is the built-in `node:sqlite` module.
+- **Node.js >= 22.5** (this build was verified on Node **v26.5.1**). Local
+  development uses built-in `node:sqlite`; hosted PostgreSQL uses `pg`.
 - npm (verified with npm **12.0.2**).
 
 No API key is required for local deterministic mode. Supabase environment
@@ -97,6 +100,7 @@ workspace**. See [`docs/DEMO_ACCESS.md`](docs/DEMO_ACCESS.md).
 | `npm test` | Vitest suite (in-memory SQLite, no network) |
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run db:reset` | Delete the local SQLite database file |
+| `npm run db:migrate:postgres` | Explicitly apply the initial PostgreSQL schema from `DATABASE_URL` |
 | `npm run smoke` | HTTP checks against a running server (`BASE_URL` overrides `http://localhost:3000`) |
 
 ### Example: production verification
@@ -198,6 +202,7 @@ role keys or other secrets in them.
 | `SUPABASE_DEMO_EMAIL` | unset | for Supabase-hosted demo | Server-only demo account address. |
 | `SUPABASE_DEMO_PASSWORD` | unset | for Supabase-hosted demo | Server-only secret; never commit or expose. |
 | `DATABASE_PATH` | `data/gapfinder.db` | local only | Use `:memory:` for tests; this database is not durable/shared on Vercel. |
+| `DATABASE_URL` | unset | hosted PostgreSQL | Server-only PostgreSQL connection string. When set, it selects PostgreSQL instead of SQLite. Configure securely; never add it to `NEXT_PUBLIC_*` variables. |
 | `GEMINI_API_KEY` | unset | no | Without it, deterministic fallbacks are used. |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | no | |
 | `EMBEDDING_PROVIDER` | auto | no | `local` forces offline hash embeddings. |
@@ -222,8 +227,8 @@ This deletes the configured SQLite file (`DATABASE_PATH`, default `data/gapfinde
 
 ## Deployment
 
-- **Local / self-hosted:** `npm run build && npm start` (set `PORT` and `DATABASE_PATH` to a writable persistent location).
-- **Vercel:** commit `0866985` is deployed to Production at <https://gapfinder-ai-dilleshwar-rao.vercel.app> and to Preview at <https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app>. Routes respond and unauthenticated protected requests redirect to login, but `/api/health` reports a database error. A durable Supabase/Postgres application data adapter is not implemented; the app is not fully functional or production-ready on Vercel until SQLite persistence and uploaded-file storage are migrated. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Local / self-hosted:** `npm run build && npm start` (SQLite requires a writable persistent location; set `DATABASE_URL` for PostgreSQL).
+- **Vercel:** configure Supabase Auth variables and a private `DATABASE_URL`, apply the schema explicitly with `npm run db:migrate:postgres`, and verify `/api/health` plus signed-in workflows in Preview before promoting. The adapter has not been connected to a hosted database in this working tree; the latest recorded Production health check reported a database error. This code has not been deployed. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Troubleshooting
 
@@ -258,7 +263,8 @@ This deletes the configured SQLite file (`DATABASE_PATH`, default `data/gapfinde
 ## Technology
 
 Next.js 16 (App Router, Turbopack), React 19, TypeScript 5, Tailwind CSS 4,
-Zod 4, Supabase Auth (`@supabase/ssr`), local `node:sqlite`, `unpdf` for PDF
+Zod 4, Supabase Auth (`@supabase/ssr`), local `node:sqlite` / hosted PostgreSQL
+(`pg`), `unpdf` for PDF
 text extraction, `lucide-react` icons, and locally bundled Onest. Tests use
 Vitest 5.
 

@@ -53,8 +53,8 @@ function parseOptions(row: QuestionRow): string[] {
   }
 }
 
-export function promptHashesForSubject(ownerId: string, subjectId: string): Set<string> {
-  const rows = db.all<{ prompt_hash: string }>(
+export async function promptHashesForSubject(ownerId: string, subjectId: string): Promise<Set<string>> {
+  const rows = await db.all<{ prompt_hash: string }>(
     "SELECT prompt_hash FROM questions WHERE owner_id = ? AND subject_id = ?",
     ownerId,
     subjectId,
@@ -62,17 +62,17 @@ export function promptHashesForSubject(ownerId: string, subjectId: string): Set<
   return new Set(rows.map((row) => row.prompt_hash));
 }
 
-export function listQuestionBank(
+export async function listQuestionBank(
   ownerId: string,
   subjectId: string,
   topicIds?: string[],
-): QuestionBankEntry[] {
+): Promise<QuestionBankEntry[]> {
   const topicFilter =
     topicIds && topicIds.length > 0
       ? `AND q.topic_id IN (${topicIds.map(() => "?").join(",")})`
       : "";
 
-  const rows = db.all<
+  const rows = await db.all<
     QuestionRow & { topic_name: string; source_count: number; attempt_count: number }
   >(
     `SELECT q.*, t.name AS topic_name,
@@ -105,8 +105,8 @@ export function listQuestionBank(
     }));
 }
 
-export function getQuestionOwned(ownerId: string, questionId: string): QuestionRow {
-  const row = db.get<QuestionRow>(
+export async function getQuestionOwned(ownerId: string, questionId: string): Promise<QuestionRow> {
+  const row = await db.get<QuestionRow>(
     "SELECT * FROM questions WHERE id = ? AND owner_id = ?",
     questionId,
     ownerId,
@@ -115,8 +115,8 @@ export function getQuestionOwned(ownerId: string, questionId: string): QuestionR
   return row;
 }
 
-export function getQuestionEvidence(ownerId: string, questionId: string): EvidenceChunk[] {
-  const rows = db.all<{
+export async function getQuestionEvidence(ownerId: string, questionId: string): Promise<EvidenceChunk[]> {
+  const rows = await db.all<{
     chunk_id: string;
     document_id: string;
     filename: string;
@@ -162,20 +162,20 @@ export interface PersistResult {
  * the evidence retrieved for the target topic. Page/section metadata is copied
  * from the database record, never from model output.
  */
-export function persistGeneratedQuestions(input: {
+export async function persistGeneratedQuestions(input: {
   ownerId: string;
   subjectId: string;
   topicId: string;
   questions: GeneratedQuestion[];
   evidence: EvidenceChunk[];
   generator: "gemini" | "deterministic";
-}): PersistResult {
+}): Promise<PersistResult> {
   const evidenceById = new Map(input.evidence.map((chunk) => [chunk.chunkId, chunk]));
   const stored: QuestionRow[] = [];
   let rejected = 0;
 
-  transaction(() => {
-    const existingHashes = promptHashesForSubject(input.ownerId, input.subjectId);
+  await transaction(async () => {
+    const existingHashes = await promptHashesForSubject(input.ownerId, input.subjectId);
     for (const generated of input.questions) {
       let resolved;
       try {
@@ -220,7 +220,7 @@ export function persistGeneratedQuestions(input: {
         continue;
       }
 
-      db.run(
+      await db.run(
         `INSERT INTO questions
           (id, owner_id, subject_id, topic_id, type, difficulty, prompt, options_json, correct_index,
            expected_answer, rubric_json, marks, generator, prompt_hash, created_at)
@@ -245,10 +245,11 @@ export function persistGeneratedQuestions(input: {
       for (const [rank, citation] of resolved.sources.entries()) {
         const chunk = evidenceById.get(citation.chunkId);
         if (!chunk) continue;
-        db.run(
-          `INSERT OR IGNORE INTO question_sources
+        await db.run(
+          `INSERT INTO question_sources
             (question_id, chunk_id, owner_id, document_id, page_number, section_heading, rank)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT DO NOTHING`,
           id,
           chunk.chunkId,
           input.ownerId,
@@ -260,15 +261,15 @@ export function persistGeneratedQuestions(input: {
       }
 
       existingHashes.add(promptHash);
-      stored.push(getQuestionOwned(input.ownerId, id));
+      stored.push(await getQuestionOwned(input.ownerId, id));
     }
   });
 
   return { stored, rejected };
 }
 
-export function assertQuestionBankUsable(ownerId: string, subjectId: string): void {
-  const count = db.get<{ count: number }>(
+export async function assertQuestionBankUsable(ownerId: string, subjectId: string): Promise<void> {
+  const count = await db.get<{ count: number }>(
     "SELECT COUNT(*) AS count FROM questions WHERE owner_id = ? AND subject_id = ?",
     ownerId,
     subjectId,

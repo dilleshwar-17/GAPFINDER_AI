@@ -20,7 +20,7 @@ export default async function DocumentDetailPage({
 
   let detail;
   try {
-    detail = getDocumentDetail(user.id, documentId);
+    detail = await getDocumentDetail(user.id, documentId);
   } catch (error) {
     pageNotFoundIfMissing(error);
   }

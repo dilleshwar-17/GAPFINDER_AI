@@ -45,12 +45,12 @@ function parseConcepts(raw: string): string[] {
  * new snapshot for each. Snapshots are append-only; previous assessments are
  * never rewritten.
  */
-export function refreshMasteryForAttempt(
+export async function refreshMasteryForAttempt(
   ownerId: string,
   subjectId: string,
   attemptId: string,
-): void {
-  const topics = db.all<{ topic_id: string }>(
+): Promise<void> {
+  const topics = await db.all<{ topic_id: string }>(
     `SELECT DISTINCT q.topic_id
        FROM answers a
        JOIN questions q ON q.id = a.question_id
@@ -61,7 +61,7 @@ export function refreshMasteryForAttempt(
   );
 
   for (const topic of topics) {
-    const rows = db.all<AnswerRow>(
+    const rows = await db.all<AnswerRow>(
       `SELECT a.id AS answer_id, a.attempt_id, a.question_id, q.topic_id, a.score, a.max_marks,
               q.difficulty, a.correctness, a.feedback, a.missing_concepts_json,
               at.submitted_at, q.prompt
@@ -86,7 +86,7 @@ export function refreshMasteryForAttempt(
     }));
     const result = computeTopicMastery(evidence);
 
-    const existing = db.get<{ id: string }>(
+    const existing = await db.get<{ id: string }>(
       "SELECT id FROM mastery_snapshots WHERE owner_id = ? AND topic_id = ? AND attempt_id = ?",
       ownerId,
       topic.topic_id,
@@ -94,7 +94,7 @@ export function refreshMasteryForAttempt(
     );
     if (existing) continue;
 
-    db.run(
+    await db.run(
       `INSERT INTO mastery_snapshots
         (id, owner_id, subject_id, topic_id, attempt_id, mastery, classification,
          evidence_answers, evidence_marks, method_version, created_at)
@@ -206,8 +206,8 @@ function confidenceLabel(
   return "limited";
 }
 
-function masteryChangeForTopic(topicId: string, ownerId: string): number | null {
-  const snapshots = db.all<{ mastery: number | null }>(
+async function masteryChangeForTopic(topicId: string, ownerId: string): Promise<number | null> {
+  const snapshots = await db.all<{ mastery: number | null }>(
     `SELECT mastery FROM mastery_snapshots
       WHERE owner_id = ? AND topic_id = ? AND mastery IS NOT NULL
       ORDER BY created_at DESC, id DESC LIMIT 2`,
@@ -221,8 +221,8 @@ function masteryChangeForTopic(topicId: string, ownerId: string): number | null 
   return next - previous;
 }
 
-function recentEvidenceForTopic(ownerId: string, topicId: string): RecentEvidenceView[] {
-  const rows = db.all<AnswerRow & {
+async function recentEvidenceForTopic(ownerId: string, topicId: string): Promise<RecentEvidenceView[]> {
+  const rows = await db.all<AnswerRow & {
     document_title: string | null;
     page_number: number | null;
     section_heading: string | null;
@@ -269,8 +269,8 @@ function recentEvidenceForTopic(ownerId: string, topicId: string): RecentEvidenc
   }));
 }
 
-function missingConceptsForTopic(ownerId: string, topicId: string): MissingConcept[] {
-  const rows = db.all<{ missing_concepts_json: string }>(
+async function missingConceptsForTopic(ownerId: string, topicId: string): Promise<MissingConcept[]> {
+  const rows = await db.all<{ missing_concepts_json: string }>(
     `SELECT a.missing_concepts_json
        FROM answers a
        JOIN questions q ON q.id = a.question_id
@@ -296,19 +296,20 @@ function missingConceptsForTopic(ownerId: string, topicId: string): MissingConce
     .map(([concept, count]) => ({ concept, count }));
 }
 
-export function getGapReport(ownerId: string, subjectId: string): GapReport {
-  const subject = getSubjectOwned(ownerId, subjectId);
-  const topics = listTopics(ownerId, subjectId);
+export async function getGapReport(ownerId: string, subjectId: string): Promise<GapReport> {
+  const subject = await getSubjectOwned(ownerId, subjectId);
+  const topics = await listTopics(ownerId, subjectId);
   const leaves = topics.filter((topic) => topic.childCount === 0);
-  const attempts = db.get<{ count: number }>(
+  const attempts = await db.get<{ count: number }>(
     `SELECT COUNT(*) AS count FROM quiz_attempts
       WHERE owner_id = ? AND subject_id = ? AND status = 'submitted'`,
     ownerId,
     subjectId,
   );
 
-  const gapTopics: GapTopic[] = leaves.map((topic) => {
-    const prerequisites = getPrerequisites(ownerId, topic.id).map((prerequisite) => {
+  const gapTopics: GapTopic[] = await Promise.all(leaves.map(async (topic) => {
+    const prerequisiteRows = await getPrerequisites(ownerId, topic.id);
+    const prerequisites = prerequisiteRows.map((prerequisite) => {
       const supported =
         prerequisite.prerequisiteClassification === "weak" &&
         (topic.classification === "weak" || topic.classification === "not_assessed");
@@ -323,6 +324,11 @@ export function getGapReport(ownerId: string, subjectId: string): GapReport {
             : `Prerequisite "${prerequisite.prerequisiteName}" is ${prerequisite.prerequisiteClassification}; no prerequisite gap is inferred from the current evidence.`,
       };
     });
+    const [masteryChange, recentEvidence, missingConcepts] = await Promise.all([
+      masteryChangeForTopic(topic.id, ownerId),
+      recentEvidenceForTopic(ownerId, topic.id),
+      missingConceptsForTopic(ownerId, topic.id),
+    ]);
 
     return {
       topicId: topic.id,
@@ -336,7 +342,7 @@ export function getGapReport(ownerId: string, subjectId: string): GapReport {
       questionCount: topic.questionCount,
       sourceCount: topic.sourceCount,
       lastAssessedAt: topic.lastAssessedAt,
-      masteryChange: masteryChangeForTopic(topic.id, ownerId),
+      masteryChange,
       confidence: confidenceLabel(
         topic.sufficient,
         topic.evidenceAnswers,
@@ -344,11 +350,11 @@ export function getGapReport(ownerId: string, subjectId: string): GapReport {
       ),
       recommendedAction: recommendation(topic.classification),
       measuredWeakness: topic.classification === "weak",
-      recentEvidence: recentEvidenceForTopic(ownerId, topic.id),
-      missingConcepts: missingConceptsForTopic(ownerId, topic.id),
+      recentEvidence,
+      missingConcepts,
       prerequisiteHypotheses: prerequisites,
     };
-  });
+  }));
 
   const assessed = gapTopics.filter((topic) => topic.sufficient).length;
 
@@ -373,11 +379,11 @@ export function getGapReport(ownerId: string, subjectId: string): GapReport {
   };
 }
 
-export function latestMasteryByTopic(
+export async function latestMasteryByTopic(
   ownerId: string,
   subjectId: string,
-): Map<string, GapTopic> {
+): Promise<Map<string, GapTopic>> {
   return new Map(
-    getGapReport(ownerId, subjectId).topics.map((topic) => [topic.topicId, topic]),
+    (await getGapReport(ownerId, subjectId)).topics.map((topic) => [topic.topicId, topic]),
   );
 }

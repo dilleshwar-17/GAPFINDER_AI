@@ -82,15 +82,15 @@ function titleCase(value: string): string {
   return trimmed;
 }
 
-function findTopicByParentName(
+async function findTopicByParentName(
   subjectId: string,
   parentId: string | null,
   name: string,
-): TopicRow | undefined {
-  return db.get<TopicRow>(
+): Promise<TopicRow | undefined> {
+  return await db.get<TopicRow>(
     `SELECT * FROM topics
       WHERE subject_id = ?
-        AND IFNULL(parent_id, '') = IFNULL(?, '')
+        AND COALESCE(parent_id, '') = COALESCE(?, '')
         AND lower(name) = lower(?)`,
     subjectId,
     parentId,
@@ -98,7 +98,7 @@ function findTopicByParentName(
   );
 }
 
-function insertTopic(input: {
+async function insertTopic(input: {
   ownerId: string;
   subjectId: string;
   parentId: string | null;
@@ -108,9 +108,9 @@ function insertTopic(input: {
   position: number;
   sourceDocumentId: string | null;
   sourcePage: number | null;
-}): TopicRow {
+}): Promise<TopicRow> {
   const id = newId();
-  db.run(
+  await db.run(
     `INSERT INTO topics
       (id, owner_id, subject_id, parent_id, name, description, importance, position,
        source_document_id, source_page, created_at)
@@ -130,17 +130,18 @@ function insertTopic(input: {
   return getTopicOwnedById(input.ownerId, id);
 }
 
-function linkTopicSource(input: {
+async function linkTopicSource(input: {
   topicId: string;
   chunkId: string;
   ownerId: string;
   subjectId: string;
   rank: number;
   score: number;
-}): void {
-  db.run(
-    `INSERT OR IGNORE INTO topic_sources (topic_id, chunk_id, owner_id, subject_id, rank, score)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+}): Promise<void> {
+  await db.run(
+    `INSERT INTO topic_sources (topic_id, chunk_id, owner_id, subject_id, rank, score)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT DO NOTHING`,
     input.topicId,
     input.chunkId,
     input.ownerId,
@@ -231,8 +232,8 @@ function describeFromChunk(
   return cleaned.slice(0, 420);
 }
 
-function extractionSourceChunks(ownerId: string, subjectId: string): ExtractionChunk[] {
-  const syllabus = db.all<ExtractionChunk>(
+async function extractionSourceChunks(ownerId: string, subjectId: string): Promise<ExtractionChunk[]> {
+  const syllabus = await db.all<ExtractionChunk>(
     `SELECT c.id, c.document_id, c.text, c.page_number, c.chunk_index, d.filename, d.kind
        FROM document_chunks c
        JOIN documents d ON d.id = c.document_id
@@ -267,16 +268,16 @@ export interface ExtractionResult {
  * actually present in the uploaded material and links each topic to the chunk
  * (and therefore the page) where the heading appeared.
  */
-export function extractTopics(
+export async function extractTopics(
   ownerId: string,
   subjectId: string,
   options: { allowDemo?: boolean } = {},
-): ExtractionResult {
+): Promise<ExtractionResult> {
   if (!options.allowDemo) {
-    assertWritableAccount(ownerId, "topic extraction");
+    await assertWritableAccount(ownerId, "topic extraction");
   }
-  getSubjectOwned(ownerId, subjectId);
-  const chunks = extractionSourceChunks(ownerId, subjectId);
+  await getSubjectOwned(ownerId, subjectId);
+  const chunks = await extractionSourceChunks(ownerId, subjectId);
   if (chunks.length === 0) {
     throw validationError(
       "No indexed material is available. Upload and process a syllabus or study notes first.",
@@ -298,7 +299,7 @@ export function extractTopics(
   let linked = 0;
   let currentUnit: TopicRow | null = null;
   const seen = new Set<string>();
-  const existingCount = db.get<{ count: number }>(
+  const existingCount = await db.get<{ count: number }>(
     "SELECT COUNT(*) AS count FROM topics WHERE owner_id = ? AND subject_id = ?",
     ownerId,
     subjectId,
@@ -312,9 +313,9 @@ export function extractTopics(
     seen.add(key);
 
     if (heading.level === "unit") {
-      let topic = findTopicByParentName(subjectId, null, heading.name);
+      let topic = await findTopicByParentName(subjectId, null, heading.name);
       if (!topic) {
-        topic = insertTopic({
+        topic = await insertTopic({
           ownerId,
           subjectId,
           parentId: null,
@@ -329,7 +330,7 @@ export function extractTopics(
         created += 1;
       }
       currentUnit = topic;
-      linkTopicSource({
+      await linkTopicSource({
         topicId: topic.id,
         chunkId: heading.chunk.id,
         ownerId,
@@ -343,9 +344,9 @@ export function extractTopics(
 
     // A flat syllabus without units keeps topics at the root.
     const parentId = currentUnit?.id ?? null;
-    let topic = findTopicByParentName(subjectId, parentId, heading.name);
+    let topic = await findTopicByParentName(subjectId, parentId, heading.name);
     if (!topic) {
-      topic = insertTopic({
+      topic = await insertTopic({
         ownerId,
         subjectId,
         parentId,
@@ -359,7 +360,7 @@ export function extractTopics(
       position += 1;
       created += 1;
     }
-    linkTopicSource({
+    await linkTopicSource({
       topicId: topic.id,
       chunkId: heading.chunk.id,
       ownerId,
@@ -381,16 +382,16 @@ export function extractTopics(
   };
 }
 
-export function createTopic(input: {
+export async function createTopic(input: {
   ownerId: string;
   subjectId: string;
   payload: CreateTopicInput;
-}): TopicView {
-  assertWritableAccount(input.ownerId, "topic changes");
-  getSubjectOwned(input.ownerId, input.subjectId);
+}): Promise<TopicView> {
+  await assertWritableAccount(input.ownerId, "topic changes");
+  await getSubjectOwned(input.ownerId, input.subjectId);
   let parentId: string | null = null;
   if (input.payload.parentId) {
-    const parent = getTopicOwnedById(input.payload.parentId);
+    const parent = await getTopicOwnedById(input.ownerId, input.payload.parentId);
     if (
       parent.owner_id !== input.ownerId ||
       parent.subject_id !== input.subjectId ||
@@ -402,17 +403,17 @@ export function createTopic(input: {
   }
 
   const name = titleCase(input.payload.name);
-  const duplicate = findTopicByParentName(input.subjectId, parentId, name);
+  const duplicate = await findTopicByParentName(input.subjectId, parentId, name);
   if (duplicate) {
     throw validationError("A topic with that name already exists at this level.");
   }
 
-  const count = db.get<{ count: number }>(
+  const count = await db.get<{ count: number }>(
     "SELECT COUNT(*) AS count FROM topics WHERE owner_id = ? AND subject_id = ?",
     input.ownerId,
     input.subjectId,
   );
-  const topic = insertTopic({
+  const topic = await insertTopic({
     ownerId: input.ownerId,
     subjectId: input.subjectId,
     parentId,
@@ -423,24 +424,24 @@ export function createTopic(input: {
     sourceDocumentId: null,
     sourcePage: null,
   });
-  return listTopics(input.ownerId, input.subjectId).find((entry) => entry.id === topic.id)!;
+  return (await listTopics(input.ownerId, input.subjectId)).find((entry) => entry.id === topic.id)!;
 }
 
-function getTopicOwnedById(userId: string, topicId?: string): TopicRow {
+async function getTopicOwnedById(userId: string, topicId?: string): Promise<TopicRow> {
   const topic = topicId
-    ? db.get<TopicRow>("SELECT * FROM topics WHERE id = ?", topicId)
+    ? await db.get<TopicRow>("SELECT * FROM topics WHERE id = ?", topicId)
     : undefined;
   if (!topic) throw notFound("That topic was not found.");
   if (topic.owner_id !== userId) throw notFound("That topic was not found.");
   return topic;
 }
 
-export function getTopicOwned(
+export async function getTopicOwned(
   ownerId: string,
   subjectId: string,
   topicId: string,
-): TopicRow {
-  const topic = getTopicOwnedById(ownerId, topicId);
+): Promise<TopicRow> {
+  const topic = await getTopicOwnedById(ownerId, topicId);
   if (topic.subject_id !== subjectId) throw notFound("That topic was not found.");
   return topic;
 }
@@ -450,9 +451,9 @@ export interface TopicContext {
   subjectName: string;
 }
 
-export function getTopicContext(ownerId: string, topicId: string): TopicContext {
-  const topic = getTopicOwnedById(ownerId, topicId);
-  const subject = db.get<{ name: string }>(
+export async function getTopicContext(ownerId: string, topicId: string): Promise<TopicContext> {
+  const topic = await getTopicOwnedById(ownerId, topicId);
+  const subject = await db.get<{ name: string }>(
     "SELECT name FROM subjects WHERE id = ? AND owner_id = ?",
     topic.subject_id,
     ownerId,
@@ -461,9 +462,9 @@ export function getTopicContext(ownerId: string, topicId: string): TopicContext 
   return { topic, subjectName: subject.name };
 }
 
-export function listTopics(ownerId: string, subjectId: string): TopicView[] {
-  getSubjectOwned(ownerId, subjectId);
-  const rows = db.all<TopicListRow>(
+export async function listTopics(ownerId: string, subjectId: string): Promise<TopicView[]> {
+  await getSubjectOwned(ownerId, subjectId);
+  const rows = await db.all<TopicListRow>(
     `SELECT t.*,
             (SELECT p.name FROM topics p WHERE p.id = t.parent_id) AS parent_name,
             (SELECT COUNT(*) FROM topics c WHERE c.parent_id = t.id) AS child_count,
@@ -513,8 +514,8 @@ export function listTopics(ownerId: string, subjectId: string): TopicView[] {
   }));
 }
 
-export function listLeafTopics(ownerId: string, subjectId: string): TopicView[] {
-  return listTopics(ownerId, subjectId).filter((topic) => topic.childCount === 0);
+export async function listLeafTopics(ownerId: string, subjectId: string): Promise<TopicView[]> {
+  return (await listTopics(ownerId, subjectId)).filter((topic) => topic.childCount === 0);
 }
 
 export interface TopicSourceView {
@@ -526,9 +527,9 @@ export interface TopicSourceView {
   excerpt: string;
 }
 
-export function getTopicSources(ownerId: string, topicId: string): TopicSourceView[] {
-  const topic = getTopicOwnedById(ownerId, topicId);
-  const rows = db.all<{
+export async function getTopicSources(ownerId: string, topicId: string): Promise<TopicSourceView[]> {
+  const topic = await getTopicOwnedById(ownerId, topicId);
+  const rows = await db.all<{
     chunk_id: string;
     document_id: string;
     filename: string;
@@ -565,8 +566,8 @@ export interface TopicPrerequisiteView {
   prerequisiteClassification: TopicClassification;
 }
 
-export function getPrerequisites(ownerId: string, topicId: string): TopicPrerequisiteView[] {
-  const rows = db.all<{
+export async function getPrerequisites(ownerId: string, topicId: string): Promise<TopicPrerequisiteView[]> {
+  const rows = await db.all<{
     prerequisite_id: string;
     prerequisite_name: string;
     status: string;
@@ -597,8 +598,8 @@ export function getPrerequisites(ownerId: string, topicId: string): TopicPrerequ
   }));
 }
 
-export function topicQuestionCount(ownerId: string, topicId: string): number {
-  const row = db.get<{ count: number }>(
+export async function topicQuestionCount(ownerId: string, topicId: string): Promise<number> {
+  const row = await db.get<{ count: number }>(
     "SELECT COUNT(*) AS count FROM questions WHERE owner_id = ? AND topic_id = ?",
     ownerId,
     topicId,

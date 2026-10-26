@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       throw new (await import("@/lib/errors")).AppError(400, "VALIDATION_ERROR", "Select a topic or switch to General mode.");
     }
 
-    const context = getTopicContext(user.id, payload.topicId);
+    const context = await getTopicContext(user.id, payload.topicId);
     const answer = await explainTopic({
       ownerId: user.id,
       subjectId: context.topic.subject_id,

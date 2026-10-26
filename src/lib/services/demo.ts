@@ -128,13 +128,13 @@ async function submitDemoAttempt(
   attemptId: string,
   profile: "baseline" | "followup",
 ): Promise<void> {
-  const view = getQuizView(userId, attemptId);
+  const view = await getQuizView(userId, attemptId);
   const topicCounters = new Map<string, number>();
-  const answers = view.questions.map((question) => {
+  const answers = await Promise.all(view.questions.map(async (question) => {
     const topicKey = question.topicName.toLowerCase();
     const index = topicCounters.get(topicKey) ?? 0;
     topicCounters.set(topicKey, index + 1);
-    const row: QuestionRow = getQuestionOwned(userId, question.id);
+    const row: QuestionRow = await getQuestionOwned(userId, question.id);
     const strategy = strategyForTopic(question.topicName, index, profile);
 
     if (question.type === "mcq") {
@@ -160,24 +160,24 @@ async function submitDemoAttempt(
       };
     }
     return { questionId: question.id, answerText: "I do not know." };
-  });
+  }));
 
   await submitAttempt(userId, attemptId, { answers }, { allowDemo: true });
 }
 
-function seedFollowUpAttempt(
+async function seedFollowUpAttempt(
   userId: string,
   subjectId: string,
   firstAttemptId: string,
-): string | null {
-  const already = db.get<{ count: number }>(
+): Promise<string | null> {
+  const already = await db.get<{ count: number }>(
     "SELECT COUNT(*) AS count FROM quiz_attempts WHERE owner_id = ? AND subject_id = ? AND generator = 'demo-seed-followup'",
     userId,
     subjectId,
   );
   if ((already?.count ?? 0) > 0) return null;
 
-  const idsRaw = db.get<{ question_ids_json: string }>(
+  const idsRaw = await db.get<{ question_ids_json: string }>(
     "SELECT question_ids_json FROM quiz_attempts WHERE id = ? AND owner_id = ?",
     firstAttemptId,
     userId,
@@ -186,7 +186,7 @@ function seedFollowUpAttempt(
   const questionIds = parseStringArray(idsRaw.question_ids_json);
   if (questionIds.length === 0) return null;
 
-  const rows = db.all<QuestionRow & { topic_name: string }>(
+  const rows = await db.all<QuestionRow & { topic_name: string }>(
     `SELECT q.*, t.name AS topic_name
        FROM questions q JOIN topics t ON t.id = q.topic_id
       WHERE q.owner_id = ? AND q.id IN (${questionIds.map(() => "?").join(",")})`,
@@ -201,7 +201,7 @@ function seedFollowUpAttempt(
 
   const attemptId = newId();
   const totalMarks = selected.reduce((sum, row) => sum + row.marks, 0);
-  db.run(
+  await db.run(
     `INSERT INTO quiz_attempts
       (id, owner_id, subject_id, status, question_ids_json, total_marks, score, started_at,
        submitted_at, generator)
@@ -217,14 +217,14 @@ function seedFollowUpAttempt(
 }
 
 async function runDemoSeed(userId: string): Promise<string> {
-  const existingSubjects = db.all<{ id: string; name: string }>(
+  const existingSubjects = await db.all<{ id: string; name: string }>(
     "SELECT id, name FROM subjects WHERE owner_id = ? AND name = ?",
     userId,
     DEMO_SUBJECT_NAME,
   );
   let subjectId = existingSubjects[0]?.id;
   if (!subjectId) {
-    const subject = createSubject({
+    const subject = await createSubject({
       ownerId: userId,
       name: DEMO_SUBJECT_NAME,
       description:
@@ -236,12 +236,12 @@ async function runDemoSeed(userId: string): Promise<string> {
     subjectId = subject.id;
   }
 
-  const subject = getSubjectOwned(userId, subjectId);
+  const subject = await getSubjectOwned(userId, subjectId);
   if (!subject.exam_date || daysUntil(subject.exam_date) < 1) {
-    updateSubjectExamDate(userId, subjectId, futureDate(21), { allowDemo: true });
+    await updateSubjectExamDate(userId, subjectId, futureDate(21), { allowDemo: true });
   }
 
-  const existingDocs = listDocuments(userId, subjectId);
+  const existingDocs = await listDocuments(userId, subjectId);
   for (const definition of DEMO_DOCUMENTS) {
     const match = existingDocs.find((document) => document.filename === definition.filename);
     if (!match) {
@@ -261,18 +261,18 @@ async function runDemoSeed(userId: string): Promise<string> {
     }
   }
 
-  if (listLeafTopics(userId, subjectId).length === 0) {
-    extractTopics(userId, subjectId, { allowDemo: true });
+  if ((await listLeafTopics(userId, subjectId)).length === 0) {
+    await extractTopics(userId, subjectId, { allowDemo: true });
   }
 
-  const leaves = listLeafTopics(userId, subjectId);
+  const leaves = await listLeafTopics(userId, subjectId);
   if (leaves.length === 0) {
     throw conflict(
       "The demo subject exists but its topic map could not be created. Reset the demo database and retry.",
     );
   }
 
-  const attempts = listAttempts(userId, subjectId);
+  const attempts = await listAttempts(userId, subjectId);
   const submitted = attempts.filter((attempt) => attempt.status === "submitted");
   const baseline = submitted.find((attempt) => attempt.generator === "demo-seed");
   let baselineId = baseline?.id ?? null;
@@ -294,7 +294,7 @@ async function runDemoSeed(userId: string): Promise<string> {
       attemptId = result.attemptId;
     }
 
-    db.run(
+    await db.run(
       "UPDATE quiz_attempts SET generator = 'demo-seed' WHERE id = ? AND owner_id = ?",
       attemptId,
       userId,
@@ -302,7 +302,7 @@ async function runDemoSeed(userId: string): Promise<string> {
     try {
       await submitDemoAttempt(userId, subjectId, attemptId, "baseline");
     } catch (error) {
-      const stillSubmitted = db.get<{ status: string }>(
+      const stillSubmitted = await db.get<{ status: string }>(
         "SELECT status FROM quiz_attempts WHERE id = ? AND owner_id = ?",
         attemptId,
         userId,
@@ -313,7 +313,7 @@ async function runDemoSeed(userId: string): Promise<string> {
   }
 
   if (baselineId) {
-    const followUpId = seedFollowUpAttempt(userId, subjectId, baselineId);
+    const followUpId = await seedFollowUpAttempt(userId, subjectId, baselineId);
     if (followUpId) {
       try {
         await submitDemoAttempt(userId, subjectId, followUpId, "followup");
@@ -323,7 +323,7 @@ async function runDemoSeed(userId: string): Promise<string> {
     }
   }
 
-  if (!getActivePlan(userId, subjectId)) {
+  if (!(await getActivePlan(userId, subjectId))) {
     await createRevisionPlan({
       ownerId: userId,
       subjectId,
@@ -362,7 +362,7 @@ export async function ensureDemoAccount(): Promise<AuthUser> {
     throw conflict("The demo workspace is disabled for this deployment.");
   }
   const email = demoEmail();
-  let record = findUserByEmail(email);
+  let record = await findUserByEmail(email);
 
   if (record && record.is_demo !== 1) {
     throw conflict(
@@ -371,13 +371,13 @@ export async function ensureDemoAccount(): Promise<AuthUser> {
   }
 
   if (!record) {
-    createUser({
+    await createUser({
       displayName: DEMO_DISPLAY_NAME,
       email,
       password: randomBytes(32).toString("base64url"),
       isDemo: true,
     });
-    record = findUserByEmail(email);
+    record = await findUserByEmail(email);
   }
   if (!record) throw conflict("The demo account could not be created.");
 

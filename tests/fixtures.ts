@@ -6,13 +6,13 @@ import { db, nowIso } from "@/lib/db";
  * constraint behaviour are exercised rather than mocked.
  */
 
-export function insertUser(options: {
+export async function insertUser(options: {
   id: string;
   email: string;
   isDemo?: boolean;
   displayName?: string;
-}): void {
-  db.run(
+}): Promise<void> {
+  await db.run(
     `INSERT INTO users (id, email, password_hash, display_name, is_demo, created_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
     options.id,
@@ -24,12 +24,12 @@ export function insertUser(options: {
   );
 }
 
-export function insertSubject(options: {
+export async function insertSubject(options: {
   id: string;
   ownerId: string;
   name?: string;
-}): void {
-  db.run(
+}): Promise<void> {
+  await db.run(
     `INSERT INTO subjects (id, owner_id, name, description, exam_date, is_demo, created_at)
      VALUES (?, ?, ?, '', NULL, 0, ?)`,
     options.id,
@@ -39,13 +39,13 @@ export function insertSubject(options: {
   );
 }
 
-export function insertTopic(options: {
+export async function insertTopic(options: {
   id: string;
   ownerId: string;
   subjectId: string;
   name?: string;
-}): void {
-  db.run(
+}): Promise<void> {
+  await db.run(
     `INSERT INTO topics
       (id, owner_id, subject_id, parent_id, name, description, importance, position,
        source_document_id, source_page, created_at)
@@ -58,7 +58,7 @@ export function insertTopic(options: {
   );
 }
 
-export function insertMcq(options: {
+export async function insertMcq(options: {
   id: string;
   ownerId: string;
   subjectId: string;
@@ -66,8 +66,8 @@ export function insertMcq(options: {
   correctIndex?: number;
   marks?: number;
   prompt?: string;
-}): void {
-  db.run(
+}): Promise<void> {
+  await db.run(
     `INSERT INTO questions
       (id, owner_id, subject_id, topic_id, type, difficulty, prompt, options_json,
        correct_index, expected_answer, rubric_json, marks, generator, prompt_hash, created_at)
@@ -86,7 +86,7 @@ export function insertMcq(options: {
   );
 }
 
-export function insertAttempt(options: {
+export async function insertAttempt(options: {
   id: string;
   ownerId: string;
   subjectId: string;
@@ -94,15 +94,18 @@ export function insertAttempt(options: {
   status?: "in_progress" | "submitted";
   score?: number | null;
   generator?: string;
-}): void {
-  const totalMarks = options.questionIds.reduce((sum, questionId) => {
-    const row = db.get<{ marks: number }>(
-      "SELECT marks FROM questions WHERE id = ?",
-      questionId,
-    );
-    return sum + (row?.marks ?? 0);
-  }, 0);
-  db.run(
+}): Promise<void> {
+  const marks = await Promise.all(
+    options.questionIds.map(async (questionId) => {
+      const row = await db.get<{ marks: number }>(
+        "SELECT marks FROM questions WHERE id = ?",
+        questionId,
+      );
+      return row?.marks ?? 0;
+    }),
+  );
+  const totalMarks = marks.reduce((sum, value) => sum + value, 0);
+  await db.run(
     `INSERT INTO quiz_attempts
       (id, owner_id, subject_id, status, question_ids_json, total_marks, score,
        started_at, submitted_at, generator, draft_json)
@@ -129,12 +132,12 @@ export interface AttemptFixture {
 }
 
 /** Creates one user, subject, topic, N MCQ questions and an in-progress attempt. */
-export function createAttemptFixture(options: {
+export async function createAttemptFixture(options: {
   suffix: string;
   questionCount?: number;
   correctIndex?: number;
   isDemo?: boolean;
-}): AttemptFixture {
+}): Promise<AttemptFixture> {
   const suffix = options.suffix;
   const userId = `user-${suffix}`;
   const subjectId = `subject-${suffix}`;
@@ -142,12 +145,12 @@ export function createAttemptFixture(options: {
   const attemptId = `attempt-${suffix}`;
   const questionCount = options.questionCount ?? 2;
 
-  insertUser({ id: userId, email: `${suffix}@example.test`, isDemo: options.isDemo });
-  insertSubject({ id: subjectId, ownerId: userId });
-  insertTopic({ id: topicId, ownerId: userId, subjectId });
+  await insertUser({ id: userId, email: `${suffix}@example.test`, isDemo: options.isDemo });
+  await insertSubject({ id: subjectId, ownerId: userId });
+  await insertTopic({ id: topicId, ownerId: userId, subjectId });
   const questionIds = Array.from({ length: questionCount }, (_, index) => `question-${suffix}-${index}`);
   for (const [index, questionId] of questionIds.entries()) {
-    insertMcq({
+    await insertMcq({
       id: questionId,
       ownerId: userId,
       subjectId,
@@ -156,7 +159,7 @@ export function createAttemptFixture(options: {
       prompt: `Question ${index + 1} for ${suffix}`,
     });
   }
-  insertAttempt({ id: attemptId, ownerId: userId, subjectId, questionIds });
+  await insertAttempt({ id: attemptId, ownerId: userId, subjectId, questionIds });
 
   return { userId, subjectId, topicId, questionIds, attemptId };
 }

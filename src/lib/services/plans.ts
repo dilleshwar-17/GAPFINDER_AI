@@ -104,8 +104,8 @@ function parseJson<T>(raw: string, fallback: T): T {
   }
 }
 
-function getActivePlanRow(ownerId: string, subjectId: string): PlanRow | undefined {
-  return db.get<PlanRow>(
+async function getActivePlanRow(ownerId: string, subjectId: string): Promise<PlanRow | undefined> {
+  return await db.get<PlanRow>(
     `SELECT * FROM revision_plans
       WHERE owner_id = ? AND subject_id = ? AND status = 'active'
       ORDER BY version DESC LIMIT 1`,
@@ -114,8 +114,8 @@ function getActivePlanRow(ownerId: string, subjectId: string): PlanRow | undefin
   );
 }
 
-function tasksForPlan(ownerId: string, planId: string): RevisionTaskView[] {
-  const rows = db.all<TaskRow & { topic_name: string }>(
+async function tasksForPlan(ownerId: string, planId: string): Promise<RevisionTaskView[]> {
+  const rows = await db.all<TaskRow & { topic_name: string }>(
     `SELECT rt.*, t.name AS topic_name
        FROM revision_tasks rt
        JOIN topics t ON t.id = rt.topic_id
@@ -138,8 +138,8 @@ function tasksForPlan(ownerId: string, planId: string): RevisionTaskView[] {
   }));
 }
 
-function toPlanView(row: PlanRow, ownerId: string): RevisionPlanView {
-  const tasks = tasksForPlan(ownerId, row.id);
+async function toPlanView(row: PlanRow, ownerId: string): Promise<RevisionPlanView> {
+  const tasks = await tasksForPlan(ownerId, row.id);
   const pendingMinutes = tasks
     .filter((task) => task.status === "pending")
     .reduce((sum, task) => sum + task.durationMinutes, 0);
@@ -168,22 +168,22 @@ function toPlanView(row: PlanRow, ownerId: string): RevisionPlanView {
   };
 }
 
-export function getActivePlan(ownerId: string, subjectId: string): RevisionPlanView | null {
-  getSubjectOwned(ownerId, subjectId);
-  const row = getActivePlanRow(ownerId, subjectId);
+export async function getActivePlan(ownerId: string, subjectId: string): Promise<RevisionPlanView | null> {
+  await getSubjectOwned(ownerId, subjectId);
+  const row = await getActivePlanRow(ownerId, subjectId);
   return row ? toPlanView(row, ownerId) : null;
 }
 
-export function listPlanHistory(ownerId: string, subjectId: string): RevisionPlanView[] {
-  getSubjectOwned(ownerId, subjectId);
-  const rows = db.all<PlanRow>(
+export async function listPlanHistory(ownerId: string, subjectId: string): Promise<RevisionPlanView[]> {
+  await getSubjectOwned(ownerId, subjectId);
+  const rows = await db.all<PlanRow>(
     `SELECT * FROM revision_plans
       WHERE owner_id = ? AND subject_id = ?
       ORDER BY version DESC LIMIT 12`,
     ownerId,
     subjectId,
   );
-  return rows.map((row) => toPlanView(row, ownerId));
+  return Promise.all(rows.map((row) => toPlanView(row, ownerId)));
 }
 
 interface PlanTopicSource {
@@ -196,12 +196,13 @@ interface PlanTopicSource {
   prerequisiteNames: string[];
 }
 
-function plannerTopics(ownerId: string, subjectId: string): PlanTopicSource[] {
-  const report = getGapReport(ownerId, subjectId);
+async function plannerTopics(ownerId: string, subjectId: string): Promise<PlanTopicSource[]> {
+  const report = await getGapReport(ownerId, subjectId);
   const mastery = new Map(report.topics.map((topic) => [topic.topicId, topic]));
-  return listLeafTopics(ownerId, subjectId).map((topic) => {
+  const topics = await listLeafTopics(ownerId, subjectId);
+  return Promise.all(topics.map(async (topic) => {
     const gap = mastery.get(topic.id);
-    const prerequisites = getPrerequisites(ownerId, topic.id);
+    const prerequisites = await getPrerequisites(ownerId, topic.id);
     const weakPrerequisites = prerequisites.filter(
       (prerequisite) =>
         prerequisite.status === "explicit" && prerequisite.prerequisiteClassification === "weak",
@@ -215,7 +216,7 @@ function plannerTopics(ownerId: string, subjectId: string): PlanTopicSource[] {
       prerequisiteWeak: weakPrerequisites.length > 0,
       prerequisiteNames: weakPrerequisites.map((prerequisite) => prerequisite.prerequisiteName),
     };
-  });
+  }));
 }
 
 export async function createRevisionPlan(input: {
@@ -226,23 +227,23 @@ export async function createRevisionPlan(input: {
   allowDemo?: boolean;
 }): Promise<RevisionPlanView> {
   if (!input.allowDemo) {
-    assertWritableAccount(input.ownerId, "revision plan changes");
+    await assertWritableAccount(input.ownerId, "revision plan changes");
   }
-  const subject = getSubjectOwned(input.ownerId, input.subjectId);
+  const subject = await getSubjectOwned(input.ownerId, input.subjectId);
   const remaining = daysUntil(input.request.examDate);
   if (remaining <= 0) {
     throw validationError("Choose an exam date at least one day in the future.");
   }
 
-  const topics = plannerTopics(input.ownerId, input.subjectId);
+  const topics = await plannerTopics(input.ownerId, input.subjectId);
   if (topics.length === 0) {
     throw validationError(
       "There are no assessable topics yet. Upload a syllabus, build the topic map, then create a plan.",
     );
   }
 
-  const previous = getActivePlanRow(input.ownerId, input.subjectId);
-  const previousView = previous ? toPlanView(previous, input.ownerId) : null;
+  const previous = await getActivePlanRow(input.ownerId, input.subjectId);
+  const previousView = previous ? await toPlanView(previous, input.ownerId) : null;
 
   const plannerInput = {
     examDate: input.request.examDate,
@@ -290,7 +291,7 @@ export async function createRevisionPlan(input: {
     trigger: input.trigger,
   });
 
-  const versionRow = db.get<{ version: number | null }>(
+  const versionRow = await db.get<{ version: number | null }>(
     "SELECT MAX(version) AS version FROM revision_plans WHERE owner_id = ? AND subject_id = ?",
     input.ownerId,
     input.subjectId,
@@ -298,15 +299,15 @@ export async function createRevisionPlan(input: {
   const version = (versionRow?.version ?? 0) + 1;
   const planId = newId();
 
-  transaction(() => {
-    db.run(
+  await transaction(async () => {
+    await db.run(
       `UPDATE revision_plans SET status = 'superseded'
         WHERE owner_id = ? AND subject_id = ? AND status = 'active'`,
       input.ownerId,
       input.subjectId,
     );
 
-    db.run(
+    await db.run(
       `INSERT INTO revision_plans
         (id, owner_id, subject_id, version, exam_date, minutes_per_day, session_minutes,
          horizon_days, capacity_minutes, allocated_minutes, status, rationale_json,
@@ -332,7 +333,7 @@ export async function createRevisionPlan(input: {
     );
 
     for (const task of result.tasks) {
-      db.run(
+      await db.run(
         `INSERT INTO revision_tasks
           (id, plan_id, owner_id, subject_id, topic_id, objective, duration_minutes, priority,
            priority_reason, status, carried_from_task_id, completed_at, position, created_at)
@@ -352,7 +353,7 @@ export async function createRevisionPlan(input: {
     }
   });
 
-  const created = db.get<PlanRow>("SELECT * FROM revision_plans WHERE id = ?", planId)!;
+  const created = (await db.get<PlanRow>("SELECT * FROM revision_plans WHERE id = ?", planId))!;
   return toPlanView(created, input.ownerId);
 }
 
@@ -365,7 +366,7 @@ export async function refreshActivePlanAfterAssessment(
   ownerId: string,
   subjectId: string,
 ): Promise<boolean> {
-  const previous = getActivePlanRow(ownerId, subjectId);
+  const previous = await getActivePlanRow(ownerId, subjectId);
   if (!previous) return false;
   if (daysUntil(previous.exam_date) <= 0) return false;
 
@@ -378,14 +379,14 @@ export async function refreshActivePlanAfterAssessment(
       sessionMinutes: previous.session_minutes,
     },
     trigger: "new_assessment",
-    allowDemo: isDemoUser(ownerId),
+    allowDemo: await isDemoUser(ownerId),
   });
   return view.version > previous.version;
 }
 
-export function toggleRevisionTask(ownerId: string, taskId: string): RevisionTaskView {
-  assertWritableAccount(ownerId, "revision task changes");
-  const task = db.get<TaskRow & { plan_status: string; topic_name: string }>(
+export async function toggleRevisionTask(ownerId: string, taskId: string): Promise<RevisionTaskView> {
+  await assertWritableAccount(ownerId, "revision task changes");
+  const task = await db.get<TaskRow & { plan_status: string; topic_name: string }>(
     `SELECT rt.*, rp.status AS plan_status, t.name AS topic_name
        FROM revision_tasks rt
        JOIN revision_plans rp ON rp.id = rt.plan_id
@@ -400,7 +401,7 @@ export function toggleRevisionTask(ownerId: string, taskId: string): RevisionTas
   }
 
   const nextStatus = task.status === "completed" ? "pending" : "completed";
-  db.run(
+  await db.run(
     "UPDATE revision_tasks SET status = ?, completed_at = ? WHERE id = ? AND owner_id = ?",
     nextStatus,
     nextStatus === "completed" ? nowIso() : null,

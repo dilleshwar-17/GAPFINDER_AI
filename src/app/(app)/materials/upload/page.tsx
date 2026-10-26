@@ -17,8 +17,8 @@ export default async function UploadMaterialPage({
 }) {
   const user = await requirePageUser();
   const params = await searchParams;
-  const subjects = listSubjects(user.id);
-  const selected = resolveSubjectId(user, params.subject) ?? subjects[0]?.id ?? "";
+  const subjects = await listSubjects(user.id);
+  const selected = (await resolveSubjectId(user, params.subject)) ?? subjects[0]?.id ?? "";
 
   return (
     <>

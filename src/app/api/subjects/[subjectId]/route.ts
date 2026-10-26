@@ -25,7 +25,7 @@ export async function PATCH(
     const user = await requireUser();
     const { subjectId } = await context.params;
     const payload = await readJson(request, updateSchema);
-    const subject = updateSubject(user.id, subjectId, {
+    const subject = await updateSubject(user.id, subjectId, {
       name: payload.name,
       description: payload.description,
       examDate: payload.examDate,
@@ -42,7 +42,7 @@ export async function DELETE(
     requireSameOrigin(request);
     const user = await requireUser();
     const { subjectId } = await context.params;
-    deleteSubject(user.id, subjectId);
+    await deleteSubject(user.id, subjectId);
     return jsonOk({ ok: true });
   });
 }

@@ -27,6 +27,13 @@ explicit approval. After a further explicit Production-deployment approval,
 commit `0866985` was directly deployed and assigned to the public Production
 alias. The alias was confirmed with `vercel alias ls`.
 
+The current local working tree now includes an optional PostgreSQL adapter and
+an explicit initial-schema migration command. Neither `DATABASE_URL` nor a
+hosted database connection was available for verification, the migration has
+not been run, and these changes have not been deployed. The production and
+Preview status above therefore describes the previously deployed SQLite-backed
+build, not this working tree.
+
 ---
 
 ## 1. Local development
@@ -107,7 +114,8 @@ Copy `.env.example` and set values. The important ones:
 | `NEXT_PUBLIC_SITE_URL` | localhost URL | production auth links | Canonical HTTPS site origin |
 | `SUPABASE_DEMO_EMAIL` | unset | hosted demo | Server-only demo identity |
 | `SUPABASE_DEMO_PASSWORD` | unset | hosted demo | Server-only secret |
-| `DATABASE_PATH` | `data/gapfinder.db` | local | Local SQLite only; not durable/shared on Vercel |
+| `DATABASE_URL` | unset | hosted PostgreSQL | Server-only connection string. When set, the app selects PostgreSQL instead of SQLite. Configure it securely; never use a `NEXT_PUBLIC_` name. |
+| `DATABASE_PATH` | `data/gapfinder.db` | local | Local SQLite file used only when `DATABASE_URL` is unset; not durable/shared on Vercel |
 | `GEMINI_API_KEY` | unset | no | Without it, deterministic fallbacks are used |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | no | |
 | `EMBEDDING_PROVIDER` | auto | no | `local` forces offline embeddings |
@@ -132,12 +140,44 @@ exact `/auth/callback` path for the configured site and preview origins, and
 email confirmation/recovery delivery must be enabled for those flows.
 
 The sign-in, sign-up, callback, sign-out, password-change, and password-recovery
-paths use Supabase Auth when configured. App profile and learner records still
-use the repository's SQLite database. The added `auth_user_id` mapping is a
-non-destructive SQLite schema change; it is not a Postgres migration or a data
-transfer.
+paths use Supabase Auth when configured. The profile mapping and learner records
+use the database selected by `DATABASE_URL`. Without that variable, the app
+falls back to SQLite, which is suitable for local development but not durable
+shared Vercel storage. No SQLite data-transfer utility is included.
 
-## 4. Preview verification record
+## 4. Hosted PostgreSQL setup
+
+The repository includes a PostgreSQL adapter and an explicit initial schema
+migration. The migration must be run before serving application traffic against
+a new database; it is never executed automatically.
+
+1. Create or select a PostgreSQL database and obtain its connection string from
+   the provider. For Supabase, use the connection option intended for the
+   deployment runtime. Keep the string private.
+2. Set `DATABASE_URL` in the Vercel Preview and Production environments using
+   Vercel's encrypted environment-variable interface. Do not add the value to
+   source code, logs, `.env.example`, or a `NEXT_PUBLIC_` variable.
+3. From a trusted local shell, configure `DATABASE_URL` without printing or
+   committing it, then run:
+
+   ```bash
+   npm run db:migrate:postgres
+   ```
+
+   The current script applies the initial schema in a transaction and records
+   it in `schema_migrations`. It creates tables only; it does not copy SQLite
+   user data or upload files. Review provider backups and database permissions
+   before running it.
+4. Deploy to Preview only after the migration succeeds. Check `/api/health`,
+   then test Supabase sign-in and a full learner workflow using a non-production
+   account and test documents. Verify data persists across separate requests.
+5. Promote to Production only after those checks pass and the owner approves
+   the production change.
+
+The adapter and migration have not yet been verified against a live PostgreSQL
+instance. A healthy build alone does not establish database readiness.
+
+## 5. Preview verification record
 
 The following commands were run against the exact Preview URL above:
 
@@ -163,7 +203,7 @@ and no mutating student-workflow actions were run. Vercel Preview readiness
 means the deployment built and was assigned; it does not mean application
 health or production readiness.
 
-## 5. Production deployment and rollback records
+## 6. Production deployment and rollback records
 
 The supplied build log showed a Production deployment from GitHub `main`
 commit `2907ca9`. Vercel inspection showed it had moved the production alias.
@@ -194,7 +234,7 @@ If you switch embedding providers, existing chunks are excluded from retrieval
 
 ---
 
-## 6. Verification results for this build
+## 7. Verification results for the previously deployed build
 
 Environment: Windows, Node **v26.5.1**, npm **12.0.2**, Next.js **16.4.3**,
 React **19.3.1**, Vitest **5.0.5**.

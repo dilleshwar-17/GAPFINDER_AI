@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
     const store = await cookies();
     const token = store.get(SESSION_COOKIE)?.value;
-    if (token) deleteSessionToken(token);
+    if (token) await deleteSessionToken(token);
     const response = jsonOk({ ok: true });
     clearSessionCookie(response);
     return response;

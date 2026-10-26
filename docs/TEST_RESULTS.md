@@ -1,7 +1,30 @@
 # Test Results
 
-Results below cover the current working tree, Preview, and Production
-deployments created on 2026-10-26. A GitHub-triggered Production deployment at
+## Current working-tree validation
+
+These checks were run after adding the optional PostgreSQL adapter, converting
+database-dependent services and callers to async-safe operations, and adding
+adapter regression tests. They ran locally and do not represent a Vercel
+deployment or a live PostgreSQL/Supabase integration.
+
+| Check | Result | Evidence and limitations |
+| --- | --- | --- |
+| `npm run typecheck` | PASS | `tsc --noEmit` completed with exit code 0. |
+| `npm run lint` | PASS | `eslint .` completed with exit code 0. |
+| `npm test` | PASS | Vitest: 12 files and 143 tests passed. Tests use in-memory SQLite and deterministic/offline AI paths. PostgreSQL tests cover placeholder conversion, generated schema conversion, and safe BIGINT parsing; they do not connect to PostgreSQL. |
+| `npm run build` | PASS | Next.js 16.4.3 compiled, type-checked, generated 25 static pages, and listed the application routes. |
+| `npm run smoke` | NOT TESTED | Not run against the existing Next dev server because another server was already running on port 3001; an isolated server could not start due to Next's shared dev lock. The existing server was not accessed or stopped. |
+| `npm run db:migrate:postgres` | BLOCKED / NOT RUN | `DATABASE_URL` is absent from the current process and `.env.local`; no hosted database was connected or modified. |
+| Live Supabase Auth and hosted student workflow | NOT TESTED | No live login, upload, persistence, diagnostic or plan workflow was performed. |
+| Vercel deployment and production alias | NOT RUN | These working-tree changes have not been deployed; no alias was changed. The prior deployment record below remains historical. |
+
+Vitest displayed a non-fatal Vite config-loader warning. No tests were weakened
+or disabled.
+
+## Historical deployment checks
+
+The following table records checks from the previously deployed code before the
+current PostgreSQL adapter changes. A GitHub-triggered Production deployment at
 commit `2907ca9` was rolled back; after explicit authorization, commit
 `0866985` was deployed to Production and assigned to the public alias. No
 production database was modified.
@@ -10,7 +33,7 @@ production database was modified.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| `npm test` | PASS | Vitest: 11 files passed, 138 tests passed. Tests use in-memory SQLite and disabled external AI providers. Vite emitted a non-fatal warning about the CommonJS/ESM configuration loader. |
+| `npm test` | PASS at the time | Vitest: 11 files passed, 138 tests passed before the current PostgreSQL adapter regression tests. Tests use in-memory SQLite and disabled external AI providers. Vite emitted a non-fatal warning about the CommonJS/ESM configuration loader. |
 | `npm run lint` | PASS | Completed after the Supabase key and session-handling changes. |
 | `npm run typecheck` | PASS | Completed after the Supabase key and session-handling changes. |
 | Supabase configuration/session regression tests | PASS | Seven focused tests cover fail-closed production configuration, legacy anon and publishable keys, missing-session redirects, and propagation of other Supabase errors. |
@@ -37,7 +60,7 @@ the production build then passed.
 | `npm run smoke` | NOT TESTED | Not run against this set of auth/theme changes. |
 | Live Supabase Auth login, callback, and recovery | NOT TESTED | Preview has Auth configuration and its no-session path works, but no credentials were submitted and no auth flow was exercised end-to-end. |
 | Supabase email confirmation/password recovery | NOT TESTED | No confirmation or recovery email flow was triggered or verified. |
-| Durable Vercel data behavior | FAIL / BLOCKED | Preview and Production health checks report database error; application data still uses local SQLite and no Postgres/Supabase data adapter exists. |
+| Durable Vercel data behavior | FAIL / BLOCKED | Preview and Production health checks for the previously deployed build report database error. The current working tree contains an optional PostgreSQL adapter, but it is unconfigured, un-migrated and not live-verified. |
 | Live Gemini/RAG provider checks | NOT TESTED | Preview has provider configuration, but no paid/provider-backed AI request was made. |
 | Mobile, keyboard, screen-reader, load, and concurrency suites | NOT TESTED | No automated browser, accessibility, or load suite was run. |
 

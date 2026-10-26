@@ -94,16 +94,16 @@ function mapProcessingError(error: unknown): AppError {
   return new AppError(500, "INTERNAL_ERROR", safeErrorMessage(error));
 }
 
-export function listDocuments(ownerId: string, subjectId: string): DocumentView[] {
-  getSubjectOwned(ownerId, subjectId);
-  const rows = db.all<DocumentRow>(
+export async function listDocuments(ownerId: string, subjectId: string): Promise<DocumentView[]> {
+  await getSubjectOwned(ownerId, subjectId);
+  const rows = await db.all<DocumentRow>(
     "SELECT * FROM documents WHERE owner_id = ? AND subject_id = ? ORDER BY created_at DESC",
     ownerId,
     subjectId,
   );
 
-  return rows.map((row) => {
-    const citations = db.get<{ count: number }>(
+  return Promise.all(rows.map(async (row) => {
+    const citations = await db.get<{ count: number }>(
       `SELECT COUNT(DISTINCT qs.question_id) AS count
          FROM question_sources qs
         WHERE qs.owner_id = ? AND qs.document_id = ?`,
@@ -124,11 +124,11 @@ export function listDocuments(ownerId: string, subjectId: string): DocumentView[
       processedAt: row.processed_at,
       citationCount: citations?.count ?? 0,
     };
-  });
+  }));
 }
 
-export function listAllDocuments(ownerId: string): LibraryDocument[] {
-  const rows = db.all<
+export async function listAllDocuments(ownerId: string): Promise<LibraryDocument[]> {
+  const rows = await db.all<
     DocumentRow & { subject_name: string; subject_is_demo: number; excerpt: string | null }
   >(
     `SELECT d.*, s.name AS subject_name, s.is_demo AS subject_is_demo,
@@ -141,8 +141,8 @@ export function listAllDocuments(ownerId: string): LibraryDocument[] {
     ownerId,
   );
 
-  return rows.map((row) => {
-    const citations = db.get<{ count: number }>(
+  return Promise.all(rows.map(async (row) => {
+    const citations = await db.get<{ count: number }>(
       `SELECT COUNT(DISTINCT qs.question_id) AS count
          FROM question_sources qs
         WHERE qs.owner_id = ? AND qs.document_id = ?`,
@@ -167,7 +167,7 @@ export function listAllDocuments(ownerId: string): LibraryDocument[] {
       subjectIsDemo: row.subject_is_demo === 1,
       excerpt: row.excerpt ? row.excerpt.replace(/\s+/g, " ").slice(0, 260) : null,
     };
-  });
+  }));
 }
 
 export interface DocumentChunkView {
@@ -185,11 +185,11 @@ export interface DocumentDetail {
   chunks: DocumentChunkView[];
 }
 
-export function getDocumentDetail(ownerId: string, documentId: string): DocumentDetail {
-  const document = listAllDocuments(ownerId).find((entry) => entry.id === documentId);
+export async function getDocumentDetail(ownerId: string, documentId: string): Promise<DocumentDetail> {
+  const document = (await listAllDocuments(ownerId)).find((entry) => entry.id === documentId);
   if (!document) throw notFound("That document was not found in your workspace.");
 
-  const rows = db.all<{
+  const rows = await db.all<{
     id: string;
     chunk_index: number;
     text: string;
@@ -222,7 +222,8 @@ export function getDocumentDetail(ownerId: string, documentId: string): Document
   };
 }
 
-export function getDocumentOwned(ownerId: string, documentId: string): DocumentRow {  const document = db.get<DocumentRow>(
+export async function getDocumentOwned(ownerId: string, documentId: string): Promise<DocumentRow> {
+  const document = await db.get<DocumentRow>(
     "SELECT * FROM documents WHERE id = ? AND owner_id = ?",
     documentId,
     ownerId,
@@ -273,15 +274,15 @@ async function processStoredDocument(document: DocumentRow): Promise<void> {
       throw new ProviderError("Embedding count did not match the chunk count.", { retryable: false });
     }
 
-    transaction(() => {
-      db.run("DELETE FROM document_chunks WHERE document_id = ?", document.id);
+    await transaction(async () => {
+      await db.run("DELETE FROM document_chunks WHERE document_id = ?", document.id);
       for (let index = 0; index < chunks.length; index += 1) {
         const chunk = chunks[index];
         const vector = embedded.vectors[index];
         if (vector.length !== config.dimensions) {
           throw new ProviderError("Embedding dimension mismatch.", { retryable: false });
         }
-        db.run(
+        await db.run(
           `INSERT INTO document_chunks
             (id, document_id, owner_id, subject_id, chunk_index, text, page_number, section_heading,
              char_start, char_end, embedding, embedding_model, embedding_dim, created_at)
@@ -302,7 +303,7 @@ async function processStoredDocument(document: DocumentRow): Promise<void> {
           nowIso(),
         );
       }
-      db.run(
+      await db.run(
         `UPDATE documents
             SET status = 'ready', error_message = NULL, page_count = ?, char_count = ?,
                 chunk_count = ?, processed_at = ?
@@ -316,7 +317,7 @@ async function processStoredDocument(document: DocumentRow): Promise<void> {
     });
   } catch (error) {
     const mapped = mapProcessingError(error);
-    db.run(
+    await db.run(
       "UPDATE documents SET status = 'failed', error_message = ?, processed_at = ?, chunk_count = 0 WHERE id = ?",
       mapped.message,
       nowIso(),
@@ -338,9 +339,9 @@ export interface UploadInput {
 }
 
 export async function ingestDocument(input: UploadInput): Promise<DocumentView> {
-  getSubjectOwned(input.ownerId, input.subjectId);
+  await getSubjectOwned(input.ownerId, input.subjectId);
   if (!input.allowDemo) {
-    assertWritableAccount(input.ownerId, "material uploads");
+    await assertWritableAccount(input.ownerId, "material uploads");
   }
 
   if (input.bytes.length === 0) {
@@ -359,7 +360,7 @@ export async function ingestDocument(input: UploadInput): Promise<DocumentView> 
   classifyFile(input.filename, input.mimeType);
 
   const sha256 = createHash("sha256").update(input.bytes).digest("hex");
-  const duplicate = db.get<{ id: string; filename: string }>(
+  const duplicate = await db.get<{ id: string; filename: string }>(
     "SELECT id, filename FROM documents WHERE owner_id = ? AND subject_id = ? AND sha256 = ?",
     input.ownerId,
     input.subjectId,
@@ -370,7 +371,7 @@ export async function ingestDocument(input: UploadInput): Promise<DocumentView> 
   }
 
   const id = newId();
-  db.run(
+  await db.run(
     `INSERT INTO documents
       (id, owner_id, subject_id, filename, mime_type, kind, size_bytes, sha256, file_data, status,
        error_message, page_count, char_count, chunk_count, created_at, processed_at)
@@ -387,9 +388,9 @@ export async function ingestDocument(input: UploadInput): Promise<DocumentView> 
     nowIso(),
   );
 
-  const stored = getDocumentOwned(input.ownerId, id);
+  const stored = await getDocumentOwned(input.ownerId, id);
   await processStoredDocument(stored);
-  return listDocuments(input.ownerId, input.subjectId).find((document) => document.id === id)!;
+  return (await listDocuments(input.ownerId, input.subjectId)).find((document) => document.id === id)!;
 }
 
 export async function retryDocument(
@@ -397,28 +398,28 @@ export async function retryDocument(
   documentId: string,
   options: { allowDemo?: boolean } = {},
 ): Promise<DocumentView> {
-  const document = getDocumentOwned(ownerId, documentId);
+  const document = await getDocumentOwned(ownerId, documentId);
   if (!options.allowDemo) {
-    assertWritableAccount(ownerId, "document reprocessing");
+    await assertWritableAccount(ownerId, "document reprocessing");
   }
   if (document.status !== "failed") {
     throw conflict("Only failed documents need reprocessing.");
   }
-  db.run(
+  await db.run(
     "UPDATE documents SET status = 'processing', error_message = NULL, processed_at = NULL WHERE id = ? AND owner_id = ?",
     documentId,
     ownerId,
   );
-  const refreshed = getDocumentOwned(ownerId, documentId);
+  const refreshed = await getDocumentOwned(ownerId, documentId);
   await processStoredDocument(refreshed);
-  return listDocuments(ownerId, document.subject_id).find((entry) => entry.id === documentId)!;
+  return (await listDocuments(ownerId, document.subject_id)).find((entry) => entry.id === documentId)!;
 }
 
-export function deleteDocument(ownerId: string, documentId: string): { subjectId: string } {
-  assertWritableAccount(ownerId, "document deletion");
-  const document = getDocumentOwned(ownerId, documentId);
+export async function deleteDocument(ownerId: string, documentId: string): Promise<{ subjectId: string }> {
+  await assertWritableAccount(ownerId, "document deletion");
+  const document = await getDocumentOwned(ownerId, documentId);
 
-  const answerCount = db.get<{ count: number }>(
+  const answerCount = await db.get<{ count: number }>(
     `SELECT COUNT(*) AS count
        FROM answers an
        JOIN question_sources qs ON qs.question_id = an.question_id
@@ -432,15 +433,15 @@ export function deleteDocument(ownerId: string, documentId: string): { subjectId
     );
   }
 
-  transaction(() => {
-    db.run(
+  await transaction(async () => {
+    await db.run(
       `DELETE FROM questions
         WHERE owner_id = ?
           AND id IN (SELECT question_id FROM question_sources WHERE document_id = ?)`,
       ownerId,
       documentId,
     );
-    db.run("DELETE FROM documents WHERE id = ? AND owner_id = ?", documentId, ownerId);
+    await db.run("DELETE FROM documents WHERE id = ? AND owner_id = ?", documentId, ownerId);
   });
 
   return { subjectId: document.subject_id };

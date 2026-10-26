@@ -30,10 +30,10 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export function createSession(userId: string): { token: string; expiresAt: string } {
+export async function createSession(userId: string): Promise<{ token: string; expiresAt: string }> {
   const token = randomBytes(32).toString("base64url");
   const expires = new Date(Date.now() + sessionTtlDays() * 24 * 60 * 60 * 1000);
-  db.run(
+  await db.run(
     "INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?)",
     newId(),
     userId,
@@ -44,9 +44,9 @@ export function createSession(userId: string): { token: string; expiresAt: strin
   return { token, expiresAt: expires.toISOString() };
 }
 
-export function findUserForSession(token: string): AuthUser | null {
+export async function findUserForSession(token: string): Promise<AuthUser | null> {
   if (!token) return null;
-  const row = db.get<UserRow>(
+  const row = await db.get<UserRow>(
     `SELECT u.id, u.email, u.display_name, u.is_demo
        FROM sessions s
        JOIN users u ON u.id = s.user_id
@@ -58,17 +58,17 @@ export function findUserForSession(token: string): AuthUser | null {
   return { id: row.id, email: row.email, displayName: row.display_name, isDemo: row.is_demo === 1 };
 }
 
-export function syncSupabaseUser(user: {
+export async function syncSupabaseUser(user: {
   id: string;
   email?: string;
   email_confirmed_at?: string | null;
   user_metadata: Record<string, unknown>;
   app_metadata: Record<string, unknown>;
-}): AuthUser {
+}): Promise<AuthUser> {
   const email = user.email?.trim().toLowerCase();
   if (!email) throw unauthenticated();
 
-  const existing = db.get<UserRow>(
+  const existing = await db.get<UserRow>(
     `SELECT id, email, display_name, is_demo, auth_user_id
        FROM users
       WHERE auth_user_id = ? OR email = ?
@@ -98,7 +98,7 @@ export function syncSupabaseUser(user: {
   const isDemo = existing?.is_demo === 1 || user.app_metadata.is_demo === true;
 
   if (existing) {
-    db.run(
+    await db.run(
       "UPDATE users SET auth_user_id = ?, email = ?, is_demo = ? WHERE id = ?",
       user.id,
       email,
@@ -108,7 +108,7 @@ export function syncSupabaseUser(user: {
     return { id: existing.id, email, displayName, isDemo };
   }
 
-  db.run(
+  await db.run(
     `INSERT INTO users (id, email, password_hash, display_name, is_demo, auth_user_id, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     user.id,
@@ -150,8 +150,8 @@ export async function requireUser(): Promise<AuthUser> {
   return user;
 }
 
-export function deleteSessionToken(token: string): void {
-  db.run("DELETE FROM sessions WHERE token_hash = ?", hashToken(token));
+export async function deleteSessionToken(token: string): Promise<void> {
+  await db.run("DELETE FROM sessions WHERE token_hash = ?", hashToken(token));
 }
 
 export function sessionCookieOptions(secure: boolean) {

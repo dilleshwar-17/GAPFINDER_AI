@@ -29,12 +29,14 @@ call was made there.
 A protected Preview deployment is available at
 <https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app>. The homepage
 and auth pages respond, and unauthenticated protected requests redirect to
-login. However, `/api/health` reports `database: error`; application data still
-uses local SQLite and is not durable on Vercel. Supabase login credentials,
-document upload, and the full learner workflow have not been exercised on the
-Preview or Production. Commit `0866985` is deployed to Production, but its
-health endpoint also reports a database error. A GitHub-triggered Production
-deployment from commit `2907ca9` was rolled back before the current deployment.
+login. However, `/api/health` reported `database: error` on the deployed build.
+Supabase login credentials, document upload, and the full learner workflow have
+not been exercised on the Preview or Production. Commit `0866985` is deployed
+to Production, but its health endpoint also reports a database error. A
+GitHub-triggered Production deployment from commit `2907ca9` was rolled back
+before the current deployment. The current working tree adds an optional
+PostgreSQL adapter and initial migration; neither is configured, live-tested,
+or deployed.
 
 ### 1.3 No browser automation
 
@@ -99,20 +101,24 @@ claims.
 
 ## 2. Persistence and scale
 
-### 2.1 SQLite is not a production serverless database
+### 2.1 Hosted PostgreSQL is not yet configured or verified
 
-The app uses Node's built-in `node:sqlite` (`DatabaseSync`). This is excellent for
-a local demo and a single process, but:
+When `DATABASE_URL` is unset, the app uses Node's built-in `node:sqlite`
+(`DatabaseSync`). This is suitable for local development and a single process,
+but:
 
 - the database is a **file on local disk**;
 - serverless platforms such as Vercel do not provide durable, shared local
   storage between invocations;
 - multiple instances would not share writes safely;
-- there is no replication, backup, failover or connection pooling.
+- there is no replication, backup or failover.
 
-A production deployment needs Postgres (with pgvector) and a storage adapter.
-The schema is relational and avoids SQLite-only SQL, but **a Postgres adapter was
-not built**.
+An optional `pg` adapter and explicit, additive initial-schema migration now
+exist in the working tree. They have not been connected to a live database or
+deployed; `DATABASE_URL` was absent from the checked environment. The migration
+does not transfer existing SQLite data. Hosted persistence is therefore still a
+release blocker, not a verified production feature. Retrieval remains an
+application-side exact vector scan and does not use pgvector.
 
 ### 2.2 Exact vector scan
 
@@ -151,8 +157,9 @@ without retention. A long-running deployment needs housekeeping.
 - **No completed account/data migration.** Existing local scrypt hashes cannot
   be used as Supabase passwords. The local schema can link a confirmed identity
   to a same-email profile, but no hosted data transfer or user import has run.
-- **Auth-only does not make the app Vercel-ready.** Learner records and uploads
-  remain in local SQLite and are not durable/shared across Vercel instances.
+- **The hosted database adapter is unverified.** Without `DATABASE_URL`,
+  learner records and uploads use local SQLite and are not durable/shared across
+  Vercel instances.
 - **No MFA/2FA.**
 - **No account deletion or data export.**
 - **No admin role, moderation, or support tooling.**
@@ -320,8 +327,9 @@ without retention. A long-running deployment needs housekeeping.
 
 ## 10. What would be done next
 
-1. Provision durable application storage and add a safe Postgres/Supabase
-   database adapter; migrate records and embeddings without losing user data.
+1. Provision a hosted PostgreSQL database, configure `DATABASE_URL` securely,
+   run the initial migration in a controlled environment, and verify the
+   adapter; plan and test any required SQLite data transfer separately.
 2. Add object storage for uploads and a background worker for extraction and
    embedding.
 3. Configure a Gemini key and run a live evaluation of generation, citation
