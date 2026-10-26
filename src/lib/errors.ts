@@ -81,6 +81,12 @@ export function publicError(error: unknown): {
   }
 
   if (error instanceof Error) {
+    if (error.message.includes("UNIQUE constraint failed")) {
+      return {
+        status: 409,
+        body: { error: { code: "CONFLICT", message: "A record with those details already exists." } },
+      };
+    }
     if (error.name === "ExtractionError") {
       return {
         status: 400,

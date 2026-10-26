@@ -94,15 +94,22 @@ export function createUser(input: {
     throw validationError("A password is required.");
   }
   const id = newId();
-  db.run(
-    "INSERT INTO users (id, email, password_hash, display_name, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    id,
-    email,
-    input.passwordHash ?? hashPassword(input.password!),
-    input.displayName.trim(),
-    input.isDemo ? 1 : 0,
-    nowIso(),
-  );
+  try {
+    db.run(
+      "INSERT INTO users (id, email, password_hash, display_name, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      id,
+      email,
+      input.passwordHash ?? hashPassword(input.password!),
+      input.displayName.trim(),
+      input.isDemo ? 1 : 0,
+      nowIso(),
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
+      throw conflict("An account with that email address already exists.");
+    }
+    throw error;
+  }
   return {
     id,
     email,

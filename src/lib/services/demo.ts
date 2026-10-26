@@ -4,7 +4,7 @@ import type { AuthUser } from "@/lib/auth/session";
 import { conflict } from "@/lib/errors";
 import { daysUntil } from "@/lib/domain/planner";
 import { isDemoEnabled } from "@/lib/env";
-import { createUser, findUserByEmail } from "@/lib/services/auth";
+import { createUser, createUserAsync, findUserByEmail } from "@/lib/services/auth";
 import {
   createSubject,
   getSubjectOwned,
@@ -371,12 +371,16 @@ export async function ensureDemoAccount(): Promise<AuthUser> {
   }
 
   if (!record) {
-    createUser({
-      displayName: DEMO_DISPLAY_NAME,
-      email,
-      password: randomBytes(32).toString("base64url"),
-      isDemo: true,
-    });
+    try {
+      await createUserAsync({
+        displayName: DEMO_DISPLAY_NAME,
+        email,
+        password: randomBytes(32).toString("base64url"),
+        isDemo: true,
+      });
+    } catch {
+      // Safe against concurrent requests
+    }
     record = findUserByEmail(email);
   }
   if (!record) throw conflict("The demo account could not be created.");
