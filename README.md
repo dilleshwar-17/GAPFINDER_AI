@@ -13,8 +13,9 @@ This repository is a runnable Next.js application. Local development uses
 SQLite and deterministic AI fallbacks. Supabase Auth is available when
 configured. The application has a PostgreSQL data adapter selected by `DATABASE_URL`,
 while retaining SQLite locally. The Vercel Supabase Postgres resource has been
-connected and the additive schema migration applied. The production deployment
-still needs the current local code and TLS configuration deployed and verified.
+connected, its additive schema migration applied, and TLS configured with
+certificate verification. The current local tree is deployed to the production
+URL below; local SQLite data was not copied into the hosted database.
 
 Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
 
@@ -33,15 +34,15 @@ Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
 | Grounded assistant (BUDDY) with citation validation and abstention | Real |
 | BUDDY voice input and spoken replies via browser Web Speech APIs | Real in supporting browsers; not exercised by automated tests |
 | Blue glassmorphism theme, across public and workspace layouts | Implemented; visually inspected in a desktop browser |
-| Supabase Auth sign-in, sign-up, callback, sign-out, and password recovery | Implemented; environment configured, full hosted workflow not live-verified |
+| Supabase Auth sign-in, sign-up, callback, sign-out, and password recovery | Implemented; production shared-demo sign-in verified, regular account and recovery flows not verified |
 | Legacy local SQLite authentication | Used only when Supabase Auth variables are absent outside production |
-| Shared demo workspace via `/api/auth/demo` | Implemented locally; Supabase production demo needs a separately configured demo user |
-| Gemini LLM / neural embeddings | **Not executed** — no `GEMINI_API_KEY` was available, so the deterministic fallbacks ran |
-| Optional PostgreSQL data adapter | Implemented; live TLS-verified read-only connection to the Vercel-managed Supabase Postgres resource |
+| Shared demo workspace via `/api/auth/demo` | Production sign-in returned HTTP 200 with `isDemo: true`; this confirms the configured account is marked read-only |
+| Gemini LLM / neural embeddings | Production health reports providers configured; live generation and embedding calls were not exercised |
+| Optional PostgreSQL data adapter | Implemented; Vercel production health reports `database: ok` over TLS-verified Supabase PostgreSQL |
 | PostgreSQL schema migration | Explicit additive migration applied to the empty hosted database; no SQLite data was copied |
 | Hosted object storage | Missing — original uploads and embeddings are stored as database binary data |
-| Vercel production data workflows | **Pending deployment verification** — hosted schema and production connection configuration are ready |
-| Live Supabase Auth and full hosted student workflow | **Not yet verified** — deployment and authenticated workflow checks remain |
+| Vercel production smoke checks | Production alias, database health, login page, unauthenticated route guard, and read-only demo sign-in verified |
+| Full hosted student workflow | **Not tested end-to-end** — upload, retrieval, diagnostic, scoring, and revision persistence need a complete authenticated run |
 
 The deterministic fallbacks are honest, working implementations rather than
 stubs: lexical hash embeddings (`gapfinder-hash-v1`, 512 dims), extractive
@@ -155,13 +156,17 @@ Run on Windows, Node v26.5.1, npm 12.0.2:
 
 | Command | Result |
 | --- | --- |
-| `npm run lint` | **Passed** after Supabase auth changes |
-| `npm run typecheck` | **Passed** after Supabase auth changes |
-| `npm test` | **Passed** — 11 files, **138 tests** |
-| Local `npm run build` | **Blocked** — Windows `EPERM` while unlinking `.next/static` with a local Next server running |
-| Vercel Preview build | **Passed** — latest Preview reported Ready |
-| Preview health | **Failed** — `/api/health` reports `database: error` |
-| `npm run smoke` | **Not run** for the current Supabase/theme changes |
+| `npm run lint` | **Passed** on the deployed local tree |
+| `npm run typecheck` | **Passed** on the deployed local tree |
+| `npm test` | **Passed** — 12 files, **147 tests** |
+| `npm run build` | **Passed** — Next.js 16.4.3 production build |
+| Vercel Production deployment | **Ready** — `dpl_AdnNASWprBTJJB7es8vwModxLTTL`, build duration 28s |
+| Production alias and `/api/health` | **Passed** — `https://gapfinder-ai-dilleshwar-rao.vercel.app`; health reports `database: ok` |
+| Production `/login` and unauthenticated `/dashboard` | **Passed** — HTTP 200 and redirect HTTP 307 to login |
+| Production shared-demo sign-in | **Passed, limited** — HTTP 200 and `isDemo: true`; no learner workflow was run |
+| Production runtime error query | **No error records returned** in the available 30-minute window; Vercel Hobby log retention is limited |
+| `npm run smoke` | **Not run** against Production |
+| Complete live student workflow | **Not tested** — regular account auth, upload/RAG, diagnostic, and revision persistence remain unverified |
 
 The smoke suite covers public pages, auth guards, cross-origin rejection, demo
 session issuance, the shared-demo banner, seeded subject discovery, every seeded
@@ -229,7 +234,7 @@ This deletes the configured SQLite file (`DATABASE_PATH`, default `data/gapfinde
 ## Deployment
 
 - **Local / self-hosted:** `npm run build && npm start` (SQLite requires a writable persistent location; set `DATABASE_URL` for PostgreSQL).
-- **Vercel:** configure Supabase Auth variables and a private `DATABASE_URL`, apply the schema explicitly with `npm run db:migrate:postgres`, and verify `/api/health` plus signed-in workflows in Preview before promoting. The adapter has not been connected to a hosted database in this working tree; the latest recorded Production health check reported a database error. This code has not been deployed. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Vercel:** Production is deployed at `https://gapfinder-ai-dilleshwar-rao.vercel.app` with Supabase PostgreSQL and TLS CA configuration. The schema migration and `/api/health` are verified; full signed-in student workflows, regular Supabase Auth flows, backups, and object storage remain unverified or incomplete. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Troubleshooting
 

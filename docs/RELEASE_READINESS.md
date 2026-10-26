@@ -1,25 +1,19 @@
 # Release Readiness
 
-**Status: NOT READY for production use.** Commit `0866985` is deployed to the
-Production alias, but its health endpoint reports a database error.
+**Status: NOT READY for production use.** The current local tree is deployed
+to the Production alias and its health endpoint reports `database: ok`, but
+the complete student workflow and operational recovery have not been verified.
 
-The current local working tree adds an optional PostgreSQL adapter, an explicit
-initial schema migration, and async-safe service and page callers. This code has
-not been deployed or tested against a hosted database. `DATABASE_URL` is not
-configured locally, so the migration and live persistence checks were not run.
+The hosted Supabase PostgreSQL database has the additive initial schema and
+strict TLS configuration. The migration did not copy local SQLite data.
 
 ## Verified
 
 - Current working-tree `npm run typecheck` passes.
 - Current working-tree `npm run lint` passes.
-- Current working-tree `npm test` passes: 12 files, 143 tests. PostgreSQL adapter
+- Current working-tree `npm test` passes: 12 files, 147 tests. PostgreSQL adapter
   tests are unit tests and do not connect to a live server.
 - Current working-tree `npm run build` passes on Next.js 16.4.3.
-- Next.js 16.4.3 production build passes after consolidating Next's
-  `middleware.ts`/`proxy.ts` entry point.
-- `npm run lint` and `npm run typecheck` pass.
-- `npm test` passes: 11 test files, 138 tests. This is an offline suite using
-  in-memory SQLite and deterministic providers.
 - Supabase Auth flows are wired in code and the SSR proxy validates configured
   provider identity; live Supabase verification is still required.
 - Production auth now fails closed with a service-unavailable response when
@@ -35,30 +29,33 @@ configured locally, so the migration and live persistence checks were not run.
 - The Preview health endpoint returned `status: degraded` and
   `database: error`; this confirms the SQLite-backed application is not healthy
   on the Vercel runtime.
-- Production deployment `dpl_CxUmknxa9hA6VH8cvaaYrKkHtgCB` is Ready and
-  assigned to the public domain. Homepage/login return HTTP 200 and an
-  unauthenticated dashboard request redirects to login.
-- The Production health endpoint also returns `status: degraded` and
-  `database: error`. The alias is current, but data-backed features are not
-  healthy.
+- Production deployment `dpl_AdnNASWprBTJJB7es8vwModxLTTL` is Ready and
+  assigned to `https://gapfinder-ai-dilleshwar-rao.vercel.app`. Login returned
+  HTTP 200 and an unauthenticated dashboard request returned HTTP 307 to login.
+- Production health returns `status: ok` and `database: ok`; the additive schema
+  migration and strict TLS connection were verified.
+- Production `/api/auth/demo` returned HTTP 200 with `isDemo: true`, confirming
+  the Supabase demo identity is marked read-only by the application.
+- No error records were returned by the production query for the available
+  30-minute log window. Vercel Hobby log retention is limited.
 
 ## Release blockers
 
-1. **Hosted database setup and verification:** configure `DATABASE_URL`
-   securely, run the explicit initial PostgreSQL migration, and test durable
-   reads/writes on Preview. The adapter has not been connected to a live server.
-2. **Supabase Auth live verification:** configure a non-production project,
-   callback allow-list, email confirmation, and reset delivery; test all flows.
+1. **End-to-end hosted workflow:** test an authorized regular learner account
+   through subject creation, material upload/indexing, diagnostic generation,
+   submission, scoring, persistence, revision planning, and retest.
+2. **Supabase Auth live verification:** test regular account sign-in, signup,
+   callback, sign-out, email confirmation, and password recovery. Only shared
+   demo sign-in was exercised.
 3. **Existing data migration:** preserve any local learner records, map
    confirmed identities, and require existing users to set/reset Supabase
-   passwords. The initial schema script does not copy data; no database was
-   modified or migrated.
+   passwords. The initial schema migration created structure only; no local
+   SQLite learner data was copied to the hosted database.
 4. **File persistence and scale:** the current adapter stores original uploads
    and embeddings in PostgreSQL `BYTEA`; no hosted object-storage path exists.
-5. **End-to-end verification:** authentication, ownership, upload/RAG/citation,
-   mobile, accessibility, load, and concurrency tests have not been run. The
-   Preview and Production cannot serve as healthy data-backed test environments
-   because their database health checks fail.
+5. **Quality and security verification:** ownership, upload/RAG/citation,
+   mobile, accessibility, load, and concurrency tests have not been run against
+   the hosted deployment.
 6. **Operations:** Production is deployed, but backup/restore, alerting,
    rollback, and end-to-end student flows have not been verified.
 

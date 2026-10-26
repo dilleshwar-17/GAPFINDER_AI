@@ -1,21 +1,31 @@
 # Deployment
 
 This document records the local setup, Supabase Auth configuration, Vercel
-deployment prerequisites, and the remaining release blockers.
+deployment, and the remaining release blockers.
 
-**Status: Hosted database configured; current deployment still needs rollout
-and verification.** On 2026-10-27, the existing Vercel-managed Supabase Free
+**Status: Production deployment and database health verified; full workflow
+verification remains incomplete.** The existing Vercel-managed Supabase Free
 resource was connected to the linked project. Its initially empty PostgreSQL
 database was inspected using a TLS-verified, read-only connection. The
 repository's additive migration `001_initial_schema` was then applied. The
 production environment now has `DATABASE_URL` and the public Supabase root CA
 configured with strict certificate and hostname verification.
 
-The current production alias still points to the older deployment until the
-current local code is deployed and checked. Do not treat database migration or
-a Ready build as proof that authentication, uploads, diagnostics, or the
-complete student workflow work end-to-end. The migration did not copy local
-SQLite data.
+On 2026-10-27, local commit `d272293` plus the preserved local Settings-page
+edit was deployed directly to Vercel Production as
+`dpl_AdnNASWprBTJJB7es8vwModxLTTL` (Ready; 28-second build). The user-facing
+alias `https://gapfinder-ai-dilleshwar-rao.vercel.app` was assigned to that
+deployment. `/api/health` returned `status: ok` and `database: ok`; `/login`
+returned HTTP 200; an unauthenticated `/dashboard` request returned HTTP 307
+to `/login`; and `/api/auth/demo` returned HTTP 200 with `isDemo: true`.
+
+These checks verify deployment, database connectivity, the no-session route
+guard, and the configured read-only demo identity—not the complete student
+workflow. The migration did not copy local SQLite data. Upload, retrieval,
+diagnostic, and revision-plan behavior on hosted data still needs end-to-end
+verification. The production error-log query returned no records for its
+available 30-minute window; the Vercel Hobby plan does not retain the longer
+requested window.
 
 The same working tree was also deployed to Preview at
 `https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app`. Vercel
@@ -37,8 +47,8 @@ variable. If set, it removes conflicting SSL query parameters from the
 connection string and passes the CA to node-postgres while keeping
 `rejectUnauthorized: true`. The certificate is the public Supabase Root 2021
 CA linked from the project's Database Settings; no TLS verification is
-disabled. The database connection and initial schema migration were verified,
-but the current app build has not yet been deployed in this record.
+disabled. The production database connection, initial schema migration, and
+deployed application health were verified.
 
 ---
 
