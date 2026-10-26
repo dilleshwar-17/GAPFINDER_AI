@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { Pool, types, type PoolClient } from "pg";
+import { Pool, types, type PoolClient, type PoolConfig } from "pg";
 import { SCHEMA_SQL } from "./schema";
 
 /**
@@ -44,6 +44,26 @@ export function isPostgresConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL?.trim());
 }
 
+export function postgresPoolOptions(connectionString: string, caCertificate?: string): PoolConfig {
+  const url = new URL(connectionString);
+  const localHost = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  const ca = caCertificate?.trim();
+
+  if (ca) {
+    for (const key of ["sslmode", "sslrootcert", "sslcert", "sslkey"]) {
+      url.searchParams.delete(key);
+    }
+  }
+
+  return {
+    connectionString: url.toString(),
+    max: 1,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 5_000,
+    ssl: localHost ? undefined : { ...(ca ? { ca } : {}), rejectUnauthorized: true },
+  };
+}
+
 function getPostgresPool(): Pool {
   if (postgresPool) return postgresPool;
   const connectionString = process.env.DATABASE_URL?.trim();
@@ -53,14 +73,9 @@ function getPostgresPool(): Pool {
   if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") {
     throw new Error("DATABASE_URL must use the postgres:// or postgresql:// scheme.");
   }
-  const localHost = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
-  postgresPool = new Pool({
-    connectionString,
-    max: 1,
-    idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 5_000,
-    ssl: localHost ? undefined : { rejectUnauthorized: true },
-  });
+  postgresPool = new Pool(
+    postgresPoolOptions(connectionString, process.env.DATABASE_CA_CERT),
+  );
   return postgresPool;
 }
 

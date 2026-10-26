@@ -15,9 +15,15 @@ if (!["postgres:", "postgresql:"].includes(connectionUrl.protocol)) {
 const source = await readFile(new URL("../src/lib/db/schema.ts", import.meta.url), "utf8");
 const schema = postgresSchemaFromSource(source);
 const isLocal = ["localhost", "127.0.0.1", "::1"].includes(connectionUrl.hostname);
+const caCertificate = process.env.DATABASE_CA_CERT?.trim();
+if (caCertificate) {
+  for (const key of ["sslmode", "sslrootcert", "sslcert", "sslkey"]) {
+    connectionUrl.searchParams.delete(key);
+  }
+}
 const client = new Client({
-  connectionString,
-  ssl: isLocal ? undefined : { rejectUnauthorized: true },
+  connectionString: connectionUrl.toString(),
+  ssl: isLocal ? undefined : { ...(caCertificate ? { ca: caCertificate } : {}), rejectUnauthorized: true },
 });
 
 await client.connect();

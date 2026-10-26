@@ -3,14 +3,19 @@
 This document records the local setup, Supabase Auth configuration, Vercel
 deployment prerequisites, and the remaining release blockers.
 
-**Status: Production deployment active; application not healthy.** On
-2026-10-26, commit `0866985` was deployed to Production at
-`https://gapfinder-ai-dilleshwar-rao.vercel.app` as deployment
-`dpl_CxUmknxa9hA6VH8cvaaYrKkHtgCB`. Vercel reports it Ready and its alias is
-assigned to this deployment. The homepage and login returned HTTP 200 and an
-unauthenticated dashboard request redirected to login. The health endpoint
-reports a database error, so the site is not fully working like local
-development.
+**Status: Hosted database configured; current deployment still needs rollout
+and verification.** On 2026-10-27, the existing Vercel-managed Supabase Free
+resource was connected to the linked project. Its initially empty PostgreSQL
+database was inspected using a TLS-verified, read-only connection. The
+repository's additive migration `001_initial_schema` was then applied. The
+production environment now has `DATABASE_URL` and the public Supabase root CA
+configured with strict certificate and hostname verification.
+
+The current production alias still points to the older deployment until the
+current local code is deployed and checked. Do not treat database migration or
+a Ready build as proof that authentication, uploads, diagnostics, or the
+complete student workflow work end-to-end. The migration did not copy local
+SQLite data.
 
 The same working tree was also deployed to Preview at
 `https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app`. Vercel
@@ -27,12 +32,13 @@ explicit approval. After a further explicit Production-deployment approval,
 commit `0866985` was directly deployed and assigned to the public Production
 alias. The alias was confirmed with `vercel alias ls`.
 
-The current local working tree now includes an optional PostgreSQL adapter and
-an explicit initial-schema migration command. Neither `DATABASE_URL` nor a
-hosted database connection was available for verification, the migration has
-not been run, and these changes have not been deployed. The production and
-Preview status above therefore describes the previously deployed SQLite-backed
-build, not this working tree.
+The local PostgreSQL adapter accepts the optional PEM `DATABASE_CA_CERT`
+variable. If set, it removes conflicting SSL query parameters from the
+connection string and passes the CA to node-postgres while keeping
+`rejectUnauthorized: true`. The certificate is the public Supabase Root 2021
+CA linked from the project's Database Settings; no TLS verification is
+disabled. The database connection and initial schema migration were verified,
+but the current app build has not yet been deployed in this record.
 
 ---
 
@@ -115,6 +121,7 @@ Copy `.env.example` and set values. The important ones:
 | `SUPABASE_DEMO_EMAIL` | unset | hosted demo | Server-only demo identity |
 | `SUPABASE_DEMO_PASSWORD` | unset | hosted demo | Server-only secret |
 | `DATABASE_URL` | unset | hosted PostgreSQL | Server-only connection string. When set, the app selects PostgreSQL instead of SQLite. Configure it securely; never use a `NEXT_PUBLIC_` name. |
+| `DATABASE_CA_CERT` | unset | hosted PostgreSQL TLS | Optional trusted CA certificate in PEM form. Required when the provider CA is not in the runtime trust store; TLS verification stays enabled. |
 | `DATABASE_PATH` | `data/gapfinder.db` | local | Local SQLite file used only when `DATABASE_URL` is unset; not durable/shared on Vercel |
 | `GEMINI_API_KEY` | unset | no | Without it, deterministic fallbacks are used |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | no | |
@@ -154,11 +161,17 @@ a new database; it is never executed automatically.
 1. Create or select a PostgreSQL database and obtain its connection string from
    the provider. For Supabase, use the connection option intended for the
    deployment runtime. Keep the string private.
-2. Set `DATABASE_URL` in the Vercel Preview and Production environments using
-   Vercel's encrypted environment-variable interface. Do not add the value to
-   source code, logs, `.env.example`, or a `NEXT_PUBLIC_` variable.
-3. From a trusted local shell, configure `DATABASE_URL` without printing or
-   committing it, then run:
+2. When using Supabase Postgres, download its CA certificate from Database
+   Settings → SSL Configuration and set it as `DATABASE_CA_CERT`. Keep
+   `rejectUnauthorized: true`; never work around certificate errors by
+   disabling TLS verification.
+3. Set `DATABASE_URL` and, when needed, `DATABASE_CA_CERT` in the Vercel
+   environments that need database access using Vercel's encrypted environment
+   variable interface. Do not add credentials to source, logs, or `NEXT_PUBLIC_`
+   variables. Prefer separating Preview and Production databases to prevent
+   Preview test activity from writing to Production data.
+4. From a trusted shell with the intended database connection configured
+   without printing or committing it, inspect the target and then run:
 
    ```bash
    npm run db:migrate:postgres
@@ -168,10 +181,10 @@ a new database; it is never executed automatically.
    it in `schema_migrations`. It creates tables only; it does not copy SQLite
    user data or upload files. Review provider backups and database permissions
    before running it.
-4. Deploy to Preview only after the migration succeeds. Check `/api/health`,
+5. Deploy to Preview only after the migration succeeds. Check `/api/health`,
    then test Supabase sign-in and a full learner workflow using a non-production
    account and test documents. Verify data persists across separate requests.
-5. Promote to Production only after those checks pass and the owner approves
+6. Promote to Production only after those checks pass and the owner approves
    the production change.
 
 The adapter and migration have not yet been verified against a live PostgreSQL

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { postgresPlaceholders } from "@/lib/db";
+import { postgresPlaceholders, postgresPoolOptions } from "@/lib/db";
 import { types } from "pg";
 import { postgresSchemaFromSource } from "../scripts/postgres-schema.mjs";
 
@@ -15,6 +15,20 @@ describe("PostgreSQL migration adapter", () => {
     const parseInt8 = types.getTypeParser(types.builtins.INT8, "text");
     expect(parseInt8("42")).toBe(42);
     expect(() => parseInt8("9007199254740992")).toThrow(RangeError);
+  });
+
+  it("uses the configured CA while preserving strict TLS verification", () => {
+    const options = postgresPoolOptions(
+      "postgresql://user:password@db.example.test/postgres?sslmode=require&sslrootcert=system",
+      "-----BEGIN CERTIFICATE-----\npublic-root\n-----END CERTIFICATE-----",
+    );
+
+    expect(options.connectionString).not.toContain("sslmode");
+    expect(options.connectionString).not.toContain("sslrootcert");
+    expect(options.ssl).toMatchObject({
+      ca: "-----BEGIN CERTIFICATE-----\npublic-root\n-----END CERTIFICATE-----",
+      rejectUnauthorized: true,
+    });
   });
 
   it("converts the shared SQLite schema to PostgreSQL without destructive statements", () => {

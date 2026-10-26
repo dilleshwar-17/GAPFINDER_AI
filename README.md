@@ -11,10 +11,10 @@ and document it came from.
 
 This repository is a runnable Next.js application. Local development uses
 SQLite and deterministic AI fallbacks. Supabase Auth is available when
-configured. The application now has an optional PostgreSQL data adapter selected
-by `DATABASE_URL`, while retaining SQLite locally. The hosted database and
-migration have not been configured or live-verified, so production data-backed
-workflows remain **blocked pending database setup and verification**.
+configured. The application has a PostgreSQL data adapter selected by `DATABASE_URL`,
+while retaining SQLite locally. The Vercel Supabase Postgres resource has been
+connected and the additive schema migration applied. The production deployment
+still needs the current local code and TLS configuration deployed and verified.
 
 Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
 
@@ -33,15 +33,15 @@ Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
 | Grounded assistant (BUDDY) with citation validation and abstention | Real |
 | BUDDY voice input and spoken replies via browser Web Speech APIs | Real in supporting browsers; not exercised by automated tests |
 | Blue glassmorphism theme, across public and workspace layouts | Implemented; visually inspected in a desktop browser |
-| Supabase Auth sign-in, sign-up, callback, sign-out, and password recovery | Implemented; not live-verified because Supabase environment is unavailable |
+| Supabase Auth sign-in, sign-up, callback, sign-out, and password recovery | Implemented; environment configured, full hosted workflow not live-verified |
 | Legacy local SQLite authentication | Used only when Supabase Auth variables are absent outside production |
 | Shared demo workspace via `/api/auth/demo` | Implemented locally; Supabase production demo needs a separately configured demo user |
 | Gemini LLM / neural embeddings | **Not executed** — no `GEMINI_API_KEY` was available, so the deterministic fallbacks ran |
-| Optional PostgreSQL data adapter | Implemented in the current working tree; not connected to or verified against a hosted database |
-| PostgreSQL schema migration | Explicit, additive initial migration is available; not run against a hosted database |
+| Optional PostgreSQL data adapter | Implemented; live TLS-verified read-only connection to the Vercel-managed Supabase Postgres resource |
+| PostgreSQL schema migration | Explicit additive migration applied to the empty hosted database; no SQLite data was copied |
 | Hosted object storage | Missing — original uploads and embeddings are stored as database binary data |
-| Vercel production data workflows | **Blocked** — `DATABASE_URL` is not configured in this environment and hosted persistence is unverified |
-| Live Supabase Auth or hosted database verification | **Blocked** — no live authenticated workflow or hosted database connection was tested |
+| Vercel production data workflows | **Pending deployment verification** — hosted schema and production connection configuration are ready |
+| Live Supabase Auth and full hosted student workflow | **Not yet verified** — deployment and authenticated workflow checks remain |
 
 The deterministic fallbacks are honest, working implementations rather than
 stubs: lexical hash embeddings (`gapfinder-hash-v1`, 512 dims), extractive
@@ -203,6 +203,7 @@ role keys or other secrets in them.
 | `SUPABASE_DEMO_PASSWORD` | unset | for Supabase-hosted demo | Server-only secret; never commit or expose. |
 | `DATABASE_PATH` | `data/gapfinder.db` | local only | Use `:memory:` for tests; this database is not durable/shared on Vercel. |
 | `DATABASE_URL` | unset | hosted PostgreSQL | Server-only PostgreSQL connection string. When set, it selects PostgreSQL instead of SQLite. Configure securely; never add it to `NEXT_PUBLIC_*` variables. |
+| `DATABASE_CA_CERT` | unset | Supabase PostgreSQL TLS | Optional public CA certificate in PEM form; use the provider's CA certificate when required. TLS certificate and hostname verification remain enabled. |
 | `GEMINI_API_KEY` | unset | no | Without it, deterministic fallbacks are used. |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | no | |
 | `EMBEDDING_PROVIDER` | auto | no | `local` forces offline hash embeddings. |
