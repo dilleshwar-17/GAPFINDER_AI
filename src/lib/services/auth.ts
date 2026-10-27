@@ -3,6 +3,7 @@ import { db, newId, nowIso } from "@/lib/db";
 import { hashPassword, verifyPassword, DUMMY_PASSWORD_HASH } from "@/lib/auth/password";
 import { conflict, validationError } from "@/lib/errors";
 import type { AuthUser } from "@/lib/auth/session";
+import { assertWritableAccount, isInteractiveDemoEmail } from "@/lib/services/guards";
 
 export interface UserRecord {
   id: string;
@@ -67,6 +68,7 @@ export async function createUser(input: {
     email,
     displayName: input.displayName.trim(),
     isDemo: input.isDemo ?? false,
+    isReadOnlyDemo: Boolean(input.isDemo) && !isInteractiveDemoEmail(email),
   };
 }
 
@@ -80,6 +82,7 @@ export async function authenticate(email: string, password: string): Promise<Aut
     email: record.email,
     displayName: record.display_name,
     isDemo: record.is_demo === 1,
+    isReadOnlyDemo: record.is_demo === 1 && !isInteractiveDemoEmail(record.email),
   };
 }
 
@@ -108,14 +111,13 @@ export async function updateDisplayName(
   }
   const record = await db.get<UserRecord>("SELECT id, email, display_name, is_demo FROM users WHERE id = ?", userId);
   if (!record) throw validationError("That account was not found.");
-  if (record.is_demo === 1) {
-    throw conflict("The shared demo profile cannot be changed. Create a personal account to edit a profile.");
-  }
+  await assertWritableAccount(userId, "profile changes");
   await db.run("UPDATE users SET display_name = ? WHERE id = ?", name, userId);
   return {
     id: record.id,
     email: record.email,
     displayName: name,
-    isDemo: false,
+    isDemo: record.is_demo === 1,
+    isReadOnlyDemo: false,
   };
 }

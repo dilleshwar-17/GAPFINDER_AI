@@ -115,7 +115,7 @@ export default async function MaterialsPage({
                     documentId={document.id}
                     subjectId={document.subjectId}
                     status={document.status}
-                    isDemo={user.isDemo}
+                    isDemo={user.isReadOnlyDemo}
                   />
                 </div>
               </div>

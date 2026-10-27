@@ -14,7 +14,7 @@ import {
   type PlannerTopic,
 } from "@/lib/domain/planner";
 import type { TopicClassification } from "@/lib/domain/types";
-import { assertWritableAccount, isDemoUser } from "@/lib/services/guards";
+import { assertWritableAccount, isSharedDemoUser } from "@/lib/services/guards";
 
 export const planRequestSchema = z.object({
   examDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Use the date format YYYY-MM-DD."),
@@ -379,7 +379,7 @@ export async function refreshActivePlanAfterAssessment(
       sessionMinutes: previous.session_minutes,
     },
     trigger: "new_assessment",
-    allowDemo: await isDemoUser(ownerId),
+    allowDemo: await isSharedDemoUser(ownerId),
   });
   return view.version > previous.version;
 }

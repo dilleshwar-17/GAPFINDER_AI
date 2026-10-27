@@ -60,7 +60,7 @@ export default async function SettingsPage() {
     },
     {
       label: "Demo access",
-      value: demoEnabled ? "Enabled · shared read-only workspace" : "Disabled",
+      value: demoEnabled ? "Enabled · isolated temporary workspace" : "Disabled",
       icon: <Info size={14} aria-hidden />,
     },
   ];
@@ -71,53 +71,41 @@ export default async function SettingsPage() {
         eyebrow="Account"
         title="Settings"
         description="Profile, security and the study defaults used by the plan builder. Configuration values below describe this running instance and never expose secrets."
-        actions={<LogoutButton />}
+        actions={<LogoutButton isDemo={user.isDemo} />}
       />
 
-      {user.isDemo ? (
+      {user.isReadOnlyDemo ? (
         <div className="mb-5">
           <Callout tone="gold" title="Shared demo workspace">
             This account is shared and read-only. Profile, password and preference changes are blocked.
-            Practice diagnostics are still scored and saved, but they do not change the seeded mastery
-            history or plan.
+          </Callout>
+        </div>
+      ) : null}
+      {user.isDemo && !user.isReadOnlyDemo ? (
+        <div className="mb-5">
+          <Callout tone="gold" title="Temporary interactive demo">
+            You can change settings and use the full learning workflow. Demo data is isolated to this
+            session and is removed when you end the demo.
           </Callout>
         </div>
       ) : null}
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
         <div className="space-y-5">
-          <ProfileForm defaultName={user.displayName} email={user.email} isDemo={user.isDemo} />
+          <ProfileForm
+            defaultName={user.displayName}
+            email={user.isDemo && !user.isReadOnlyDemo ? "Temporary demo session" : user.email}
+            isDemo={user.isReadOnlyDemo}
+          />
           <PasswordForm isDemo={user.isDemo} />
           <PreferencesForm
             defaultMinutes={preferences.minutesPerDay}
             defaultSession={preferences.sessionMinutes}
-            isDemo={user.isDemo}
+            isDemo={user.isReadOnlyDemo}
           />
         </div>
 
         <div className="space-y-4">
-          <section className="card p-5">
-            <SectionHeading
-              title="This instance"
-              description="Runtime configuration, resolved from server environment variables."
-            />
-            <dl className="space-y-3">
-              {rows.map((row) => (
-                <div key={row.label} className="flex gap-2.5">
-                  <span className="mt-0.5 shrink-0 text-[#7a5af8]">{row.icon}</span>
-                  <div className="min-w-0">
-                    <dt className="text-[0.63rem] font-semibold uppercase tracking-[0.08em] text-[#667085]">
-                      {row.label}
-                    </dt>
-                    <dd className="mt-0.5 break-words font-mono text-[0.69rem] leading-relaxed text-[#344054]">
-                      {row.value}
-                    </dd>
-                  </div>
-                </div>
-              ))}
-            </dl>
-          </section>
-
           <section className="card p-5">
             <div className="flex items-center gap-2">
               <ShieldCheck size={15} className="text-[#7a5af8]" aria-hidden />

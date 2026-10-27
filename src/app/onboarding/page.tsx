@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   const user = await requirePageUser();
-  if (user.isDemo) redirect("/dashboard");
+  if (user.isReadOnlyDemo) redirect("/dashboard");
   const preferences = await getPreferences(user.id);
 
   return (
@@ -22,7 +22,7 @@ export default async function OnboardingPage() {
           <Brand />
           <div className="flex items-center gap-3 text-[0.78rem] text-[#475467]">
             <span className="hidden sm:inline">{user.displayName}</span>
-            <LogoutButton compact />
+            <LogoutButton compact isDemo={user.isDemo} />
           </div>
         </div>
       </header>
@@ -68,8 +68,8 @@ export default async function OnboardingPage() {
             <section className="card p-5">
               <p className="eyebrow mb-2">Not sure yet?</p>
               <p className="text-[0.8rem] leading-relaxed text-[#475467]">
-                Explore the seeded demo instead. It is a shared, read-only sample workspace with a
-                complete Biology loop already in place.
+                Explore the interactive demo instead. It includes three sample subjects, each with
+                five original study materials, and is cleared when you end the session.
               </p>
               <Link href="/demo-access" className="btn btn-secondary btn-sm mt-3">
                 About the demo

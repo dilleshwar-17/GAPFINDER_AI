@@ -63,7 +63,7 @@ export default async function ResultsPage({
     view.score === null || view.totalMarks === 0
       ? null
       : Math.round((view.score / view.totalMarks) * 100);
-  const practiceOnly = user.isDemo && !view.isSeededDemo;
+  const practiceOnly = user.isReadOnlyDemo && !view.isSeededDemo;
 
   if (!view.submittedAt) notFound();
 

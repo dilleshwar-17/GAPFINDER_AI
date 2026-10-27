@@ -312,11 +312,14 @@ export function Breadcrumbs({
   );
 }
 
-export function DemoBanner() {
+export function DemoBanner({ readOnly }: { readOnly: boolean }) {
   return (
     <div className="no-print mb-5 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#fedf89] bg-[#fffaeb] px-4 py-2.5 text-[0.78rem] text-[#b54708]">
       <p>
-        <strong className="font-semibold">DEMO WORKSPACE</strong> — You are exploring seeded sample learning data.
+        <strong className="font-semibold">DEMO WORKSPACE</strong> —{" "}
+        {readOnly
+          ? "This shared sample account is read-only."
+          : "This session is private and interactive. Ending the demo deletes its data; closing this tab requests cleanup, and abandoned sessions expire automatically."}{" "}
         Sample results are not a real student&apos;s outcomes.
       </p>
       <Link href="/demo-access" className="font-semibold underline decoration-[#f79009] underline-offset-2">

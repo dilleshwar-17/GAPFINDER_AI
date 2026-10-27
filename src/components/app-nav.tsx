@@ -83,9 +83,11 @@ export function SidebarNav() {
 export function MobileNav({
   displayName,
   isDemo,
+  isReadOnlyDemo,
 }: {
   displayName: string;
   isDemo: boolean;
+  isReadOnlyDemo: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -116,7 +118,7 @@ export function MobileNav({
         >
           <p className="mb-2 text-[0.72rem] text-[#98a2b3]">
             {displayName}
-            {isDemo ? " · shared demo" : ""}
+            {isDemo ? (isReadOnlyDemo ? " · shared demo" : " · interactive demo") : ""}
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
             {sections.map((section) => (

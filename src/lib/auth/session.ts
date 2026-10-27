@@ -8,6 +8,7 @@ import { unauthenticated } from "@/lib/errors";
 import { SESSION_COOKIE } from "@/lib/auth/constants";
 import { DUMMY_PASSWORD_HASH } from "@/lib/auth/password";
 import { createClient, isSupabaseAuthConfigured } from "@/lib/supabase/server";
+import { isInteractiveDemoEmail } from "@/lib/services/guards";
 
 export { SESSION_COOKIE };
 
@@ -16,6 +17,7 @@ export interface AuthUser {
   email: string;
   displayName: string;
   isDemo: boolean;
+  isReadOnlyDemo: boolean;
 }
 
 interface UserRow {
@@ -30,9 +32,12 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export async function createSession(userId: string): Promise<{ token: string; expiresAt: string }> {
+export async function createSession(
+  userId: string,
+  ttlSeconds = sessionTtlDays() * 24 * 60 * 60,
+): Promise<{ token: string; expiresAt: string }> {
   const token = randomBytes(32).toString("base64url");
-  const expires = new Date(Date.now() + sessionTtlDays() * 24 * 60 * 60 * 1000);
+  const expires = new Date(Date.now() + ttlSeconds * 1000);
   await db.run(
     "INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?)",
     newId(),
@@ -47,7 +52,7 @@ export async function createSession(userId: string): Promise<{ token: string; ex
 export async function findUserForSession(token: string): Promise<AuthUser | null> {
   if (!token) return null;
   const row = await db.get<UserRow>(
-    `SELECT u.id, u.email, u.display_name, u.is_demo
+    `SELECT u.id, u.email, u.display_name, u.is_demo, u.auth_user_id
        FROM sessions s
        JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = ? AND s.expires_at > ?`,
@@ -55,7 +60,14 @@ export async function findUserForSession(token: string): Promise<AuthUser | null
     nowIso(),
   );
   if (!row) return null;
-  return { id: row.id, email: row.email, displayName: row.display_name, isDemo: row.is_demo === 1 };
+  const isDemo = row.is_demo === 1;
+  return {
+    id: row.id,
+    email: row.email,
+    displayName: row.display_name,
+    isDemo,
+    isReadOnlyDemo: isDemo && !isInteractiveDemoEmail(row.email),
+  };
 }
 
 export async function syncSupabaseUser(user: {
@@ -109,7 +121,13 @@ export async function syncSupabaseUser(user: {
       isDemo ? 1 : 0,
       existing.id,
     );
-    return { id: existing.id, email, displayName, isDemo };
+    return {
+      id: existing.id,
+      email,
+      displayName,
+      isDemo,
+      isReadOnlyDemo: isDemo,
+    };
   }
 
   await db.run(
@@ -123,7 +141,7 @@ export async function syncSupabaseUser(user: {
     user.id,
     nowIso(),
   );
-  return { id: user.id, email, displayName, isDemo };
+  return { id: user.id, email, displayName, isDemo, isReadOnlyDemo: isDemo };
 }
 
 /**
@@ -132,6 +150,18 @@ export async function syncSupabaseUser(user: {
  * query per navigation (and stays a no-op outside a render).
  */
 export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
+  const store = await cookies();
+  const token = store.get(SESSION_COOKIE)?.value;
+  if (token) {
+    const sessionUser = await findUserForSession(token);
+    if (
+      sessionUser &&
+      (!isSupabaseAuthConfigured() || (sessionUser.isDemo && !sessionUser.isReadOnlyDemo))
+    ) {
+      return sessionUser;
+    }
+  }
+
   if (isSupabaseAuthConfigured()) {
     const supabase = await createClient();
     const {
@@ -142,10 +172,7 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
     return user ? syncSupabaseUser(user) : null;
   }
 
-  const store = await cookies();
-  const token = store.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  return findUserForSession(token);
+  return null;
 });
 
 export async function requireUser(): Promise<AuthUser> {
@@ -158,13 +185,13 @@ export async function deleteSessionToken(token: string): Promise<void> {
   await db.run("DELETE FROM sessions WHERE token_hash = ?", hashToken(token));
 }
 
-export function sessionCookieOptions(secure: boolean) {
+export function sessionCookieOptions(secure: boolean, maxAgeSeconds: number | null = sessionTtlDays() * 24 * 60 * 60) {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
     secure,
     path: "/",
-    maxAge: sessionTtlDays() * 24 * 60 * 60,
+    ...(maxAgeSeconds === null ? {} : { maxAge: maxAgeSeconds }),
   };
 }
 
@@ -182,8 +209,13 @@ export function attachSessionCookie(
   response: NextResponse,
   request: Request,
   token: string,
+  maxAgeSeconds?: number | null,
 ): void {
-  response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(requestIsSecure(request)));
+  response.cookies.set(
+    SESSION_COOKIE,
+    token,
+    sessionCookieOptions(requestIsSecure(request), maxAgeSeconds),
+  );
 }
 
 export function clearSessionCookie(response: NextResponse): void {

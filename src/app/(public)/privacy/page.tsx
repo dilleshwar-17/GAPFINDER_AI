@@ -82,12 +82,14 @@ export default function PrivacyPage() {
           deleted while it has no answered questions.
         </p>
 
-        <h2>The shared demo</h2>
+        <h2>Temporary demo sessions</h2>
         <p>
-          The demo is a single shared account. Anything you type into practice answers, BUDDY
-          questions or profile-adjacent fields may be visible to another reviewer using the same
-          workspace. Do not enter personal, sensitive or confidential information into the demo. Shared
-          reference data is protected by server-side write guards, but practice submissions are shared.
+          Each demo visit uses a unique account and workspace; another visitor cannot read its
+          application data. Ending a demo deletes its workspace, and a session expires after four
+          hours. Closing a tab sends a best-effort cleanup request, so abrupt browser termination
+          may delay deletion until expiry and a later cleanup. Database backups and provider or
+          infrastructure retention are outside application-level deletion. Do not enter sensitive
+          or confidential information into a demo.
         </p>
 
         <h2>Your choices</h2>

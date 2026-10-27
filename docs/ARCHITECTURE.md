@@ -38,8 +38,8 @@ Three route groups:
 - `(public)` — landing, auth, legal and demo-access pages with a marketing
   chrome. Signed-in visitors are redirected away from auth pages.
 - `(app)` — the authenticated workspace. `layout.tsx` calls
-  `requirePageUser()`, renders the sidebar/mobile navigation and the shared-demo
-  banner.
+  `requirePageUser()`, renders the sidebar/mobile navigation and the demo
+  session banner.
 - `onboarding` — a focused first-run wizard outside the main shell.
 
 `src/proxy.ts` refreshes and validates Supabase Auth sessions when configured,
@@ -79,7 +79,8 @@ Services own business transactions and authorization:
 - `assistant.ts` — retrieval-augmented explanations.
 - `progress.ts`, `preferences.ts` — aggregate views and settings.
 - `demo.ts` — idempotent demo provisioning and seeding.
-- `guards.ts` — `assertWritableAccount`, which blocks shared-demo writes.
+- `guards.ts` — separates legacy shared-demo write guards from temporary
+  interactive-demo account recognition.
 
 Almost every read takes `ownerId` and filters on it in SQL. Cross-user access
 therefore fails as **not found** rather than forbidden, which avoids confirming
@@ -180,8 +181,8 @@ without asking the learner to re-upload.
    feedback are returned only after the attempt is submitted.
 5. `submitAttempt` validates completeness, scores every answer deterministically,
    stores `answers`, marks the attempt `submitted`, refreshes mastery snapshots,
-   and refreshes the active plan. For the shared demo account both mastery and
-   plan mutation are skipped unless the seeding path passes `allowDemo`.
+   and refreshes the active plan. Temporary demo accounts use this same
+   workflow; their results are isolated and deleted with the session workspace.
 
 ### Plan refresh
 
@@ -222,7 +223,7 @@ tasks) as history. The declared time budget and exam date are reused.
 | Authorization | `owner_id` filters in SQL; not-found responses for foreign IDs |
 | Upload | extension/MIME allow-list, size cap, NUL-byte and UTF-8 checks |
 | Prompt injection | retrieved text is untrusted data; JSON output validated against a schema; citations re-checked |
-| Demo | shared account flagged `is_demo`; writes blocked in services via `assertWritableAccount`; preferences and profile return `409`, resource writes `403` |
+| Demo | unique temporary account per launch; owner-scoped operations; application data is deleted on exit or expiry; legacy shared-demo accounts remain read-only |
 | Rate limits | in-memory fixed windows for login, registration and demo entry |
 
 Details and threat notes are in [`SECURITY_AND_PRIVACY.md`](SECURITY_AND_PRIVACY.md).

@@ -148,7 +148,7 @@ export default async function RevisionPlanPage({
                           }
                         />
                         <div id="tasks-heading">
-                          <TaskChecklist tasks={plan.tasks} isDemo={user.isDemo} />
+                          <TaskChecklist tasks={plan.tasks} isDemo={user.isReadOnlyDemo} />
                         </div>
                       </section>
 
@@ -208,7 +208,7 @@ export default async function RevisionPlanPage({
                         defaultExamDate={plan.examDate}
                         defaultMinutes={plan.minutesPerDay}
                         defaultSession={plan.sessionMinutes}
-                        isDemo={user.isDemo}
+                        isDemo={user.isReadOnlyDemo}
                         hasActivePlan
                         assessableTopics={leafTopics.length}
                       />
@@ -335,7 +335,7 @@ export default async function RevisionPlanPage({
                     }
                     defaultMinutes={preferences.minutesPerDay}
                     defaultSession={preferences.sessionMinutes}
-                    isDemo={user.isDemo}
+                    isDemo={user.isReadOnlyDemo}
                     hasActivePlan={false}
                     assessableTopics={leafTopics.length}
                   />

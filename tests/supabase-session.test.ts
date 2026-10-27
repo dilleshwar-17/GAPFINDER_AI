@@ -5,6 +5,15 @@ const supabaseMocks = vi.hoisted(() => ({
   configured: vi.fn(),
   getUser: vi.fn(),
 }));
+const cookieMocks = vi.hoisted(() => ({
+  sessionToken: null as string | null,
+}));
+
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(async () => ({
+    get: () => (cookieMocks.sessionToken ? { value: cookieMocks.sessionToken } : undefined),
+  })),
+}));
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: vi.fn(() => ({
@@ -21,6 +30,8 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import { proxy } from "@/proxy";
 import { getCurrentUser } from "@/lib/auth/session";
+import { createSession } from "@/lib/auth/session";
+import { createUser } from "@/lib/services/auth";
 
 const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const originalSupabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -37,6 +48,7 @@ afterEach(() => {
   setEnvironmentValue("NEXT_PUBLIC_SUPABASE_ANON_KEY", originalSupabaseAnonKey);
   supabaseMocks.configured.mockReset();
   supabaseMocks.getUser.mockReset();
+  cookieMocks.sessionToken = null;
 });
 
 describe("Supabase session handling", () => {
@@ -70,6 +82,31 @@ describe("Supabase session handling", () => {
     });
 
     await expect(getCurrentUser()).resolves.toBeNull();
+  });
+
+  it("uses a valid app demo session before the Supabase identity", async () => {
+    supabaseMocks.configured.mockReturnValue(true);
+    const user = await createUser({
+      displayName: "Temporary demo",
+      email: "demo-session-44444444-4444-4444-8444-444444444444@demo.gapfinder.local",
+      password: "temporary-password",
+      isDemo: true,
+    });
+    const session = await createSession(user.id);
+    cookieMocks.sessionToken = session.token;
+    supabaseMocks.getUser.mockResolvedValue({
+      data: { user: null },
+      error: Object.assign(new Error("Auth session missing"), {
+        name: "AuthSessionMissingError",
+      }),
+    });
+
+    await expect(getCurrentUser()).resolves.toMatchObject({
+      id: user.id,
+      isDemo: true,
+      isReadOnlyDemo: false,
+    });
+    expect(supabaseMocks.getUser).not.toHaveBeenCalled();
   });
 
   it("still surfaces Supabase errors other than a missing session", async () => {

@@ -1,20 +1,12 @@
 import { randomBytes } from "node:crypto";
-import { db, newId, nowIso } from "@/lib/db";
+import { db, newId, nowIso, transaction } from "@/lib/db";
 import type { AuthUser } from "@/lib/auth/session";
 import { conflict } from "@/lib/errors";
-import { daysUntil } from "@/lib/domain/planner";
 import { isDemoEnabled } from "@/lib/env";
-import { createUser, findUserByEmail } from "@/lib/services/auth";
-import {
-  createSubject,
-  getSubjectOwned,
-  updateSubjectExamDate,
-} from "@/lib/services/subjects";
-import {
-  ingestDocument,
-  listDocuments,
-  retryDocument,
-} from "@/lib/services/documents";
+import { createSession } from "@/lib/auth/session";
+import { createUser } from "@/lib/services/auth";
+import { createSubject } from "@/lib/services/subjects";
+import { ingestDocument, listDocuments, retryDocument } from "@/lib/services/documents";
 import { extractTopics, listLeafTopics } from "@/lib/services/topics";
 import { getQuestionOwned, type QuestionRow } from "@/lib/services/questions";
 import {
@@ -24,9 +16,11 @@ import {
   submitAttempt,
 } from "@/lib/services/assessment";
 import { createRevisionPlan, getActivePlan } from "@/lib/services/plans";
+import { isInteractiveDemoEmail } from "@/lib/services/guards";
 
 export const DEMO_SUBJECT_NAME = "Biology: Cells and Energy";
 export const DEMO_DISPLAY_NAME = "Demo Learner";
+export const DEMO_SESSION_TTL_SECONDS = 4 * 60 * 60;
 
 export function demoEmail(): string {
   return process.env.DEMO_EMAIL?.trim().toLowerCase() || "demo@gapfinder.local";
@@ -38,53 +32,201 @@ function futureDate(days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-const SYLLABUS = `UNIT 1: Cell Structure and Function
+interface DemoDocumentSeed {
+  filename: string;
+  kind: "syllabus" | "notes" | "past_paper" | "other";
+  content: string;
+}
 
+interface DemoSubjectSeed {
+  name: string;
+  description: string;
+  documents: DemoDocumentSeed[];
+}
+
+const DEMO_SUBJECTS: DemoSubjectSeed[] = [
+  {
+    name: DEMO_SUBJECT_NAME,
+    description: "Original sample content covering cell structure, photosynthesis and energy transfer.",
+    documents: [
+      {
+        filename: "biology-syllabus.txt",
+        kind: "syllabus",
+        content: `UNIT 1: Cell Structure and Function
 1.1 Cell membrane
-The cell membrane controls which substances enter and leave the cell and therefore defines the boundary of the cell.
-
 1.2 Organelles
-Organelles are specialised structures inside a cell that carry out particular functions.
-
 UNIT 2: Energy Transfer
-
 2.1 Photosynthesis
-Photosynthesis captures light energy and stores it in glucose.
-
 2.2 Cellular respiration
-Cellular respiration releases usable energy from glucose in the form of ATP.
-`;
 
-const NOTES = `CELL MEMBRANE
-
-The cell membrane is a selectively permeable barrier that controls which substances enter and leave the cell. It consists of a phospholipid bilayer with proteins embedded in it. The fluid mosaic model describes the membrane as a flexible structure in which proteins and lipids move within the bilayer. Small nonpolar molecules can diffuse directly across the membrane, while charged ions require channel proteins. Osmosis is the movement of water across a selectively permeable membrane from a region of low solute concentration to a region of high solute concentration.
+Course outcomes: Explain how cell structures support their functions, compare ways substances cross the cell membrane, and describe how photosynthesis and cellular respiration transfer energy. Use evidence from observations and diagrams to connect each process to the needs of living cells.`,
+      },
+      {
+        filename: "biology-notes.txt",
+        kind: "notes",
+        content: `CELL MEMBRANE
+The cell membrane is a selectively permeable barrier that controls which substances enter and leave the cell. It consists of a phospholipid bilayer with proteins embedded in it. Small nonpolar molecules diffuse across the bilayer, while charged ions use channel proteins.
 \f
-CELL ORGANELLES
-
-The mitochondrion is the organelle that carries out aerobic respiration and releases energy as ATP. The ribosome is a small structure that assembles proteins from amino acids. The nucleus is the organelle that stores genetic material and coordinates cellular activities. The Golgi apparatus is a stack of flattened membranes that modifies and packages proteins for transport. Lysosomes are membrane-bound compartments that contain digestive enzymes for breaking down waste.
+ORGANELLES
+Mitochondria carry out aerobic respiration and release energy as ATP. Ribosomes assemble proteins from amino acids. The nucleus stores genetic material and coordinates cellular activities. The Golgi apparatus modifies and packages proteins for transport.
 \f
 PHOTOSYNTHESIS
-
-Photosynthesis is the process by which green plants convert light energy into chemical energy stored in glucose. It takes place mainly in the chloroplast, where the pigment chlorophyll absorbs light energy. The light-dependent reactions occur in the thylakoid membranes and produce ATP and NADPH for the next stage. The Calvin cycle is a sequence of enzyme-controlled reactions that use ATP and NADPH to fix carbon dioxide into glucose. Oxygen is released as a by-product when water is split during the light-dependent reactions.
+Photosynthesis converts light energy into chemical energy stored in glucose. Chlorophyll in chloroplasts absorbs light. The light-dependent reactions produce ATP and NADPH, which the Calvin cycle uses to fix carbon dioxide. Oxygen is released when water is split.
 \f
 CELLULAR RESPIRATION
+Cellular respiration releases usable energy from glucose as ATP. Glycolysis breaks glucose into pyruvate in the cytoplasm. The Krebs cycle occurs in mitochondria and releases carbon dioxide. Oxidative phosphorylation uses a proton gradient to drive ATP synthesis.`,
+      },
+      {
+        filename: "biology-practice-paper.txt",
+        kind: "past_paper",
+        content: `PRACTICE PAPER: CELLS AND ENERGY
+Question 1. Explain how the phospholipid bilayer and membrane proteins control transport across a cell membrane.
+Question 2. Describe how light energy is converted into chemical energy during photosynthesis.
+Question 3. Compare glycolysis with the Krebs cycle, including where each occurs and one product.`,
+      },
+      {
+        filename: "biology-worked-examples.txt",
+        kind: "other",
+        content: `WORKED EXAMPLE: MEMBRANE TRANSPORT
+A small nonpolar molecule can diffuse through the hydrophobic centre of the phospholipid bilayer. A charged ion cannot cross that centre easily and instead moves through a channel protein.
+\f
+WORKED EXAMPLE: ENERGY TRANSFER
+During the light-dependent reactions, absorbed light energy supports production of ATP and NADPH. The Calvin cycle uses these molecules to build sugars from carbon dioxide.`,
+      },
+      {
+        filename: "biology-glossary.txt",
+        kind: "other",
+        content: `GLOSSARY: CELL BIOLOGY
+Selective permeability means allowing some substances through a membrane more readily than others.
+An organelle is a specialised structure inside a cell.
+Chlorophyll is a pigment that absorbs light energy.
+ATP is a molecule that transfers usable energy in cells.
+Glycolysis is the first stage of cellular respiration and occurs in the cytoplasm.`,
+      },
+    ],
+  },
+  {
+    name: "Algebra: Functions and Equations",
+    description: "Original sample content for linear and quadratic functions and equation solving.",
+    documents: [
+      {
+        filename: "algebra-syllabus.txt",
+        kind: "syllabus",
+        content: `UNIT 1: Functions and Graphs
+1.1 Linear functions
+1.2 Quadratic functions
+UNIT 2: Equations and Models
+2.1 Solving equations
+2.2 Systems of equations
 
-Cellular respiration is the controlled release of energy from glucose in the form of ATP. Glycolysis is the first stage of respiration and breaks one glucose molecule into two pyruvate molecules in the cytoplasm. The Krebs cycle is a sequence of reactions in the mitochondria that releases carbon dioxide and produces reduced coenzymes. Oxidative phosphorylation is the process in which an electron transport chain creates a proton gradient that drives ATP synthesis. Anaerobic respiration is the breakdown of glucose without oxygen and produces lactate in animal cells.
-`;
+Course outcomes: Interpret linear and quadratic functions from equations, tables, and graphs. Solve equations using equivalent operations, check results by substitution, and explain how a solution to a system represents a value shared by all equations.`,
+      },
+      {
+        filename: "algebra-notes.txt",
+        kind: "notes",
+        content: `LINEAR FUNCTIONS
+A linear function has the form y = mx + b, where m is the gradient and b is the vertical intercept. Equal changes in x produce proportional changes in y. Its graph is a straight line.
+\f
+QUADRATIC FUNCTIONS
+A quadratic function has the form y = ax squared + bx + c, with a not equal to zero. Its graph is a parabola. The sign of a determines whether the parabola opens upward or downward. Roots are the x-values where the graph crosses the x-axis.
+\f
+SOLVING EQUATIONS
+An equation remains equivalent when the same operation is applied to both sides. To solve 3x + 5 = 20, subtract 5 from both sides and divide by 3, giving x = 5. Check a solution by substitution.
+\f
+SYSTEMS OF EQUATIONS
+A solution to a system satisfies every equation simultaneously. Substitution replaces one variable using an equivalent expression. Elimination adds or subtracts equations to remove a variable. On a graph, the solution is an intersection point.`,
+      },
+      {
+        filename: "algebra-practice-paper.txt",
+        kind: "past_paper",
+        content: `PRACTICE PAPER: FUNCTIONS
+Question 1. Identify the gradient and vertical intercept in y = 4x - 3.
+Question 2. Explain how the coefficient of x squared affects the shape of a quadratic graph.
+Question 3. Solve 3x + 5 = 20 and verify the result.
+Question 4. Explain what an intersection point represents in a system of two linear equations.`,
+      },
+      {
+        filename: "algebra-worked-examples.txt",
+        kind: "other",
+        content: `WORKED EXAMPLE: LINEAR FUNCTION
+For y = 2x + 1, the gradient is 2 and the vertical intercept is 1. Increasing x by 1 increases y by 2.
+\f
+WORKED EXAMPLE: EQUATION
+To solve 3x + 5 = 20, subtract 5 to obtain 3x = 15, then divide by 3 to obtain x = 5. Substitution gives 3(5) + 5 = 20.`,
+      },
+      {
+        filename: "algebra-glossary.txt",
+        kind: "other",
+        content: `GLOSSARY: ALGEBRA
+Gradient measures the change in y for a unit change in x.
+A function maps each permitted input to exactly one output.
+A root is an input where a function has output zero.
+A solution satisfies an equation.
+A system is a set of equations whose solution must satisfy all of them.`,
+      },
+    ],
+  },
+  {
+    name: "Climate Science: Earth Systems",
+    description: "Original sample content about climate processes, evidence and ecosystems.",
+    documents: [
+      {
+        filename: "climate-syllabus.txt",
+        kind: "syllabus",
+        content: `UNIT 1: Climate Processes
+1.1 Earth's energy balance
+1.2 The water cycle
+UNIT 2: Climate Evidence and Impacts
+2.1 Climate evidence
+2.2 Ecosystems and biodiversity
 
-const PAST_PAPER = `PAST PAPER: CELL BIOLOGY AND ENERGY
-
-Question 1. Explain how the structure of the cell membrane relates to its function as a selective barrier. A strong answer should refer to the phospholipid bilayer and membrane proteins.
-
-Question 2. Describe the role of chlorophyll in photosynthesis. A strong answer should explain that chlorophyll absorbs light energy in the chloroplast.
-
-Question 3. Compare glycolysis with the Krebs cycle. A strong answer should mention the cytoplasm, pyruvate, the mitochondria, carbon dioxide and reduced coenzymes.
-`;
-
-const DEMO_DOCUMENTS = [
-  { filename: "demo-syllabus.txt", kind: "syllabus" as const, content: SYLLABUS },
-  { filename: "demo-notes.txt", kind: "notes" as const, content: NOTES },
-  { filename: "demo-past-paper.txt", kind: "past_paper" as const, content: PAST_PAPER },
+Course outcomes: Describe how energy and water move through Earth systems, distinguish direct observations from climate proxy evidence, and explain how changes in temperature or rainfall can affect species, habitats, and biodiversity.`,
+      },
+      {
+        filename: "climate-notes.txt",
+        kind: "notes",
+        content: `EARTH'S ENERGY BALANCE
+Earth receives shortwave energy from the Sun and emits longwave energy to space. Greenhouse gases absorb and re-emit some outgoing infrared radiation. A change in the balance between incoming and outgoing energy changes the climate system's stored heat.
+\f
+THE WATER CYCLE
+Solar energy drives evaporation from water and soil. Water vapour cools and condenses into clouds, then returns as precipitation. Runoff and infiltration move water across and through land. Temperature affects the rate of evaporation and the amount of water air can hold.
+\f
+CLIMATE EVIDENCE
+Thermometers provide direct temperature observations. Ice cores contain trapped air bubbles that preserve samples of past atmospheric composition. Tree rings can record patterns of growth. Multiple independent records help researchers compare recent conditions with earlier periods.
+\f
+ECOSYSTEMS AND BIODIVERSITY
+Species respond to changing temperature and rainfall by shifting ranges, changing seasonal timing or adapting. A rapid change can disrupt food webs and habitats. Biodiversity can support ecosystem resilience because different species may perform overlapping ecological roles.`,
+      },
+      {
+        filename: "climate-practice-paper.txt",
+        kind: "past_paper",
+        content: `PRACTICE PAPER: CLIMATE SYSTEMS
+Question 1. Explain how greenhouse gases affect the movement of energy through Earth's atmosphere.
+Question 2. Describe two stages that move water between the surface and atmosphere.
+Question 3. Compare one direct climate observation with one proxy record.
+Question 4. Explain one way a rapid climate shift can affect ecosystem biodiversity.`,
+      },
+      {
+        filename: "climate-worked-examples.txt",
+        kind: "other",
+        content: `WORKED EXAMPLE: ENERGY BALANCE
+If incoming solar energy exceeds outgoing energy for a period, the system stores additional heat. The result is a change in energy balance, not a direct measurement of a particular local weather event.
+\f
+WORKED EXAMPLE: CLIMATE EVIDENCE
+A thermometer is a direct measurement of temperature. An ice core is a proxy record: trapped air bubbles provide evidence about past atmospheric composition. Using both records gives different kinds of evidence.`,
+      },
+      {
+        filename: "climate-glossary.txt",
+        kind: "other",
+        content: `GLOSSARY: CLIMATE SCIENCE
+Shortwave radiation is the incoming solar energy reaching Earth.
+Longwave radiation is infrared energy emitted by Earth.
+Condensation is the change from water vapour to liquid water.
+A proxy record provides indirect evidence about past climate conditions.
+Biodiversity is the variety of life in an ecosystem or region.`,
+      },
+    ],
+  },
 ];
 
 function textBytes(content: string): Uint8Array {
@@ -216,33 +358,26 @@ async function seedFollowUpAttempt(
   return attemptId;
 }
 
-async function runDemoSeed(userId: string): Promise<string> {
-  const existingSubjects = await db.all<{ id: string; name: string }>(
-    "SELECT id, name FROM subjects WHERE owner_id = ? AND name = ?",
+async function seedDemoSubject(userId: string, seed: DemoSubjectSeed): Promise<string> {
+  let subject = await db.get<{ id: string }>(
+    "SELECT id FROM subjects WHERE owner_id = ? AND name = ?",
     userId,
-    DEMO_SUBJECT_NAME,
+    seed.name,
   );
-  let subjectId = existingSubjects[0]?.id;
-  if (!subjectId) {
-    const subject = await createSubject({
+  if (!subject) {
+    subject = await createSubject({
       ownerId: userId,
-      name: DEMO_SUBJECT_NAME,
-      description:
-        "Seeded demonstration subject: a short biology syllabus, original notes, and a past paper used to demonstrate the diagnostic loop.",
+      name: seed.name,
+      description: seed.description,
       examDate: futureDate(21),
       isDemo: true,
       allowDemo: true,
     });
-    subjectId = subject.id;
   }
-
-  const subject = await getSubjectOwned(userId, subjectId);
-  if (!subject.exam_date || daysUntil(subject.exam_date) < 1) {
-    await updateSubjectExamDate(userId, subjectId, futureDate(21), { allowDemo: true });
-  }
+  const subjectId = subject.id;
 
   const existingDocs = await listDocuments(userId, subjectId);
-  for (const definition of DEMO_DOCUMENTS) {
+  for (const definition of seed.documents) {
     const match = existingDocs.find((document) => document.filename === definition.filename);
     if (!match) {
       await ingestDocument({
@@ -254,9 +389,7 @@ async function runDemoSeed(userId: string): Promise<string> {
         bytes: textBytes(definition.content),
         allowDemo: true,
       });
-      continue;
-    }
-    if (match.status === "failed") {
+    } else if (match.status === "failed") {
       await retryDocument(userId, match.id, { allowDemo: true });
     }
   }
@@ -264,63 +397,45 @@ async function runDemoSeed(userId: string): Promise<string> {
   if ((await listLeafTopics(userId, subjectId)).length === 0) {
     await extractTopics(userId, subjectId, { allowDemo: true });
   }
-
   const leaves = await listLeafTopics(userId, subjectId);
   if (leaves.length === 0) {
-    throw conflict(
-      "The demo subject exists but its topic map could not be created. Reset the demo database and retry.",
-    );
+    throw conflict(`The sample topic map for "${seed.name}" could not be created.`);
   }
 
   const attempts = await listAttempts(userId, subjectId);
-  const submitted = attempts.filter((attempt) => attempt.status === "submitted");
-  const baseline = submitted.find((attempt) => attempt.generator === "demo-seed");
-  let baselineId = baseline?.id ?? null;
+  let baselineId = attempts.find(
+    (attempt) => attempt.status === "submitted" && attempt.generator === "demo-seed",
+  )?.id;
 
   if (!baselineId) {
-    const inProgress = attempts.find(
+    const existing = attempts.find(
       (attempt) => attempt.status === "in_progress" && attempt.generator === "demo-seed",
     );
-    let attemptId = inProgress?.id;
+    let attemptId = existing?.id;
     if (!attemptId) {
-      const preferredNames = ["cell membrane", "photosynthesis", "cellular respiration"];
-      const selected = preferredNames
+      const preferred = seed.name === DEMO_SUBJECT_NAME
+        ? ["cell membrane", "photosynthesis", "cellular respiration"]
+        : [];
+      const selected = preferred
         .map((name) => leaves.find((topic) => topic.name.toLowerCase().includes(name)))
         .filter((topic): topic is (typeof leaves)[number] => Boolean(topic));
       const topicIds = (selected.length > 0 ? selected : leaves.slice(0, 3)).map(
         (topic) => topic.id,
       );
-      const result = await startDiagnostic(userId, subjectId, topicIds);
-      attemptId = result.attemptId;
+      attemptId = (await startDiagnostic(userId, subjectId, topicIds)).attemptId;
     }
-
     await db.run(
       "UPDATE quiz_attempts SET generator = 'demo-seed' WHERE id = ? AND owner_id = ?",
       attemptId,
       userId,
     );
-    try {
-      await submitDemoAttempt(userId, subjectId, attemptId, "baseline");
-    } catch (error) {
-      const stillSubmitted = await db.get<{ status: string }>(
-        "SELECT status FROM quiz_attempts WHERE id = ? AND owner_id = ?",
-        attemptId,
-        userId,
-      );
-      if (stillSubmitted?.status !== "submitted") throw error;
-    }
+    await submitDemoAttempt(userId, subjectId, attemptId, "baseline");
     baselineId = attemptId;
   }
 
-  if (baselineId) {
+  if (seed.name === DEMO_SUBJECT_NAME && baselineId) {
     const followUpId = await seedFollowUpAttempt(userId, subjectId, baselineId);
-    if (followUpId) {
-      try {
-        await submitDemoAttempt(userId, subjectId, followUpId, "followup");
-      } catch {
-        // A partially seeded follow-up is harmless; the baseline remains valid.
-      }
-    }
+    if (followUpId) await submitDemoAttempt(userId, subjectId, followUpId, "followup");
   }
 
   if (!(await getActivePlan(userId, subjectId))) {
@@ -340,55 +455,72 @@ async function runDemoSeed(userId: string): Promise<string> {
   return subjectId;
 }
 
-let seedInFlight: Promise<string> | null = null;
+const seedInFlight = new Map<string, Promise<string[]>>();
 
-export async function ensureDemoWorkspace(userId: string): Promise<string> {
-  if (!seedInFlight) {
-    seedInFlight = runDemoSeed(userId).finally(() => {
-      seedInFlight = null;
-    });
-  }
-  return seedInFlight;
+export async function ensureDemoWorkspace(userId: string): Promise<string[]> {
+  const current = seedInFlight.get(userId);
+  if (current) return current;
+  const pending = (async () => {
+    const subjectIds: string[] = [];
+    for (const seed of DEMO_SUBJECTS) {
+      subjectIds.push(await seedDemoSubject(userId, seed));
+    }
+    return subjectIds;
+  })().finally(() => seedInFlight.delete(userId));
+  seedInFlight.set(userId, pending);
+  return pending;
 }
 
-/**
- * Provisions (or reuses) the dedicated demo account and seeds its workspace.
- * The account has no published password: the demo route authenticates it with a
- * server-issued session after a rate-limited request. A random password is
- * stored so the account cannot be entered through the regular password form.
- */
-export async function ensureDemoAccount(): Promise<AuthUser> {
+export async function pruneExpiredDemoWorkspaces(): Promise<void> {
+  const olderThan = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const now = nowIso();
+  await db.run(
+    `DELETE FROM users
+      WHERE is_demo = 1
+        AND email LIKE 'demo-session-%@demo.gapfinder.local'
+        AND created_at < ?
+        AND NOT EXISTS (
+          SELECT 1 FROM sessions s
+           WHERE s.user_id = users.id AND s.expires_at > ?
+        )`,
+    olderThan,
+    now,
+  );
+}
+
+export async function deleteInteractiveDemoWorkspace(userId: string): Promise<void> {
+  const user = await db.get<{ is_demo: number; email: string }>(
+    "SELECT is_demo, email FROM users WHERE id = ?",
+    userId,
+  );
+  if (!user || user.is_demo !== 1 || !isInteractiveDemoEmail(user.email)) return;
+  await transaction(async () => {
+    await db.run("DELETE FROM users WHERE id = ? AND is_demo = 1", userId);
+  });
+}
+
+export async function createInteractiveDemoSession(): Promise<{
+  user: AuthUser;
+  session: { token: string; expiresAt: string };
+}> {
   if (!isDemoEnabled()) {
     throw conflict("The demo workspace is disabled for this deployment.");
   }
-  const email = demoEmail();
-  let record = await findUserByEmail(email);
-
-  if (record && record.is_demo !== 1) {
-    throw conflict(
-      "The configured demo email is already used by a non-demo account. Set DEMO_EMAIL to a different address.",
-    );
-  }
-
-  if (!record) {
-    await createUser({
-      displayName: DEMO_DISPLAY_NAME,
-      email,
-      password: randomBytes(32).toString("base64url"),
-      isDemo: true,
-    });
-    record = await findUserByEmail(email);
-  }
-  if (!record) throw conflict("The demo account could not be created.");
-
-  await ensureDemoWorkspace(record.id);
-
-  return {
-    id: record.id,
-    email: record.email,
-    displayName: record.display_name,
+  await pruneExpiredDemoWorkspaces();
+  const user = await createUser({
+    displayName: DEMO_DISPLAY_NAME,
+    email: `demo-session-${newId()}@demo.gapfinder.local`,
+    password: randomBytes(32).toString("base64url"),
     isDemo: true,
-  };
+  });
+  try {
+    await ensureDemoWorkspace(user.id);
+    const session = await createSession(user.id, DEMO_SESSION_TTL_SECONDS);
+    return { user, session };
+  } catch (error) {
+    await deleteInteractiveDemoWorkspace(user.id);
+    throw error;
+  }
 }
 
 export function demoStatus() {
@@ -396,5 +528,7 @@ export function demoStatus() {
     email: demoEmail(),
     enabled: isDemoEnabled(),
     subjectName: DEMO_SUBJECT_NAME,
+    subjectCount: DEMO_SUBJECTS.length,
+    materialsPerSubject: DEMO_SUBJECTS[0]?.documents.length ?? 0,
   };
 }

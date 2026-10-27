@@ -21,7 +21,7 @@ import {
 import { resolveQuestionSources } from "@/lib/domain/citations";
 import { refreshMasteryForAttempt } from "@/lib/services/gaps";
 import { refreshActivePlanAfterAssessment } from "@/lib/services/plans";
-import { isDemoUser } from "@/lib/services/guards";
+import { isSharedDemoUser } from "@/lib/services/guards";
 import {
   attemptSubmissionSchema,
   quizRequestSchema,
@@ -695,14 +695,12 @@ export async function submitAttempt(
     attemptId,
     ownerId,
   );
-  // Demo assessments are interactive practice only. They are scored and stored,
-  // but they must not rewrite the shared seeded mastery history or revision plan
-  // that every visitor sees. The seed routine opts back in with allowDemo.
-  if (!(await isDemoUser(ownerId)) || options.allowDemo) {
+  // Shared demo results remain isolated from its reference workspace.
+  if (!(await isSharedDemoUser(ownerId)) || options.allowDemo) {
     await refreshMasteryForAttempt(ownerId, attempt.subject_id, attemptId);
   }
   let planUpdated = false;
-  if (!(await isDemoUser(ownerId)) || options.allowDemo) {
+  if (!(await isSharedDemoUser(ownerId)) || options.allowDemo) {
     try {
       planUpdated = await refreshActivePlanAfterAssessment(ownerId, attempt.subject_id);
     } catch (error) {

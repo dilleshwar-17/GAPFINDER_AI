@@ -39,7 +39,7 @@ export default async function UploadMaterialPage({
             documentCount: subject.readyDocuments,
           }))}
           initialSubjectId={selected}
-          isDemo={user.isDemo}
+          isDemo={user.isReadOnlyDemo}
           maxUploadMb={Math.round(maxUploadBytes() / (1024 * 1024))}
         />
 

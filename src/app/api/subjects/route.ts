@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       name: payload.name,
       description: payload.description,
       examDate: payload.examDate,
+      isDemo: false,
     });
     return jsonOk({ subject }, 201);
   });

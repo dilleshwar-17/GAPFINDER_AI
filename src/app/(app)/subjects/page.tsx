@@ -24,7 +24,7 @@ export default async function SubjectsPage({
         description="A subject contains its own sources, topic map, assessment evidence and revision history. Mastery never moves between subjects."
       />
       <SubjectManager
-        isDemo={user.isDemo}
+        isDemo={user.isReadOnlyDemo}
         initialCreate={params.intent === "create"}
         subjects={subjects.map((subject) => ({
           id: subject.id,

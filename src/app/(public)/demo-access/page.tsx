@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, Eye, Lock, RefreshCcw, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Eye } from "lucide-react";
 import { demoStatus } from "@/lib/services/demo";
 import { runtimeMode } from "@/lib/env";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -20,11 +20,10 @@ export default async function DemoAccessPage() {
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <div className="max-w-3xl">
         <p className="eyebrow">Judge and reviewer access</p>
-        <h1 className="display-lg mt-3 text-[#171f2e]">A coherent workspace, without a published password.</h1>
+        <h1 className="display-lg mt-3 text-[#171f2e]">A complete workspace, private to your demo session.</h1>
         <p className="mt-4 text-[0.94rem] leading-relaxed text-[#475467]">
-          The demo is a dedicated, seeded account. The button below asks the server to provision or
-          reuse that account and to issue a normal HTTP-only session cookie. No demo credential is
-          printed here, in the repository, or in the interface.
+          Each visit gets a fresh, isolated workspace with sample content. You can try the full
+          learning flow; ending the demo deletes its application data. No demo credential is shown.
         </p>
       </div>
 
@@ -35,7 +34,7 @@ export default async function DemoAccessPage() {
               <h2 className="text-[1.1rem]">Enter the demo workspace</h2>
               <p className="mt-1 text-[0.82rem] text-[#475467]">
                 {status.enabled
-                  ? "The shared sample workspace is enabled on this deployment."
+                  ? "A private interactive workspace is enabled on this deployment."
                   : "The demo workspace is disabled on this deployment."}
               </p>
             </div>
@@ -47,11 +46,11 @@ export default async function DemoAccessPage() {
           <div className="mt-5 grid gap-2 text-[0.8rem] text-[#475467]">
             <p className="flex items-start gap-2">
               <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#7a5af8]" aria-hidden />
-              Three indexed Biology sources: syllabus, notes and a past paper.
+              Three sample subjects, each with five indexed study materials.
             </p>
             <p className="flex items-start gap-2">
               <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#7a5af8]" aria-hidden />
-              A topic map, baseline and follow-up attempts, mastery history and an active plan.
+              Topic maps, diagnostics, mastery history and a revision plan for each subject.
             </p>
             <p className="flex items-start gap-2">
               <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#7a5af8]" aria-hidden />
@@ -79,10 +78,10 @@ export default async function DemoAccessPage() {
           </div>
 
           {user?.isDemo ? (
-            <Callout tone="gold" title="You are signed in to the shared demo">
-              You can take practice diagnostics and use BUDDY. Uploads, subject edits, topic
-              extraction, plan generation and preference changes are blocked server-side so the
-              workspace stays intact for the next reviewer.
+          <Callout tone="gold" title={user.isReadOnlyDemo ? "Shared read-only demo" : "Private interactive demo"}>
+            {user.isReadOnlyDemo
+              ? "This legacy shared demo account is read-only. Start a new demo session to try the full interactive workspace."
+              : "This session is isolated from other visitors. Changes are temporary and will be removed when you end the demo or when the session expires."}
             </Callout>
           ) : null}
 
@@ -96,8 +95,8 @@ export default async function DemoAccessPage() {
               {status.subjectName}
             </p>
             <p className="mt-2 text-[0.75rem] leading-relaxed text-[#98a2b3]">
-              The seed is idempotent. Re-entering the demo does not duplicate subjects, attempts or
-              plans.
+              Each new session gets its own three subjects and five indexed materials per subject.
+              Start fresh any time; ending this session removes its workspace data.
             </p>
           </section>
         </div>

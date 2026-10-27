@@ -113,9 +113,9 @@ const faqs = [
       "The app still runs. It uses deterministic, source-grounded question generation and a labelled extractive answer fallback. Embeddings fall back to a local non-neural hash method, so retrieval is weaker but remains inspectable.",
   },
   {
-    question: "Does the shared demo change its data?",
+    question: "Can I change data in the demo?",
     answer:
-      "No. The demo is a read-only sample workspace. Practice diagnostics are scored for you, but they do not write mastery history or version the seeded plan. Uploads and workspace edits are blocked on the server.",
+      "Yes. Each demo session has its own private workspace where you can try uploads, diagnostics, reports, plans and BUDDY. Ending the demo deletes its application data; abandoned sessions expire automatically.",
   },
   {
     question: "Are the mastery bands official?",

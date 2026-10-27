@@ -141,7 +141,7 @@ export default async function DiagnosticsPage({
                   subjectId={selectedSubject.id}
                   subjectName={selectedSubject.name}
                   initialTopicId={initialTopicId}
-                  isDemo={user.isDemo}
+                  isDemo={user.isReadOnlyDemo}
                   topics={leafTopics.map((topic) => ({
                     id: topic.id,
                     name: topic.name,

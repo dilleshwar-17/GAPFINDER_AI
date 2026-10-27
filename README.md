@@ -36,7 +36,7 @@ Source: <https://github.com/dilleshwar-17/GAPFINDER_AI> (branch `main`).
 | Blue glassmorphism theme, across public and workspace layouts | Implemented; visually inspected in a desktop browser |
 | Supabase Auth sign-in, sign-up, callback, sign-out, and password recovery | Implemented; production shared-demo sign-in verified, regular account and recovery flows not verified |
 | Legacy local SQLite authentication | Used only when Supabase Auth variables are absent outside production |
-| Shared demo workspace via `/api/auth/demo` | Production sign-in returned HTTP 200 with `isDemo: true`; this confirms the configured account is marked read-only |
+| Temporary interactive demo via `/api/auth/demo` | Each entry gets an isolated workspace with three seeded subjects and five indexed materials per subject; lifecycle tests use in-memory SQLite |
 | Gemini LLM / neural embeddings | Production health reports providers configured; live generation and embedding calls were not exercised |
 | Optional PostgreSQL data adapter | Implemented; Vercel production health reports `database: ok` over TLS-verified Supabase PostgreSQL |
 | PostgreSQL schema migration | Explicit additive migration applied to the empty hosted database; no SQLite data was copied |
@@ -163,7 +163,7 @@ Run on Windows, Node v26.5.1, npm 12.0.2:
 | Vercel Production deployment | **Ready** — `dpl_AdnNASWprBTJJB7es8vwModxLTTL`, build duration 28s |
 | Production alias and `/api/health` | **Passed** — `https://gapfinder-ai-dilleshwar-rao.vercel.app`; health reports `database: ok` |
 | Production `/login` and unauthenticated `/dashboard` | **Passed** — HTTP 200 and redirect HTTP 307 to login |
-| Production shared-demo sign-in | **Passed, limited** — HTTP 200 and `isDemo: true`; no learner workflow was run |
+| Production shared-demo sign-in | Historical check only — the former shared demo identity was read-only; the current temporary interactive-demo behavior needs deployment verification |
 | Production runtime error query | **No error records returned** in the available 30-minute window; Vercel Hobby log retention is limited |
 | `npm run smoke` | **Not run** against Production |
 | Complete live student workflow | **Not tested** — regular account auth, upload/RAG, diagnostic, and revision persistence remain unverified |

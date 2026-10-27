@@ -64,7 +64,7 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (error && error.name !== "AuthSessionMissingError") throw error;
 
-  if (isProtected && !user) {
+  if (isProtected && !user && !request.cookies.has(SESSION_COOKIE)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);

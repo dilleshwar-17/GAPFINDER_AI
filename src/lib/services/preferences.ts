@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { db, nowIso } from "@/lib/db";
-import { isDemoUser } from "@/lib/services/guards";
-import { conflict } from "@/lib/errors";
+import { assertWritableAccount } from "@/lib/services/guards";
 
 export const preferencesSchema = z.object({
   minutesPerDay: z.coerce
@@ -59,9 +58,7 @@ export async function savePreferences(
   input: PreferencesInput,
   options: { completeOnboarding?: boolean; lastSubjectId?: string | null } = {},
 ): Promise<Preferences> {
-  if (await isDemoUser(userId)) {
-    throw conflict("The shared demo workspace cannot change study preferences.");
-  }
+  await assertWritableAccount(userId, "study preference changes");
   const existing = await getPreferences(userId);
   const onboardingCompleted =
     options.completeOnboarding === true ? 1 : existing.onboardingCompleted ? 1 : 0;

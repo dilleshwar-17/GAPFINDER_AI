@@ -31,6 +31,7 @@ describe("syncSupabaseUser", () => {
       email: "learner@example.com",
       displayName: "Learner",
       isDemo: false,
+      isReadOnlyDemo: false,
     });
     expect(
       await db.get<{ auth_user_id: string; password_hash: string }>(

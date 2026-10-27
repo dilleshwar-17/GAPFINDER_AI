@@ -237,7 +237,13 @@ export function DemoLaunchButton({
   );
 }
 
-export function LogoutButton({ compact = false }: { compact?: boolean }) {
+export function LogoutButton({
+  compact = false,
+  isDemo = false,
+}: {
+  compact?: boolean;
+  isDemo?: boolean;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -260,7 +266,7 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
       className={compact ? "btn btn-ghost btn-sm" : "btn btn-secondary btn-sm"}
     >
       {pending ? <Loader2 size={13} className="animate-spin" aria-hidden /> : null}
-      {pending ? "Signing out…" : "Sign out"}
+      {pending ? (isDemo ? "Ending demo…" : "Signing out…") : isDemo ? "End demo" : "Sign out"}
     </button>
   );
 }

@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNav, SidebarNav } from "@/components/app-nav";
 import { LogoutButton } from "@/components/auth-forms";
 import { DemoBanner } from "@/components/ui";
+import { DemoSessionLifecycle } from "@/components/demo-session-lifecycle";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="app-shell min-h-screen lg:grid lg:grid-cols-[252px_1fr]">
+      {user.isDemo && !user.isReadOnlyDemo ? <DemoSessionLifecycle /> : null}
       <aside className="app-sidebar no-print sticky top-0 hidden h-screen flex-col overflow-y-auto px-4 py-5 lg:flex">
         <div className="flex items-center justify-between gap-2 px-1">
           <Brand tone="light" />
@@ -38,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <div className="min-w-0">
                 <p className="truncate text-[0.78rem] font-medium text-[#f2f4f7]">{user.displayName}</p>
                 <p className="truncate text-[0.66rem] text-[#98a2b3]">
-                  {user.isDemo ? "Shared demo" : user.email}
+                  {user.isDemo ? (user.isReadOnlyDemo ? "Shared demo" : "Interactive demo") : user.email}
                 </p>
               </div>
             </div>
@@ -50,7 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 Settings
               </Link>
               <span className="text-[#d0d5dd]">
-                <LogoutButton compact />
+                <LogoutButton compact isDemo={user.isDemo} />
               </span>
             </div>
           </div>
@@ -62,13 +64,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </aside>
 
       <div className="flex min-h-screen min-w-0 flex-col">
-        <MobileNav displayName={user.displayName} isDemo={user.isDemo} />
+        <MobileNav
+          displayName={user.displayName}
+          isDemo={user.isDemo}
+          isReadOnlyDemo={user.isReadOnlyDemo}
+        />
         <main
           id="main-content"
           className="app-main relative flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
         >
           <div className="mx-auto w-full max-w-6xl">
-            {user.isDemo ? <DemoBanner /> : null}
+            {user.isDemo ? <DemoBanner readOnly={user.isReadOnlyDemo} /> : null}
             {children}
           </div>
         </main>

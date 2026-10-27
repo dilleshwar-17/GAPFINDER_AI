@@ -4,18 +4,30 @@ import { db } from "@/lib/db";
 import { isPostgresConfigured } from "@/lib/db";
 import { forbidden } from "@/lib/errors";
 
-/**
- * Demo accounts share one seeded workspace. These helpers keep the shared
- * reference data read-only so one visitor cannot permanently damage the demo
- * for another. They are enforced on the server, not only in the interface.
- */
-export async function isDemoUser(userId: string): Promise<boolean> {
-  const row = await db.get<{ is_demo: number }>("SELECT is_demo FROM users WHERE id = ?", userId);
-  return row?.is_demo === 1;
+const INTERACTIVE_DEMO_EMAIL = /^demo-session-[0-9a-f-]{36}@demo\.gapfinder\.local$/i;
+
+export function isInteractiveDemoEmail(email: string): boolean {
+  return INTERACTIVE_DEMO_EMAIL.test(email);
+}
+
+export async function isInteractiveDemoUser(userId: string): Promise<boolean> {
+  const row = await db.get<{ is_demo: number; email: string }>(
+    "SELECT is_demo, email FROM users WHERE id = ?",
+    userId,
+  );
+  return row?.is_demo === 1 && isInteractiveDemoEmail(row.email);
+}
+
+export async function isSharedDemoUser(userId: string): Promise<boolean> {
+  const row = await db.get<{ is_demo: number; email: string }>(
+    "SELECT is_demo, email FROM users WHERE id = ?",
+    userId,
+  );
+  return row?.is_demo === 1 && !isInteractiveDemoEmail(row.email);
 }
 
 export async function assertWritableAccount(userId: string, action: string): Promise<void> {
-  if (await isDemoUser(userId)) {
+  if (await isSharedDemoUser(userId)) {
     throw forbidden(
       `The shared demo workspace is read-only for ${action}. Create a personal account to use this action.`,
     );

@@ -135,26 +135,25 @@ an equivalent shared store. This is listed in the limitations.
 - `ai_events` stores provider/model/status/reason only — no prompts, passages,
   answers or model text.
 
-## 7. Shared demo isolation
+## 7. Temporary demo isolation
 
-- The demo account is a normal row with `users.is_demo = 1`.
-- In local mode, its password is a 32-byte random value generated at
-  provisioning time, stored only as a scrypt hash, and never printed, logged,
-  or returned in an API response. Supabase mode uses the configured
-  server-only demo credentials; the exact configured demo email, trusted
-  `app_metadata.is_demo`, or an existing demo flag marks its app profile
-  read-only.
-- Entry is via `POST /api/auth/demo`: local mode issues a `gf_session`;
-  Supabase mode establishes the provider's SSR session.
-- Writes are blocked server-side by `assertWritableAccount` for uploads,
-  document delete/retry, subject create/update/delete, topic extraction/creation,
-  preferences, plans, profile and password.
-- Interactive diagnostics and assistant questions are allowed, but demo practice
-  submissions skip shared mastery/plan mutation unless an internal seeding flag
-  is set. One visitor cannot permanently damage the shared reference data or
-  overwrite another visitor's mastery.
-- The UI shows a persistent "shared demo" banner and read-only affordances are
-  disabled with an explanation.
+- Each `POST /api/auth/demo` request creates a random temporary account and an
+  isolated workspace; it does not reuse the former shared demo identity.
+- The app issues an HTTP-only `gf_session` whose random token is stored as a
+  hash. The session expires after four hours. When Supabase Auth is configured,
+  this app-owned demo session is validated server-side before resolving normal
+  Supabase identities.
+- The temporary account uses the normal learning services and owner-scoped data
+  paths, but cannot change its password.
+- Explicit demo exit deletes the account. Foreign-key cascades remove owned
+  sessions and workspace rows.
+- Tab-close cleanup uses `navigator.sendBeacon` and is best effort. A session
+  that is not explicitly deleted becomes inaccessible at expiry and is removed
+  during cleanup on a later demo launch.
+- Application deletion does not erase database backups or provider and
+  infrastructure logs subject to separate retention policies.
+- Legacy shared demo identities remain read-only and use server-side write
+  guards.
 
 ## 8. Privacy
 

@@ -56,7 +56,7 @@ export default async function DocumentDetailPage({
             documentId={document.id}
             subjectId={document.subjectId}
             status={document.status}
-            isDemo={user.isDemo}
+            isDemo={user.isReadOnlyDemo}
             redirectOnDelete
           />
         }

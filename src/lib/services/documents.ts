@@ -7,7 +7,7 @@ import { AppError, conflict, notFound, validationError } from "@/lib/errors";
 import { chunkPages, CHUNKING_CONFIG } from "@/lib/domain/chunking";
 import { extractDocument, ExtractionError } from "@/lib/ingest/extract";
 import { getSubjectOwned } from "@/lib/services/subjects";
-import { assertWritableAccount, isDemoUser } from "@/lib/services/guards";
+import { assertWritableAccount, isInteractiveDemoUser } from "@/lib/services/guards";
 
 export const documentKindSchema = z.enum(["syllabus", "notes", "past_paper", "other"]);
 export type DocumentKind = z.infer<typeof documentKindSchema>;
@@ -374,6 +374,16 @@ export async function ingestDocument(input: UploadInput): Promise<DocumentView> 
   await getSubjectOwned(input.ownerId, input.subjectId);
   if (!input.allowDemo) {
     await assertWritableAccount(input.ownerId, "material uploads");
+  }
+  if (await isInteractiveDemoUser(input.ownerId)) {
+    const count = await db.get<{ count: number }>(
+      "SELECT COUNT(*) AS count FROM documents WHERE owner_id = ? AND subject_id = ?",
+      input.ownerId,
+      input.subjectId,
+    );
+    if ((count?.count ?? 0) >= 5) {
+      throw validationError("The demo allows up to five materials per subject. Delete one before adding another.");
+    }
   }
 
   if (input.bytes.length === 0) {

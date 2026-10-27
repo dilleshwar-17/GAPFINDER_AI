@@ -93,7 +93,7 @@ export default async function TopicsPage({
 
       <TopicMap
         subjectId={subject.id}
-        isDemo={user.isDemo}
+        isDemo={user.isReadOnlyDemo}
         topics={topics.map((topic) => ({
           id: topic.id,
           name: topic.name,
