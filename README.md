@@ -95,7 +95,7 @@ service-role keys.
 | `npm run lint` | Run ESLint |
 | `npm run typecheck` | Check TypeScript types |
 | `npm test` | Run the offline test suite |
-| `npm run smoke` | Run HTTP smoke checks against a running server |
+| `npm run smoke` | Run HTTP checks against a running instance; creates a temporary demo workspace and may call configured AI providers |
 
 ## Temporary demo
 
@@ -116,9 +116,11 @@ backups or provider/infrastructure retention. See
 The local application is implemented and verified for material processing,
 retrieval, citations, assessment scoring, revision planning and the demo
 workspace lifecycle. Hosted PostgreSQL and Supabase Auth are configured for
-production; the latest demo changes still require production deployment and a
-live authenticated workflow check. Live Gemini calls and neural embeddings
-were not part of local verification.
+production. The interactive demo is deployed to the production site; the
+production health endpoint reports the database healthy and the demo entry page
+shows the updated private-session flow. A live demo session was not launched
+during verification, so its hosted first-run seed has not been exercised.
+Live Gemini calls and neural embeddings were not part of local test runs.
 
 Hosted object storage is not configured; uploaded files and embeddings are
 stored in the database. Provider and database backup retention are managed by

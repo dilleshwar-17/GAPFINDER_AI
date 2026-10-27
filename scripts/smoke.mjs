@@ -150,16 +150,23 @@ async function main() {
   const subjectsBody = await subjects.json().catch(() => null);
   record(subjects.ok, "Authenticated /api/subjects returns data", `HTTP ${subjects.status}`);
   record(
-    Array.isArray(subjectsBody?.subjects) && subjectsBody.subjects.length > 0,
-    "Demo workspace contains seeded subjects",
+    Array.isArray(subjectsBody?.subjects) && subjectsBody.subjects.length === 3,
+    "Demo workspace contains three isolated sample subjects",
     `${subjectsBody?.subjects?.length ?? 0} subject(s)`,
+  );
+  record(
+    subjectsBody?.subjects?.every?.((subject) => subject.readyDocuments === 5) === true,
+    "Each sample subject contains five indexed materials",
   );
 
   const reports = await request("/reports", { headers: authed });
   record(reports.ok, "Authenticated /reports renders", `HTTP ${reports.status}`);
 
   const dashboardHtml = await dashboard.text();
-  record(/shared demo/i.test(dashboardHtml), "Demo workspace shows the shared-demo banner");
+  record(
+    /DEMO WORKSPACE|private and interactive/i.test(dashboardHtml),
+    "Demo workspace shows its temporary-session banner",
+  );
 
   const subjectId =
     firstMatch(dashboardHtml, /href="\/subjects\/([^"/]+)\/topics"/) ??
@@ -314,8 +321,8 @@ async function main() {
     body: JSON.stringify({ name: "Demo write probe" }),
   });
   record(
-    demoWrite.status === 403,
-    "Shared demo blocks subject creation",
+    demoWrite.status === 201,
+    "Interactive demo allows subject creation",
     `HTTP ${demoWrite.status}`,
   );
 

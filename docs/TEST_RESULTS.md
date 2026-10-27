@@ -27,6 +27,21 @@ otherwise stated.
 Vitest displayed a non-fatal Vite config-loader warning. No tests were weakened
 or disabled.
 
+## Interactive demo deployment — 2026-10-27
+
+| Check | Result | Evidence and limitations |
+| --- | --- | --- |
+| `npm test` | PASS | 13 files and 151 tests passed, including demo seed shape, per-owner isolation, write enablement, document cap, cascading cleanup, session precedence and expiry cleanup. Tests use in-memory SQLite and local embeddings. |
+| `npm run lint` | PASS | `eslint .` completed with exit code 0. |
+| `npm run typecheck` | PASS | `tsc --noEmit` completed with exit code 0. |
+| `npm run build` | PASS | Next.js 16.4.3 production build completed and listed `/api/auth/demo/exit`. |
+| `git diff --check` | PASS | No whitespace errors before commit. |
+| Vercel production deployment | PASS | Commit `003f190`, deployment `dpl_HKcaPYKowYxZp9wEdVCafS1zNTwT`, status Ready, 42-second build. |
+| Canonical production alias | PASS | `gapfinder-ai-dilleshwar-rao.vercel.app` was assigned to the latest deployment. |
+| Production `/api/health` | PASS | Protected `vercel curl` reported `status: ok` and `database: ok`. |
+| Production `/demo-access` | PASS, limited | Browser rendered the new interactive-demo copy; HTTP 200. |
+| Production demo launch and full seeded workflow | NOT TESTED | Not invoked to avoid live provider embedding requests and production writes. |
+
 ## Historical deployment checks
 
 The following table records checks from earlier deployments before the

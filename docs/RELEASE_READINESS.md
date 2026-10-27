@@ -1,8 +1,9 @@
 # Release Readiness
 
 **Status: NOT READY for production use.** The current local tree is deployed
-to the Production alias and its health endpoint reports `database: ok`, but
-the complete student workflow and operational recovery have not been verified.
+to the Production alias and its health endpoint reports `database: ok`. The
+interactive demo entry page is deployed, but the complete hosted student
+workflow and operational recovery have not been verified.
 
 The hosted Supabase PostgreSQL database has the additive initial schema and
 strict TLS configuration. The migration did not copy local SQLite data.
@@ -11,7 +12,7 @@ strict TLS configuration. The migration did not copy local SQLite data.
 
 - Current working-tree `npm run typecheck` passes.
 - Current working-tree `npm run lint` passes.
-- Current working-tree `npm test` passes: 12 files, 147 tests. PostgreSQL adapter
+- Current working-tree `npm test` passes: 13 files, 151 tests. PostgreSQL adapter
   tests are unit tests and do not connect to a live server.
 - Current working-tree `npm run build` passes on Next.js 16.4.3.
 - Supabase Auth flows are wired in code and the SSR proxy validates configured
@@ -34,8 +35,12 @@ strict TLS configuration. The migration did not copy local SQLite data.
   HTTP 200 and an unauthenticated dashboard request returned HTTP 307 to login.
 - Production health returns `status: ok` and `database: ok`; the additive schema
   migration and strict TLS connection were verified.
-- Production `/api/auth/demo` returned HTTP 200 with `isDemo: true`, confirming
-  the Supabase demo identity is marked read-only by the application.
+- Production `/demo-access` returns HTTP 200 and displays the temporary
+  interactive-demo flow. The demo entry endpoint was not called in production
+  because first-time seeding invokes the configured embedding provider.
+- The previous production `/api/auth/demo` check exercised the former
+  shared-demo implementation and does not verify the current temporary-session
+  creation or cleanup against hosted PostgreSQL.
 - No error records were returned by the production query for the available
   30-minute log window. Vercel Hobby log retention is limited.
 

@@ -3,8 +3,9 @@
 This document records the local setup, Supabase Auth configuration, Vercel
 deployment, and the remaining release blockers.
 
-**Status: Production deployment and database health verified; full workflow
-verification remains incomplete.** The existing Vercel-managed Supabase Free
+**Status: Production deployment, database health and the interactive demo
+entry page verified; full hosted workflow verification remains incomplete.**
+The existing Vercel-managed Supabase Free
 resource was connected to the linked project. Its initially empty PostgreSQL
 database was inspected using a TLS-verified, read-only connection. The
 repository's additive migration `001_initial_schema` was then applied. The
@@ -19,13 +20,21 @@ deployment. `/api/health` returned `status: ok` and `database: ok`; `/login`
 returned HTTP 200; an unauthenticated `/dashboard` request returned HTTP 307
 to `/login`; and `/api/auth/demo` returned HTTP 200 with `isDemo: true`.
 
-These checks verify deployment, database connectivity, the no-session route
-guard, and the configured read-only demo identity—not the complete student
-workflow. The migration did not copy local SQLite data. Upload, retrieval,
-diagnostic, and revision-plan behavior on hosted data still needs end-to-end
-verification. The production error-log query returned no records for its
-available 30-minute window; the Vercel Hobby plan does not retain the longer
-requested window.
+On 2026-10-27, commit `003f190` deployed the isolated interactive demo as
+`dpl_HKcaPYKowYxZp9wEdVCafS1zNTwT` (Ready; 42-second build). The canonical
+`https://gapfinder-ai-dilleshwar-rao.vercel.app` alias was assigned to the new
+deployment. Protected `vercel curl` requests confirmed `/api/health` reports
+`status: ok` and `database: ok`, and `/demo-access` returned HTTP 200 with the
+updated interactive-demo content. The demo-entry endpoint was not invoked
+against production during this check because the seeded workspace makes live
+embedding-provider requests.
+
+These checks verify deployment, database connectivity and the public demo
+entry page—not the complete hosted student workflow. The migration did not
+copy local SQLite data. Upload, retrieval, diagnostic, and revision-plan
+behavior on hosted data still needs end-to-end verification. The production
+error-log query returned no records for its available 30-minute window; the
+Vercel Hobby plan does not retain the longer requested window.
 
 The same working tree was also deployed to Preview at
 `https://gapfinder-qcvgrogr0-dilleshwar-17s-projects.vercel.app`. Vercel
@@ -128,8 +137,7 @@ Copy `.env.example` and set values. The important ones:
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | unset | Supabase Auth | Preferred public key; never a service-role key |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | unset | Supabase Auth | Legacy public key; used when publishable key is unset |
 | `NEXT_PUBLIC_SITE_URL` | localhost URL | production auth links | Canonical HTTPS site origin |
-| `SUPABASE_DEMO_EMAIL` | unset | hosted demo | Server-only demo identity |
-| `SUPABASE_DEMO_PASSWORD` | unset | hosted demo | Server-only secret |
+| `DISABLE_DEMO` | `0` | optional | Set to `1` to disable temporary demo sessions |
 | `DATABASE_URL` | unset | hosted PostgreSQL | Server-only connection string. When set, the app selects PostgreSQL instead of SQLite. Configure it securely; never use a `NEXT_PUBLIC_` name. |
 | `DATABASE_CA_CERT` | unset | hosted PostgreSQL TLS | Optional trusted CA certificate in PEM form. Required when the provider CA is not in the runtime trust store; TLS verification stays enabled. |
 | `DATABASE_PATH` | `data/gapfinder.db` | local | Local SQLite file used only when `DATABASE_URL` is unset; not durable/shared on Vercel |
@@ -444,7 +452,7 @@ If you have a VM or container with a persistent disk:
 5. Keep the process alive with a supervisor (systemd, PM2, container restart
    policy).
 6. Back up the SQLite file regularly (stop writes or use SQLite's backup API).
-7. Set `DISABLE_DEMO=1` unless you intentionally want a shared demo.
+7. Set `DISABLE_DEMO=1` unless you intentionally want temporary interactive demo sessions enabled.
 8. Set `GEMINI_API_KEY` only if you want neural AI; verify with a test upload and
    diagnostic afterward.
 

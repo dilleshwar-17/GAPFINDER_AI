@@ -41,7 +41,7 @@ confident the conclusion is.
 5. **Produce an actionable, time-bounded plan.** The plan must fit the declared
    daily budget, preserve completed work, and adapt after new assessments.
 6. **Protect the learner's material.** Ownership checks, session security,
-   upload limits, and a read-only shared demo are part of the product, not
+   upload limits, and isolated temporary demo sessions are part of the product, not
    afterthoughts.
 7. **Show the state of every AI dependency.** The UI must be clear about whether
    neural models or deterministic fallbacks are running, and what that means.
